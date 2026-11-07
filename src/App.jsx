@@ -25,6 +25,7 @@ import StudentView from './views/StudentView';
 import StudentRegistration from './views/StudentRegistration';
 import NotificationsView from './views/NotificationsView';
 import SettingsView from './views/SettingsView';
+import DataBackupPanel from './components/DataBackupPanel';
 import CommunityView from './views/CommunityView'; 
 import PaymentsView from './views/PaymentsView'; 
 
@@ -257,7 +258,12 @@ export default function App() {
             {activeView === 'routines' && <RoutinesView routines={routines} exercisesLibrary={exercises} onAddRoutine={handleAddRoutine} onUpdateRoutine={handleUpdateRoutine} onDeleteRoutine={handleDeleteRoutine} />}
             {activeView === 'client-detail' && selectedClient && <ClientDetailView client={selectedClient} goBack={() => navigateTo('clients')} exercisesLibrary={exercises} routines={routines} onUpdateClient={handleUpdateClientData} />}
             {activeView === 'calendar' && <CalendarView clients={clients} />}
-            {activeView === 'settings' && <SettingsView settings={settings} onUpdateSettings={handleUpdateSettings} />}
+            {activeView === 'settings' && (
+              <div className="space-y-6">
+                <DataBackupPanel />
+                <SettingsView settings={settings} onUpdateSettings={handleUpdateSettings} />
+              </div>
+            )}
             {activeView === 'community' && <CommunityView isCoach={true} coachName="Coach Ragnar" />}
             {activeView === 'payments' && <PaymentsView clients={clients} settings={settings} onUpdateClient={handleUpdateClientData} />}
           </div>
