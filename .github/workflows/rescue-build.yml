@@ -1,4 +1,4 @@
-name: Ragnar - comprobar copia y respaldo
+name: Ragnar - compilar y entregar paquete Netlify
 
 on:
   push:
@@ -17,3 +17,25 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+      - name: Verificar archivos compilados, no código fuente
+        run: |
+          test -f dist/index.html
+          test -f dist/rescate.html
+          test -f dist/manifest.json
+          test -d dist/assets
+          grep -q '/assets/' dist/index.html
+          if grep -q '/src/main.jsx' dist/index.html; then
+            echo 'ERROR: index.html todavía apunta a código fuente'
+            exit 1
+          fi
+          find dist -maxdepth 2 -type f | sort
+      - name: Comprimir contenido listo para Netlify
+        run: |
+          cd dist
+          zip -qr ../ragnar-netlify-dist.zip .
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ragnar-netlify-dist
+          path: ragnar-netlify-dist.zip
+          if-no-files-found: error
+          retention-days: 7
