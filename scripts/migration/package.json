@@ -1,0 +1,14 @@
+{
+  "name": "ragnar-firestore-migration",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "check": "node --check import-backup.mjs"
+  },
+  "dependencies": {
+    "firebase-admin": "^13.5.0"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
