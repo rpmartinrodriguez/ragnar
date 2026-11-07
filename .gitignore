@@ -22,3 +22,11 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Copias y claves privadas de Ragnar
+ragnar-backup-*.json
+**/ragnar-backup-*.json
+scripts/migration/secrets/
+**/*service-account*.json
+.env
+.env.*
