@@ -1,13 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { AlertTriangle, CheckCircle2, Database, FileJson, LockKeyhole, Upload } from 'lucide-react';
-import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
-import { db } from './firebase';
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'firebase/auth';
+import { dbMigration as db, authMigration as auth } from './firebaseMigration';
 import { importRagnarBackup, validateRagnarBackup } from './utils/importRagnarBackup';
 
 const TARGET = 'ragnar-5f8d7';
 
 export default function MigrationApp() {
-  const auth = getAuth();
   const [session, setSession] = useState(null);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState('');
