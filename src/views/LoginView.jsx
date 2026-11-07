@@ -1,12 +1,36 @@
 import React, { useState } from 'react';
 import { Lock, Mail, ArrowRight } from 'lucide-react';
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth';
+import { getAuth, signInWithEmailAndPassword, sendPasswordResetEmail } from 'firebase/auth';
 
 export default function LoginView({ onLoginSuccess }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resetting, setResetting] = useState(false);
+  const [resetStatus, setResetStatus] = useState('');
+
+  const resetPassword = async () => {
+    const targetEmail = email.trim();
+    if (!targetEmail) {
+      setResetStatus('Ingresá primero el correo de tu cuenta.');
+      return;
+    }
+    setResetting(true);
+    setResetStatus('');
+    try {
+      await sendPasswordResetEmail(getAuth(), targetEmail);
+      setResetStatus('Si la cuenta existe, recibirás las instrucciones para crear una contraseña nueva.');
+    } catch (err) {
+      if (err.code === 'auth/too-many-requests') {
+        setResetStatus('Hay demasiadas solicitudes. Intentá nuevamente más tarde.');
+      } else {
+        setResetStatus('No se pudo enviar el correo de recuperación. Revisá el correo y la configuración de Authentication.');
+      }
+    } finally {
+      setResetting(false);
+    }
+  };
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -101,6 +125,12 @@ export default function LoginView({ onLoginSuccess }) {
             </button>
 
           </form>
+          <div className="mt-4 text-center space-y-2">
+            <button type="button" disabled={resetting} onClick={resetPassword} className="text-yellow-400 text-xs font-bold hover:underline disabled:opacity-60">
+              {resetting ? 'Enviando...' : '¿Olvidaste tu contraseña?'}
+            </button>
+            {resetStatus && <p role="status" className="text-xs text-zinc-300">{resetStatus}</p>}
+          </div>
         </div>
         
         <p className="text-center text-zinc-600 text-xs mt-8">
