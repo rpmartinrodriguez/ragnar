@@ -7,7 +7,7 @@ import {
 // --- Firebase ---
 import { 
   collection, onSnapshot, addDoc, updateDoc, deleteDoc, 
-  doc, query, orderBy, where, getDocs, setDoc 
+  doc, query, orderBy, where, getDocs, setDoc, limit 
 } from 'firebase/firestore';
 import { getAuth, onAuthStateChanged, signOut } from 'firebase/auth';
 import { db } from './firebase'; 
@@ -25,7 +25,7 @@ import StudentView from './views/StudentView';
 import StudentRegistration from './views/StudentRegistration';
 import NotificationsView from './views/NotificationsView';
 import SettingsView from './views/SettingsView';
-import DataBackupPanel from './components/DataBackupPanel';
+import MigrationAuditPanel from './components/MigrationAuditPanel';
 import CommunityView from './views/CommunityView'; 
 import PaymentsView from './views/PaymentsView'; 
 
@@ -77,18 +77,28 @@ export default function App() {
   }, []);
 
   const checkUserRole = async (uid) => {
+    // Los historiales conservan UID anteriores: nunca inferir entrenador
+    // por el simple hecho de que el usuario no figure como alumno.
+    setUserRole(null);
+    setStudentProfileId(null);
     try {
-      const q = query(collection(db, 'clients'), where('studentUserId', '==', uid));
-      const querySnapshot = await getDocs(q);
-      if (!querySnapshot.empty) {
-        const clientDoc = querySnapshot.docs[0];
+      const own = await getDocs(query(collection(db, 'clients'), where('studentUserId', '==', uid), limit(1)));
+      if (!own.empty) {
+        setStudentProfileId(own.docs[0].id);
         setUserRole('student');
-        setStudentProfileId(clientDoc.id);
-      } else {
-        setUserRole('trainer');
+        return;
       }
     } catch (error) {
-      console.error(error);
+      console.error('Verificación de alumno:', error);
+    }
+
+    // Solo un coach autorizado por reglas Firestore puede listar clients.
+    try {
+      await getDocs(query(collection(db, 'clients'), limit(1)));
+      setUserRole('trainer');
+    } catch (error) {
+      console.warn('Usuario no habilitado en Firebase nuevo:', error.code || error.message);
+      setUserRole('unlinked');
     }
   };
 
@@ -196,14 +206,28 @@ export default function App() {
   };
 
   const renderMainContent = () => {
-    if (inviteId && (!user || (user && userRole !== 'student'))) {
-      return <StudentRegistration inviteId={inviteId} onRegisterSuccess={() => { window.history.pushState({}, document.title, window.location.pathname); setInviteId(null); }} />;
+    if (inviteId) {
+      return <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 text-center gap-4">
+        <h1 className="text-yellow-400 text-2xl font-black">RAGNAR · Migración</h1>
+        <p className="max-w-md text-zinc-300">Los enlaces de registro antiguos están deshabilitados en esta versión de prueba. Primero vamos a vincular de forma segura las cuentas del Firebase nuevo para conservar los historiales.</p>
+        <button onClick={() => { window.history.replaceState({}, document.title, '/'); setInviteId(null); }} className="bg-yellow-400 text-black px-6 py-3 rounded-xl font-bold">Volver al inicio</button>
+      </div>;
     }
     if (user && userRole === 'student' && studentProfileId) {
       return <StudentView clientId={studentProfileId} />;
     }
     if (!user) {
       return <LoginView onLoginSuccess={() => {}} />;
+    }
+    if (!userRole) {
+      return <div className="min-h-screen bg-black text-zinc-300 grid place-items-center">Verificando permisos en el Firebase nuevo...</div>;
+    }
+    if (userRole !== 'trainer') {
+      return <div className="min-h-screen bg-black text-white flex flex-col items-center justify-center p-6 gap-4 text-center">
+        <h1 className="text-2xl font-black text-yellow-400">Cuenta pendiente de vinculación</h1>
+        <p className="max-w-md text-zinc-300">Tu cuenta está autenticada, pero todavía no está asociada a un perfil de alumno ni tiene permisos de entrenador en el Firebase nuevo. Tus historiales importados no se borraron.</p>
+        <button onClick={handleLogout} className="rounded-xl border border-yellow-400 px-6 py-3 text-yellow-400">Cerrar sesión</button>
+      </div>;
     }
 
     return (
@@ -260,7 +284,7 @@ export default function App() {
             {activeView === 'calendar' && <CalendarView clients={clients} />}
             {activeView === 'settings' && (
               <div className="space-y-6">
-                <DataBackupPanel />
+                <MigrationAuditPanel clients={clients} coachUid={user.uid} />
                 <SettingsView settings={settings} onUpdateSettings={handleUpdateSettings} />
               </div>
             )}
