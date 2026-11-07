@@ -1,19 +1,16 @@
-// src/firebase.js
+// Rama de migracion: ESTA copia apunta solamente al Firebase nuevo.
+// La rama main conserva la configuracion original para el respaldo.
 import { initializeApp } from 'firebase/app';
-import { getFirestore } from 'firebase/firestore'; // Importamos la base de datos
+import { getFirestore } from 'firebase/firestore';
 
-// Tu configuración (La que me pasaste)
 const firebaseConfig = {
-  apiKey: 'AIzaSyAtzIf6JGLQuDVYc6poZAOMgmjEzbEaZk0',
-  authDomain: 'ragnar-training.firebaseapp.com',
-  projectId: 'ragnar-training',
-  storageBucket: 'ragnar-training.firebasestorage.app',
-  messagingSenderId: '727763697342',
-  appId: '1:727763697342:web:094a55944d708a80f568ef',
+  apiKey: 'AIzaSyAVxRCZ3gG1QGehoLZ9I1yd-qnhm4MKK3M',
+  authDomain: 'ragnar-5f8d7.firebaseapp.com',
+  projectId: 'ragnar-5f8d7',
+  storageBucket: 'ragnar-5f8d7.firebasestorage.app',
+  messagingSenderId: '986593179800',
+  appId: '1:986593179800:web:0301184bed7a5a642778ed'
 };
 
-// 1. Inicializar Firebase
 const app = initializeApp(firebaseConfig);
-
-// 2. Inicializar y exportar la Base de Datos (Firestore)
 export const db = getFirestore(app);
