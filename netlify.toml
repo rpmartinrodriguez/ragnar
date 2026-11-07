@@ -1,0 +1,14 @@
+# Ragnar: despliegue del codigo compilado por Vite.
+# No publicar la raiz del repositorio ni la carpeta src.
+[build]
+  command = "npm ci && npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# Para la PWA y las rutas cliente de React.
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
