@@ -173,7 +173,7 @@ export default function ClientsView({
                 
                 <div className="flex flex-col items-end gap-1">
                   <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${client.studentUserId ? 'bg-green-900/30 text-green-400 border border-green-900' : 'bg-amber-900/30 text-amber-500 border border-amber-900'}`}>
-                    {client.studentUserId ? 'App Vinculada' : 'Pendiente'}
+                    {client.studentUserId ? 'UID histórico' : 'Sin UID'}
                   </span>
                   {/* Etiqueta visible si tiene días de gracia activos */}
                   {client.graceDays > 0 && (
@@ -198,14 +198,14 @@ export default function ClientsView({
               </div>
               
               <div className="flex items-center gap-2 pt-4 border-t border-zinc-800" onClick={e => e.stopPropagation()}>
-                {!client.studentUserId && (
-                  <button 
-                    onClick={(e) => handleCopyLink(e, client.id)}
-                    className={`flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg border transition-all flex items-center justify-center gap-2 ${copiedId === client.id ? 'bg-green-500/20 border-green-500/30 text-green-500' : 'bg-yellow-400/10 border-yellow-400/20 text-yellow-400 hover:bg-yellow-400/20'}`}
-                  >
-                    {copiedId === client.id ? <><Check size={14}/> Copiado</> : <><Link size={14}/> Invitar</>}
-                  </button>
-                )}
+                <button
+                  type="button"
+                  onClick={(e) => { e.stopPropagation(); navigateTo('access'); }}
+                  className="flex-1 py-2 text-xs font-black uppercase tracking-widest rounded-lg border border-yellow-400/20 bg-yellow-400/10 text-yellow-400 hover:bg-yellow-400/20"
+                  title="Administrar acceso; la invitación antigua está deshabilitada durante la migración"
+                >
+                  Gestionar acceso
+                </button>
 
                 {/* NUEVO BOTÓN: DÍAS DE GRACIA */}
                 <button 
