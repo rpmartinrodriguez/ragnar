@@ -1,0 +1,65 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Esto asegura que el fondo sea negro desde el principio */
+body {
+  background-color: #000000;
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+/* --- PERSONALIZACIÓN DEL CALENDARIO (Hardcore Theme) --- */
+.react-calendar {
+  background-color: #18181b; /* Zinc-900 */
+  color: #fff;
+  border: 1px solid #27272a;
+  font-family: inherit;
+  border-radius: 0.75rem;
+  width: 100%;
+  line-height: 1.125em;
+}
+.react-calendar__navigation button {
+  color: #facc15; /* Yellow-400 */
+  min-width: 44px;
+  background: none;
+  font-size: 16px;
+  margin-top: 8px;
+}
+.react-calendar__navigation button:enabled:hover,
+.react-calendar__navigation button:enabled:focus {
+  background-color: #27272a;
+}
+.react-calendar__month-view__days__day {
+  color: #a1a1aa;
+}
+.react-calendar__tile:enabled:hover,
+.react-calendar__tile:enabled:focus {
+  background-color: #27272a;
+  color: #facc15;
+}
+.react-calendar__tile--now {
+  background: #27272a;
+  color: #facc15;
+  font-weight: bold;
+  border: 1px solid #facc15;
+}
+.react-calendar__tile--active {
+  background: #facc15 !important;
+  color: #000 !important;
+  font-weight: bold;
+}
+/* Días que tienen rutina (marcados con un punto o estilo) */
+.has-workout {
+  position: relative;
+}
+.has-workout::after {
+  content: '';
+  position: absolute;
+  bottom: 5px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6px;
+  height: 6px;
+  background-color: #facc15;
+  border-radius: 50%;
+}
