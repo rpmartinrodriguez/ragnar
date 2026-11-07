@@ -53,3 +53,14 @@ Advertencia: los alumnos sin email válido o sin UID anterior no pueden recupera
 - No mover el dominio ni enviar alumnos a la nueva versión hasta terminar estas pruebas.
 
 **IMPORTANTE:** el script Authentication NO se ha ejecutado. Requiere autorización y los archivos locales privados, que nunca se deben adjuntar en un chat.
+
+## Gestión de accesos desde el panel del coach (staging)
+
+- En la rama `staging/ragnar-5f8d7` se agregó un menú **Accesos alumnos** en escritorio y teléfono.
+- El coach puede buscar por nombre/correo, copiar el correo y solicitar directamente a Firebase un email de restablecimiento de contraseña para la cuenta del alumno, si existe en Authentication del Firebase nuevo.
+- NO es posible ver la contraseña actual de un alumno. Este panel no la guarda ni la comparte.
+- El UID de alumno guardado en Firestore NO confirma que la cuenta de Firebase Authentication ya haya sido creada. La solicitud de restablecimiento puede procesarse sin que exista destinatario; se deben crear/verificar las cuentas previamente.
+- La edición de nombre, plan y datos personales sigue disponible en Mis Atletas. Cambiar el correo de una ficha de Firestore NO modifica por sí mismo el correo de Firebase Authentication.
+- Para que el coach pueda establecer directamente una contraseña temporal se necesita además una función administrativa de servidor con Firebase Admin SDK y verificación estricta de permisos; nunca habilitar desde el navegador el SDK de administración.
+
+**Visibilidad de ramas:** GitHub > repositorio `rpmartinrodriguez/ragnar` > selector `main` (sobre la lista de archivos) > escribir `staging/ragnar-5f8d7`. Netlify no publica automáticamente todas las ramas. Crear un segundo sitio desde el mismo repositorio seleccionando esta rama o habilitar Branch deploys. No reorientar el sitio principal a la rama staging hasta validar la migración.
