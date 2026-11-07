@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Menu, Dumbbell, Settings, BarChart3, Users, Calendar, 
+  Menu, Dumbbell, Settings, BarChart3, Users, Calendar, KeyRound, 
   X, LogOut, List, Layout, Bell, MessageSquare, CreditCard 
 } from 'lucide-react';
 
@@ -26,6 +26,7 @@ import StudentRegistration from './views/StudentRegistration';
 import NotificationsView from './views/NotificationsView';
 import SettingsView from './views/SettingsView';
 import MigrationAuditPanel from './components/MigrationAuditPanel';
+import StudentAccessPanel from './components/StudentAccessPanel';
 import CommunityView from './views/CommunityView'; 
 import PaymentsView from './views/PaymentsView'; 
 
@@ -249,6 +250,7 @@ export default function App() {
                  {unreadCount > 0 && <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">{unreadCount}</span>}
               </button>
               <button onClick={() => navigateTo('clients')} className={`p-4 text-left rounded-xl flex items-center gap-3 transition-colors ${activeView === 'clients' ? 'bg-yellow-400 text-black font-black' : 'text-zinc-400 hover:text-white hover:bg-zinc-900'}`}><Users size={20}/> Mis Atletas</button>
+              <button onClick={() => navigateTo('access')} className={`p-4 text-left rounded-xl flex items-center gap-3 transition-colors ${activeView === 'access' ? 'bg-yellow-400 text-black font-black' : 'text-zinc-400 hover:text-white hover:bg-zinc-900'}`}><KeyRound size={20}/> Accesos alumnos</button>
               <button onClick={() => navigateTo('exercises')} className={`p-4 text-left rounded-xl flex items-center gap-3 transition-colors ${activeView === 'exercises' ? 'bg-yellow-400 text-black font-black' : 'text-zinc-400 hover:text-white hover:bg-zinc-900'}`}><List size={20}/> Ejercicios</button>
               <button onClick={() => navigateTo('routines')} className={`p-4 text-left rounded-xl flex items-center gap-3 transition-colors ${activeView === 'routines' ? 'bg-yellow-400 text-black font-black' : 'text-zinc-400 hover:text-white hover:bg-zinc-900'}`}><Layout size={20}/> Rutinas</button>
               <button onClick={() => navigateTo('calendar')} className={`p-4 text-left rounded-xl flex items-center gap-3 transition-colors ${activeView === 'calendar' ? 'bg-yellow-400 text-black font-black' : 'text-zinc-400 hover:text-white hover:bg-zinc-900'}`}><Calendar size={20}/> Agenda</button>
@@ -278,6 +280,7 @@ export default function App() {
             {activeView === 'dashboard' && <DashboardView clients={clients} settings={settings} navigateTo={navigateTo} onAddClient={handleAddClient} />}
             {activeView === 'notifications' && <NotificationsView navigateTo={navigateTo} clients={clients} />}
             {activeView === 'clients' && <ClientsView clients={clients} settings={settings} routines={routines} navigateTo={navigateTo} onAddClient={handleAddClient} onUpdateClient={handleUpdateClientData} onDeleteClient={handleDeleteClient} />}
+            {activeView === 'access' && <StudentAccessPanel clients={clients} onOpenClients={() => navigateTo('clients')} />}
             {activeView === 'exercises' && <ExercisesView exercises={exercises} exercisesLibrary={exercises} onAddExercise={handleAddExercise} onUpdateExercise={handleUpdateExercise} onDeleteExercise={handleDeleteExercise} />}
             {activeView === 'routines' && <RoutinesView routines={routines} exercisesLibrary={exercises} onAddRoutine={handleAddRoutine} onUpdateRoutine={handleUpdateRoutine} onDeleteRoutine={handleDeleteRoutine} />}
             {activeView === 'client-detail' && selectedClient && <ClientDetailView client={selectedClient} goBack={() => navigateTo('clients')} exercisesLibrary={exercises} routines={routines} onUpdateClient={handleUpdateClientData} />}
