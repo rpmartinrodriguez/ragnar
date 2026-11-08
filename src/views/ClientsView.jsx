@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Search, ChevronRight, Plus, X, Dumbbell, Calendar, Check, Link, Edit, Trash2, User, Clock } from 'lucide-react';
+import React, { useMemo, useState } from 'react';
+import { Search, ChevronRight, Plus, X, Dumbbell, Calendar, Check, Link, Edit, Archive, ArchiveRestore, User, Clock, ShieldCheck, ShieldAlert, Filter, LoaderCircle } from 'lucide-react';
 
 export default function ClientsView({ 
   clients = [], 
@@ -10,6 +10,9 @@ export default function ClientsView({
   onDeleteClient 
 }) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [isSaving, setIsSaving] = useState(false);
+  const [formError, setFormError] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingClient, setEditingClient] = useState(null);
   const [copiedId, setCopiedId] = useState(null);
@@ -31,14 +34,28 @@ export default function ClientsView({
     ? settings.plans.map(p => typeof p === 'object' ? String(p.name) : String(p)) 
     : ['Plan Base'];
 
-  const filteredClients = safeClients.filter(client => {
-    if (!client || !client.name) return false;
-    return client.name.toLowerCase().includes(searchTerm.toLowerCase());
-  });
+  // La ficha sigue siendo la misma: "UID histórico" no es sinónimo de acceso activo.
+  const filteredClients = useMemo(() => {
+    const query = searchTerm.trim().toLocaleLowerCase('es');
+    return safeClients.filter(client => {
+      if (!client || !client.name) return false;
+      const plan = typeof client.plan === 'object' ? client.plan?.name : client.plan;
+      const searchable = [client.name,client.email,plan].map(v=>String(v||'').toLocaleLowerCase('es')).join(' ');
+      if (query && !searchable.includes(query)) return false;
+      if (statusFilter === 'activated' && client.accountAccessStatus !== 'activated') return false;
+      if (statusFilter === 'pending' && client.accountAccessStatus === 'activated') return false;
+      if (statusFilter === 'archived' && client.active !== false) return false;
+      if (statusFilter === 'active' && client.active === false) return false;
+      return true;
+    }).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'es'));
+  }, [clients,searchTerm,statusFilter]);
+  const activatedCount = safeClients.filter(c=>c.accountAccessStatus==='activated').length;
+  const activeCount = safeClients.filter(c=>c.active!==false).length;
 
   // --- MANEJO DEL MODAL PRINCIPAL (CREAR/EDITAR) ---
   const openAddModal = () => {
     setEditingClient(null);
+    setFormError('');
     setFormData({
       name: '',
       email: '',
@@ -51,6 +68,7 @@ export default function ClientsView({
   const openEditModal = (client, e) => {
     e.stopPropagation();
     setEditingClient(client);
+    setFormError('');
     let planStr = client.plan || safePlans[0];
     if (typeof client.plan === 'object' && client.plan !== null) {
       planStr = client.plan.name || safePlans[0];
@@ -73,17 +91,18 @@ export default function ClientsView({
     setIsGraceModalOpen(true);
   };
 
-  const handleGraceSubmit = (e) => {
+  const handleGraceSubmit = async (e) => {
     e.preventDefault();
-    if (!graceClient) return;
-
-    if (typeof onUpdateClient === 'function') {
-      // Enviamos el cliente actualizado con el nuevo valor numérico de días de gracia
-      onUpdateClient({ ...graceClient, graceDays: Number(graceDays) });
-    }
-    
-    setIsGraceModalOpen(false);
-    setGraceClient(null);
+    if (!graceClient || isSaving) return;
+    setIsSaving(true);
+    setFormError('');
+    try {
+      await onUpdateClient?.({ ...graceClient, graceDays: Math.min(365,Math.max(0,Number(graceDays)||0)) });
+      setIsGraceModalOpen(false);
+      setGraceClient(null);
+    } catch (error) {
+      setFormError('No se pudieron guardar los días de gracia: ' + (error?.message||'error de conexión'));
+    } finally { setIsSaving(false); }
   };
 
   // --- ACCIONES GENERALES ---
@@ -94,28 +113,36 @@ export default function ClientsView({
     }
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!formData.name || String(formData.name).trim() === '') return;
-
-    const dataToSave = {
-      name: String(formData.name),
-      email: String(formData.email),
-      plan: String(formData.plan || safePlans[0]),
-      startDate: String(formData.startDate),
-      status: 'active'
-    };
-
-    if (editingClient) {
-      if(typeof onUpdateClient === 'function') onUpdateClient({ ...editingClient, ...dataToSave });
-    } else {
-      if(typeof onAddClient === 'function') {
-        // Al crear un alumno, nace con 0 días de gracia por defecto
-        onAddClient({ ...dataToSave, graceDays: 0 });
-      }
+    if (isSaving) return;
+    const name = String(formData.name||'').trim().replace(/\s+/g,' ');
+    const email = String(formData.email||'').trim().toLowerCase();
+    if (!name) return setFormError('Ingresá el nombre del atleta.');
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      return setFormError('El correo tiene un formato inválido.');
     }
-    
-    setIsModalOpen(false);
+    if (email && safeClients.some(c=>c.id!==editingClient?.id && String(c.email||'').trim().toLowerCase()===email)) {
+      return setFormError('Otro atleta ya tiene asignado este correo. Cada acceso debe ser único.');
+    }
+    if (editingClient?.accountAccessStatus==='activated' &&
+        email !== String(editingClient.email||'').trim().toLowerCase()) {
+      return setFormError('El correo de un atleta activado no se cambia desde esta ficha porque está vinculado a Firebase Authentication.');
+    }
+    const dataToSave = {
+      name,
+      email,
+      plan: String(formData.plan||safePlans[0]),
+      startDate:String(formData.startDate)
+    };
+    setIsSaving(true);setFormError('');
+    try {
+      if(editingClient) await onUpdateClient?.({...editingClient,...dataToSave});
+      else await onAddClient?.({...dataToSave,graceDays:0,status:'active'});
+      setIsModalOpen(false);
+    } catch (error) {
+      setFormError('No se pudo guardar el atleta: '+(error?.message||'revisá tu conexión e intentá nuevamente.'));
+    } finally {setIsSaving(false);}
   };
 
   const handleCopyLink = (e, clientId) => {
