@@ -20,6 +20,7 @@ jobs:
       - run: node --input-type=module -e "await import('./netlify/functions/reset-student-password.mjs')"
       - run: node --test tests/sessionSafety.test.mjs
       - run: node --test tests/billingCycle.test.mjs
+      - run: node --test tests/trainingInsights.test.mjs
       - run: npm run build
       - run: node --check scripts/migration/import-backup.mjs
       - run: node --check scripts/migration/create-student-auth.mjs
