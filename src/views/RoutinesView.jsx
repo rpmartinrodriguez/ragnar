@@ -68,7 +68,8 @@ export default function RoutinesView({ exercisesLibrary }) {
     let name=base+' (copia)';
     let counter=2;
     while(routines.some(r=>String(r.name||'').toLowerCase()===name.toLowerCase())){
-      name=base+' (copia '+counter+++')';
+      name=base+' (copia '+counter+')';
+      counter += 1;
     }
     if(!window.confirm('¿Duplicar «'+base+'» como «'+name+'»? Se creará una plantilla independiente; los entrenamientos asignados no cambiarán.'))return;
     setIsSaving(true);setError('');
@@ -209,14 +210,29 @@ export default function RoutinesView({ exercisesLibrary }) {
         </button>
       </div>
 
+      {error && !isAddingEx && !isCreating && (
+        <p role="alert" className="rounded-xl p-3 mb-4 border border-red-500/20 bg-red-500/10 text-red-300 text-sm flex gap-2 items-center">
+          <AlertCircle size={18}/> {error}
+        </p>
+      )}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* COLUMNA IZQUIERDA: LISTA DE PLANTILLAS */}
         <div className="lg:col-span-1 space-y-3">
-          {routines.map(routine => (
+          <div className="relative">
+            <Search size={17} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500"/>
+            <input type="search" aria-label="Buscar plantilla" placeholder="Buscar plantilla..."
+              value={search} onChange={e=>setSearch(e.target.value)}
+              className="w-full bg-zinc-900 border border-zinc-800 text-white text-sm rounded-xl py-3 pl-10 pr-3 outline-none focus:border-yellow-400"/>
+          </div>
+          <p className="text-xs text-zinc-500">{visibleRoutines.length} de {routines.length} plantillas</p>
+          {visibleRoutines.map(routine => (
             <div 
               key={routine.id} 
               onClick={() => setSelectedRoutine(routine)}
+              onKeyDown={e=>{if(e.target===e.currentTarget && (e.key==='Enter'||e.key===' ')){e.preventDefault();setSelectedRoutine(routine);}}}
+              role="button" tabIndex={0}
+              aria-label={'Abrir plantilla '+routine.name}
               className={`p-4 rounded-2xl border cursor-pointer transition-all flex justify-between items-center group ${selectedRoutine?.id === routine.id ? 'bg-zinc-800 border-yellow-400 shadow-lg' : 'bg-zinc-900 border-zinc-800 hover:border-zinc-600'}`}
             >
               <div className="flex items-center gap-3">
@@ -233,7 +249,13 @@ export default function RoutinesView({ exercisesLibrary }) {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <button 
+                <button type="button" disabled={isSaving}
+                  onClick={e=>{e.stopPropagation();handleDuplicateRoutine(routine);}}
+                  className="text-zinc-400 hover:text-yellow-400 p-2.5 transition-colors rounded-lg hover:bg-zinc-800 disabled:opacity-40"
+                  title="Duplicar plantilla sin modificar la original" aria-label={'Duplicar '+routine.name}>
+                  <Copy size={17}/>
+                </button>
+                <button type="button" disabled={isSaving}
                   onClick={(e) => { e.stopPropagation(); handleDeleteRoutine(routine.id); }} 
                   className="text-zinc-600 hover:text-red-500 p-2 transition-colors rounded-lg hover:bg-zinc-800"
                   title="Eliminar Plantilla"
@@ -244,9 +266,9 @@ export default function RoutinesView({ exercisesLibrary }) {
               </div>
             </div>
           ))}
-          {routines.length === 0 && (
+          {visibleRoutines.length === 0 && (
             <div className="text-center py-10 bg-zinc-900/50 rounded-2xl border border-dashed border-zinc-800">
-              <p className="text-zinc-500 text-sm font-bold uppercase tracking-widest">No hay plantillas creadas</p>
+              <p className="text-zinc-500 text-sm font-bold uppercase tracking-widest">{routines.length===0?'No hay plantillas creadas':'No se encontraron plantillas'}</p>
             </div>
           )}
         </div>
@@ -254,15 +276,15 @@ export default function RoutinesView({ exercisesLibrary }) {
         {/* COLUMNA DERECHA: DETALLE DE PLANTILLA SELECCIONADA */}
         <div className="lg:col-span-2">
           {selectedRoutine ? (
-            <div className="bg-zinc-900 rounded-[2rem] border border-zinc-800 overflow-hidden shadow-xl flex flex-col h-[70vh]">
+            <div className="bg-zinc-900 rounded-[2rem] border border-zinc-800 overflow-hidden shadow-xl flex flex-col min-h-[420px] lg:h-[70vh]">
               
               <div className="p-6 border-b border-zinc-800 bg-zinc-950/50 flex justify-between items-center shrink-0">
                 <div>
                   <h3 className="text-2xl font-black text-white uppercase italic tracking-tighter">{selectedRoutine.name}</h3>
                   <p className="text-[10px] text-yellow-400 uppercase font-black tracking-widest mt-1">Configuración Global</p>
                 </div>
-                <button 
-                  onClick={handleOpenAddModal} 
+                <button type="button" disabled={isSaving}
+                  onClick={handleOpenAddModal}
                   className="bg-yellow-400 hover:bg-yellow-300 text-black px-4 py-2.5 rounded-xl font-black uppercase text-xs tracking-widest flex items-center gap-2 transition-colors shadow-lg"
                 >
                   <Plus size={16}/> Agregar
@@ -327,7 +349,7 @@ export default function RoutinesView({ exercisesLibrary }) {
               </div>
             </div>
           ) : (
-            <div className="bg-zinc-900/30 rounded-[2rem] border border-dashed border-zinc-800 h-[70vh] flex flex-col items-center justify-center text-zinc-600">
+            <div className="bg-zinc-900/30 rounded-[2rem] border border-dashed border-zinc-800 min-h-[360px] lg:h-[70vh] flex flex-col items-center justify-center text-zinc-600">
               <Layout size={64} className="mb-4 opacity-20"/>
               <p className="font-black uppercase tracking-widest text-sm text-zinc-500">Selecciona una plantilla para editarla</p>
             </div>
@@ -338,7 +360,7 @@ export default function RoutinesView({ exercisesLibrary }) {
       {/* --- MODAL CREAR NUEVA RUTINA --- */}
       {isCreating && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="bg-zinc-950 w-full max-w-sm rounded-[2rem] border border-zinc-800 shadow-2xl overflow-hidden">
+          <div role="dialog" aria-modal="true" aria-label="Nueva plantilla" className="bg-zinc-950 w-full max-w-sm rounded-[2rem] border border-zinc-800 shadow-2xl overflow-hidden">
             
             <div className="p-6 border-b border-zinc-800 flex justify-between bg-zinc-900/50">
               <h2 className="font-black text-white uppercase italic text-xl tracking-tighter">Nueva Plantilla</h2>
@@ -358,11 +380,10 @@ export default function RoutinesView({ exercisesLibrary }) {
                   onChange={e => setNewRoutineName(e.target.value)} 
                 />
               </div>
-              <button 
-                type="submit" 
-                className="w-full bg-yellow-400 text-black font-black py-4 rounded-xl uppercase tracking-widest text-xs shadow-lg hover:bg-yellow-300 transition-colors shadow-yellow-400/20"
-              >
-                Crear Plantilla
+              {error && <p role="alert" className="text-red-300 text-xs mb-2">{error}</p>}
+              <button type="submit" disabled={isSaving}
+                className="w-full bg-yellow-400 text-black font-black py-4 rounded-xl uppercase tracking-widest text-xs shadow-lg hover:bg-yellow-300 transition-colors shadow-yellow-400/20 disabled:opacity-40">
+                {isSaving ? 'Creando...' : 'Crear Plantilla'}
               </button>
             </form>
           </div>
@@ -372,7 +393,7 @@ export default function RoutinesView({ exercisesLibrary }) {
       {/* --- MODAL AGREGAR EJERCICIO A RUTINA (FORMATO SERIES DINÁMICAS) --- */}
       {isAddingEx && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="bg-zinc-950 w-full max-w-md rounded-[2rem] border border-zinc-800 shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+          <div role="dialog" aria-modal="true" aria-label="Agregar ejercicio a la plantilla" className="bg-zinc-950 w-full max-w-md rounded-[2rem] border border-zinc-800 shadow-2xl overflow-hidden flex flex-col max-h-[90dvh]">
             
             <div className="p-6 border-b border-zinc-800 flex justify-between bg-zinc-900/50 shrink-0">
               <h2 className="font-black text-white uppercase italic text-xl tracking-tighter">Configurar Ejercicio</h2>
@@ -394,7 +415,7 @@ export default function RoutinesView({ exercisesLibrary }) {
                   >
                     <option value="" disabled>Elegir ejercicio...</option>
                     {exercisesLibrary?.map(ex => (
-                      <option key={ex.id || Math.random()} value={ex.name}>{ex.name}</option>
+                      <option key={ex.id || ex.name} value={ex.name}>{ex.name}</option>
                     ))}
                   </select>
                 </div>
@@ -454,6 +475,7 @@ export default function RoutinesView({ exercisesLibrary }) {
               </div>
               
               {/* BOTONES DE GUARDADO */}
+              {error && <p role="alert" className="text-red-300 text-xs px-6 pt-3">{error}</p>}
               <div className="p-6 bg-zinc-950 border-t border-zinc-800 flex gap-3 shrink-0">
                 <button 
                   type="button" 
@@ -462,11 +484,9 @@ export default function RoutinesView({ exercisesLibrary }) {
                 >
                   Cancelar
                 </button>
-                <button 
-                  type="submit" 
-                  className="flex-1 bg-yellow-400 text-black font-black py-4 rounded-xl uppercase text-xs tracking-widest shadow-lg shadow-yellow-400/20 hover:bg-yellow-300 transition-colors"
-                >
-                  Guardar
+                <button type="submit" disabled={isSaving}
+                  className="flex-1 bg-yellow-400 text-black font-black py-4 rounded-xl uppercase text-xs tracking-widest shadow-lg shadow-yellow-400/20 hover:bg-yellow-300 transition-colors disabled:opacity-40">
+                  {isSaving ? 'Guardando...' : 'Guardar'}
                 </button>
               </div>
 
