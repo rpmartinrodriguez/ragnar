@@ -48,6 +48,7 @@ import CommunityView from './CommunityView';
 import ProgressChart from '../components/ProgressChart';
 import StudentChangePassword from '../components/StudentChangePassword';
 import StudentWorkoutNote from '../components/StudentWorkoutNote';
+import ConnectionBanner from '../components/ConnectionBanner';
 import StudentAlertsPanel from '../components/StudentAlertsPanel';
 import { studentAlertRequest, studentForegroundListener } from '../utils/studentPush';
 import { getUpcomingRenewal, ymdInArgentina } from '../utils/billingCycle';
@@ -761,6 +762,7 @@ export default function StudentView({ clientId }) {
 
   return (
     <div className="min-h-screen bg-zinc-950 text-white font-sans flex flex-col relative overflow-x-hidden">
+        <ConnectionBanner/>
       
       {/* MODAL DE NUEVA MEDALLA DESBLOQUEADA (CELEBRACIÓN) */}
       {newMedalAlert && (
