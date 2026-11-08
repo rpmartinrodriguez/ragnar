@@ -32,20 +32,32 @@ import {
   query, 
   orderBy, 
   updateDoc,
-  writeBatch,
-  getDocFromServer
+  runTransaction
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import ProgressChart from '../components/ProgressChart';
 import CoachSetLogger from '../components/CoachSetLogger';
 import { sessionHasProtectedHistory } from '../utils/sessionSafety';
 
-async function ensureSessionIsSafeToPlan(sessionRef) {
-  const snapshot = await getDocFromServer(sessionRef);
+function assertSessionUnmodified(snapshot, sessionRef, expectedExercises = null) {
   if (snapshot.exists() && sessionHasProtectedHistory(snapshot.data())) {
     throw new Error('La fecha ' + sessionRef.id +
       ' ya tiene actividad registrada o una observación del alumno. Por seguridad no se sobrescribió.');
   }
+  if (expectedExercises && snapshot.exists() &&
+      JSON.stringify(snapshot.data().exercises || []) !== JSON.stringify(expectedExercises)) {
+    throw new Error('La planificación cambió en otro dispositivo. Actualizá la pantalla para no sobrescribir cambios.');
+  }
+}
+
+async function safelyWritePlannedSession(sessionRef, patch, expectedExercises = null) {
+  // La lectura y escritura comparten una transacción: si alguien completa una
+  // sesión entre ambos pasos, Firebase reintenta y el control detecta actividad.
+  return runTransaction(db, async tx => {
+    const current = await tx.get(sessionRef);
+    assertSessionUnmodified(current, sessionRef, expectedExercises);
+    tx.set(sessionRef, patch, { merge: true });
+  });
 }
 
 export default function ClientDetailView({ client, goBack, exercisesLibrary = [], routines = [] }) {
@@ -281,19 +293,18 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
       setLoading(true);
       try {
         const targetRef=doc(db,'clients',client.id,'sessions',currentDateId);
-        await ensureSessionIsSafeToPlan(targetRef);
         const cleanExercises=clipboardSingleDay.exercises.map(ex=>({
           ...ex, plannedSets:Array.isArray(ex.plannedSets)?ex.plannedSets.map(set=>({...set})):ex.plannedSets,
           actualSets:[]
         }));
-        await setDoc(targetRef,{
+        await safelyWritePlannedSession(targetRef,{
           date:currentDateId,
           exercises:cleanExercises,
           targetHydration:clipboardSingleDay.hydration||'',
           targetCardioMinutes:clipboardSingleDay.cardioMin||'',
           targetCardioIntensity:clipboardSingleDay.cardioInt||'Baja',
           isFinalized:false
-        },{merge:true});
+        });
         setAllSessionsIds(prev=>prev.includes(currentDateId)?prev:[...prev,currentDateId]);
         window.alert('La rutina se copió al día seleccionado. No se modificaron sesiones realizadas.');
       }catch(error){
@@ -347,11 +358,14 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
         if(new Set(writes.map(w=>w.id)).size!==writes.length){
           throw new Error('Las fechas del bloque se superponen; revisá el rango copiado.');
         }
-        // Verificamos todas las fechas ANTES de ejecutar el batch.
-        await Promise.all(writes.map(w=>ensureSessionIsSafeToPlan(w.ref)));
-        const batch=writeBatch(db);
-        writes.forEach(w=>batch.set(w.ref,w.data,{merge:true}));
-        await batch.commit();
+        // Todas las fechas se verifican y escriben en la MISMA transacción.
+        // Si un alumno registra actividad simultáneamente, no se sobrescribe.
+        await runTransaction(db, async tx=>{
+          const snapshots=[];
+          for(const w of writes) snapshots.push(await tx.get(w.ref));
+          snapshots.forEach((snapshot,i)=>assertSessionUnmodified(snapshot,writes[i].ref));
+          writes.forEach(w=>tx.set(w.ref,w.data,{merge:true}));
+        });
         setAllSessionsIds(prev=>Array.from(new Set([...prev,...writes.map(w=>w.id)])));
         window.alert('Se copiaron '+writes.length+' días sin sobrescribir historiales de entrenamiento.');
       }catch(error){
@@ -388,12 +402,11 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
       });
 
       const targetRef=doc(db,'clients',client.id,'sessions',currentDateId);
-      await ensureSessionIsSafeToPlan(targetRef);
-      await setDoc(targetRef, {
+      await safelyWritePlannedSession(targetRef, {
         date: currentDateId,
         exercises: formattedExercises,
         isFinalized: false
-      }, { merge: true });
+      });
 
       if (!allSessionsIds.includes(currentDateId)) {
         setAllSessionsIds([...allSessionsIds, currentDateId]);
@@ -484,11 +497,10 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
     setIsSavingExercise(true);setExerciseSaveError('');
     try {
       const targetRef=doc(db,'clients',client.id,'sessions',currentDateId);
-      await ensureSessionIsSafeToPlan(targetRef);
-      await setDoc(targetRef,{
+      await safelyWritePlannedSession(targetRef,{
         date:currentDateId,
         exercises:updatedSession
-      },{merge:true});
+      },dailySession);
       setIsExerciseModalOpen(false);
       if(updatedSession.length===1) setAllSessionsIds(prev=>prev.includes(currentDateId)?prev:[...prev,currentDateId]);
     }catch(error){
@@ -504,8 +516,7 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
     setIsSavingExercise(true);
     try{
       const targetRef=doc(db,'clients',client.id,'sessions',currentDateId);
-      await ensureSessionIsSafeToPlan(targetRef);
-      await setDoc(targetRef,{exercises:updatedSession},{merge:true});
+      await safelyWritePlannedSession(targetRef,{exercises:updatedSession},dailySession);
       if(updatedSession.length===0)setAllSessionsIds(prev=>prev.filter(id=>id!==currentDateId));
     }catch(error){
       window.alert('No se pudo quitar el ejercicio: '+(error?.message||'revisá tu conexión'));
