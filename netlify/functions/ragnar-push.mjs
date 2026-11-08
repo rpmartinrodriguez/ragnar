@@ -36,7 +36,7 @@ function admin() {
 
 function validToken(s) {
   return typeof s==='string' && s.length>30 && s.length<3000 &&
-    /^[A-Za-z0-9_:\-.]+$/.test(s);
+    /^[A-Za-z0-9_:\-./~+=]+$/.test(s);
 }
 function validId(s) {
   return typeof s==='string' && s.length<=150 && /^[A-Za-z0-9_-]+$/.test(s);
@@ -150,7 +150,7 @@ export default async function handler(request) {
         return reject('No se encontró un mensaje nuevo válido',409);
       }
       const when=msg.get('createdAt');
-      if(when?.toMillis && Date.now()-when.toMillis()>15*60*1000) return reject('El mensaje ya no es reciente',409);
+      if(!when?.toMillis || Math.abs(Date.now()-when.toMillis())>15*60*1000) return reject('El mensaje ya no es reciente',409);
       title='Nuevo mensaje en Ragnar';
       bodyText=(clientSnap.get('name')||'Un alumno')+' te envió un mensaje';
     }else{
