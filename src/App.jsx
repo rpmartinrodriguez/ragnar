@@ -211,7 +211,7 @@ export default function App() {
   };
 
   const handleAddExercise = async (data) => { 
-    try { await addDoc(collection(db, 'exercises'), { name: data.name, videoUrl: data.videoUrl || '' }); } catch (error) { console.error(error); }
+    try { await addDoc(collection(db, 'exercises'), { name: data.name, videoUrl: data.videoUrl || '', trainingRegion: data.trainingRegion || 'unknown' }); } catch (error) { console.error(error); }
   };
 
   const handleUpdateExercise = async (updatedData) => {
