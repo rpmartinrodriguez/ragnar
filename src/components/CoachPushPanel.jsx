@@ -14,6 +14,9 @@ export default function CoachPushPanel(){
   const [feedback,setFeedback]=useState('');
   const [error,setError]=useState('');
   const [ready,setReady]=useState(false);
+  const [preferences,setPreferences]=useState({
+    workout_completed:true,student_message:true,student_note:true,missed_workout:true
+  });
 
   useEffect(()=>{
     let alive=true;
@@ -22,8 +25,11 @@ export default function CoachPushPanel(){
         const snap=await getDoc(doc(db,'settings','general'));
         const stored=String(snap.data()?.webPushVapidPublicKey||'');
         const isAvailable=await webPushSupported();
-        const status=await pushRequest('status');
+        const [status,prefs]=await Promise.all([
+          pushRequest('status'),pushRequest('preferences')
+        ]);
         if(!alive)return;
+        setPreferences(prev=>({...prev,...prefs.preferences}));
         setKey(stored);setDraft(stored);
         setSupported(isAvailable);
         setPermission(typeof Notification==='undefined'?'unsupported':Notification.permission);
@@ -69,6 +75,16 @@ export default function CoachPushPanel(){
         ? 'Firebase aceptó el envío a '+result.sent+' dispositivo(s). Comprobá el aviso con Ragnar en segundo plano.'
         : 'No se enviaron avisos: todavía no hay dispositivos registrados o sus tokens vencieron.');
     }catch(e){setError(e?.message||'No se pudo enviar la prueba');}
+    finally{setBusy('');}
+  };
+
+  const savePreferences=async()=>{
+    setBusy('preferences');setFeedback('');setError('');
+    try{
+      const result=await pushRequest('update-preferences',{preferences});
+      setPreferences(result.preferences);
+      setFeedback('Preferencias de notificaciones guardadas. Los cambios ya se aplican a los próximos avisos.');
+    }catch(error){setError(error?.message||'No se pudieron guardar las preferencias');}
     finally{setBusy('');}
   };
 
@@ -143,6 +159,30 @@ export default function CoachPushPanel(){
         </div>
         <p className="text-xs text-zinc-500">En iPhone necesitás iOS 16.4 o posterior y abrir Ragnar como aplicación agregada a la pantalla de inicio. En Android y computadoras modernas, depende del navegador y sus permisos.</p>
       </div>
+      <div className="rounded-2xl border border-zinc-800 bg-black/30 p-4 space-y-4">
+        <div>
+          <p className="font-black text-white uppercase text-sm">Qué avisos quiero recibir</p>
+          <p className="text-zinc-400 text-xs mt-1">Podés elegir cuáles llegan como push. Los registros internos de Ragnar no se borran.</p>
+        </div>
+        {[
+          {key:'workout_completed',label:'Al finalizar una rutina'},
+          {key:'student_message',label:'Cuando un alumno me escribe'},
+          {key:'student_note',label:'Cuando dejan una observación'},
+          {key:'missed_workout',label:'Cuando justifican una ausencia'}
+        ].map(item=>(
+          <label key={item.key} className="flex gap-3 items-center border-b border-zinc-800 pb-3 last:border-b-0 last:pb-0 cursor-pointer">
+            <input type="checkbox" className="accent-yellow-400 w-5 h-5 shrink-0"
+              checked={preferences[item.key]!==false}
+              onChange={e=>setPreferences(prev=>({...prev,[item.key]:e.target.checked}))}/>
+            <span className="text-zinc-200 text-sm">{item.label}</span>
+          </label>
+        ))}
+        <button type="button" onClick={savePreferences} disabled={!ready||!!busy}
+          className="px-4 py-3 rounded-xl bg-yellow-400 text-black font-black text-xs disabled:opacity-40">
+          {busy==='preferences'?'Guardando...':'Guardar preferencias'}
+        </button>
+      </div>
+
       {feedback&&<p role="status" className="rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 text-sm p-3 flex gap-2 items-start"><CheckCircle size={18}/>{feedback}</p>}
       {error&&<p role="alert" className="rounded-xl bg-red-500/10 border border-red-500/20 text-red-300 text-sm p-3 flex gap-2 items-start"><AlertCircle size={18}/>{error}</p>}
       <p className="text-xs text-zinc-500">La clave VAPID es pública y se comparte entre dispositivos del mismo Firebase. El permiso push es individual para cada navegador, instalación y dominio. La publicación en el dominio definitivo requerirá activarlo nuevamente.</p>
