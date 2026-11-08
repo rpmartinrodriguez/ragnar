@@ -136,7 +136,7 @@ export default async function handler(request) {
   // Eventos del alumno: nunca confiar en nombre, contenido o receptor dados por el navegador.
   if(body.action==='event') {
     const {type,clientId,sourceId}=body;
-    if(!['workout_completed','student_message','missed_workout'].includes(type) ||
+    if(!['workout_completed','student_message','missed_workout','student_note'].includes(type) ||
        !validId(clientId)||!validId(sourceId)) return reject('Evento inválido');
     const clientSnap=await db.doc('clients/'+clientId).get();
     if(!clientSnap.exists || clientSnap.get('studentUserId')!==uid) {
@@ -158,14 +158,21 @@ export default async function handler(request) {
       if(!session.exists) return reject('No se encontró esa sesión',409);
       if(type==='workout_completed'&&session.get('isFinalized')!==true) return reject('La rutina todavía no figura finalizada',409);
       if(type==='missed_workout'&&typeof session.get('missedReason')!=='string') return reject('No existe la justificación',409);
-      const eventDate=type==='workout_completed'?session.get('completedAt'):session.get('missedReasonAt');
+      if(type==='student_note'&&
+         (typeof session.get('studentNote')!=='string'||!session.get('studentNote').trim())) {
+        return reject('No existe una observación del alumno en esta sesión',409);
+      }
+      const eventDate=type==='workout_completed'?session.get('completedAt'):
+        type==='missed_workout'?session.get('missedReasonAt'):session.get('studentNoteUpdatedAt');
       const eventTime=eventDate?.toMillis?.();
       if(!eventTime || Math.abs(Date.now()-eventTime)>15*60*1000) {
         return reject('La notificación corresponde a una actividad anterior; no reenviar',409);
       }
-      title=type==='workout_completed'?'Entrenamiento finalizado':'Ausencia justificada';
+      title=type==='workout_completed'?'Entrenamiento finalizado':
+        type==='student_note'?'Observación de entrenamiento':'Ausencia justificada';
       bodyText=(clientSnap.get('name')||'Un alumno')+
-        (type==='workout_completed'?' terminó su rutina':' informó un motivo de ausencia');
+        (type==='workout_completed'?' terminó su rutina':
+          type==='student_note'?' dejó una nota sobre su entrenamiento':' informó un motivo de ausencia');
     }
 
     // Encontrar entrenador: UID correcto en ficha o, en migración, único coach habilitado.
