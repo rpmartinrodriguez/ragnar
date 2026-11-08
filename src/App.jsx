@@ -29,6 +29,7 @@ import MigrationAuditPanel from './components/MigrationAuditPanel';
 import StudentAccessPanel from './components/StudentAccessPanel';
 import CoachPushPanel from './components/CoachPushPanel';
 import CoachPushForeground from './components/CoachPushForeground';
+import ConnectionBanner from './components/ConnectionBanner';
 import CommunityView from './views/CommunityView'; 
 import PaymentsView from './views/PaymentsView'; 
 
@@ -259,6 +260,7 @@ export default function App() {
 
     return (
       <div className="flex h-screen bg-black text-zinc-100 font-sans overflow-hidden">
+        <ConnectionBanner/>
         <div className="hidden md:block">
           <Sidebar activeView={activeView} navigateTo={navigateTo} notificationCount={unreadCount} />
         </div>
