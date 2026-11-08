@@ -1,5 +1,5 @@
 import React,{useEffect,useMemo,useState} from 'react';
-import {collection,onSnapshot} from 'firebase/firestore';
+import {collection,onSnapshot,getDocs} from 'firebase/firestore';
 import {db} from '../firebase';
 import {Activity,ArrowUpRight,CalendarCheck,Clock,Dumbbell,Info,TrendingUp,CalendarDays} from 'lucide-react';
 import WeeklyRecap from './WeeklyRecap';
@@ -12,6 +12,7 @@ const formatWeight=x=>Number(x).toLocaleString('es-AR',{maximumFractionDigits:1}
 
 export default function ProgressChart({clientId}){
   const [sessions,setSessions]=useState([]);
+  const [libraryRegions,setLibraryRegions]=useState({});
   const [region,setRegion]=useState('all');
   const [selectedExercise,setSelectedExercise]=useState('');
   const [loading,setLoading]=useState(true);
@@ -30,21 +31,49 @@ export default function ProgressChart({clientId}){
     });
   },[clientId]);
 
-  const progress=useMemo(()=>groupProgress(sessions,today,region),[sessions,today,region]);
+  // Para historiales importados sin categoría, utilizar la clasificación de
+  // Biblioteca Global POR NOMBRE cuando la cuenta del alumno pueda leerla.
+  // Si las reglas no conceden acceso, se mantienen las inferencias existentes.
+  useEffect(()=>{
+    if(!clientId)return;
+    let active=true;
+    getDocs(collection(db,'exercises')).then(snapshot=>{
+      if(!active)return;
+      const regions={};
+      snapshot.docs.forEach(d=>{
+        const item=d.data();
+        const name=String(item.name||'').trim().toLocaleLowerCase('es');
+        if(name&&['upper','lower','core','cardio'].includes(item.trainingRegion)){
+          regions[name]=item.trainingRegion;
+        }
+      });
+      setLibraryRegions(regions);
+    }).catch(()=>{});
+    return()=>{active=false;};
+  },[clientId]);
+  const categorizedSessions=useMemo(()=>sessions.map(session=>({
+    ...session,
+    exercises:(session.exercises||[]).map(ex=>{
+      if(['upper','lower','core','cardio'].includes(ex.trainingRegion))return ex;
+      const fromLibrary=libraryRegions[String(ex.name||'').trim().toLocaleLowerCase('es')];
+      return fromLibrary?{...ex,trainingRegion:fromLibrary}:ex;
+    })
+  })),[sessions,libraryRegions]);
+  const progress=useMemo(()=>groupProgress(categorizedSessions,today,region),[categorizedSessions,today,region]);
   const week=progress.insight;
   const lastFriday=useMemo(()=>{
-    const ids=sessions.filter(s=>Array.isArray(s.exercises)&&s.exercises.length)
+    const ids=categorizedSessions.filter(s=>Array.isArray(s.exercises)&&s.exercises.length)
       .map(dateKey);
-    return sessions.filter(s=>s.isFinalized===true&&isFridayFinalSession(dateKey(s),ids))
+    return categorizedSessions.filter(s=>s.isFinalized===true&&isFridayFinalSession(dateKey(s),ids))
       .map(dateKey).sort().at(-1)||null;
-  },[sessions]);
+  },[categorizedSessions]);
   const lastFridaySummary=useMemo(()=>lastFriday
-    ?weeklyInsights(sessions,lastFriday):null,[sessions,lastFriday]);
+    ?weeklyInsights(categorizedSessions,lastFriday):null,[categorizedSessions,lastFriday]);
   const options=progress.exerciseNames;
   useEffect(()=>{
     if(!options.includes(selectedExercise))setSelectedExercise(options[0]||'');
   },[options.join('|'),selectedExercise]);
-  const chart=useMemo(()=>exerciseHistorySeries(sessions,selectedExercise),[sessions,selectedExercise]);
+  const chart=useMemo(()=>exerciseHistorySeries(categorizedSessions,selectedExercise),[categorizedSessions,selectedExercise]);
   const max=chart.length?Math.max(...chart.map(x=>x.maxWeight)):0;
   const last=chart.at(-1);
   const previous=chart.length>1?chart.at(-2):null;
