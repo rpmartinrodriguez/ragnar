@@ -47,6 +47,7 @@ import { db } from '../firebase';
 import CommunityView from './CommunityView';
 import ProgressChart from '../components/ProgressChart';
 import StudentChangePassword from '../components/StudentChangePassword';
+import StudentFirstAccessModal from '../components/StudentFirstAccessModal';
 import StudentWorkoutNote from '../components/StudentWorkoutNote';
 import ConnectionBanner from '../components/ConnectionBanner';
 import StudentAlertsPanel from '../components/StudentAlertsPanel';
@@ -160,6 +161,14 @@ export default function StudentView({ clientId }) {
     return `${year}-${month}-${day}`;
   };
 
+  // Las cuentas nuevas y los restablecimientos recientes requieren cambio obligatorio.
+  // Compatibilidad con cuentas activadas antes de que existiera este indicador:
+  // la primera activación sin una marca posterior de cambio también se considera temporal.
+  const temporaryPasswordRequired = Boolean(client &&
+    (client.passwordChangeRequired === true ||
+      (client.passwordChangeRequired !== false &&
+       (client.accountActivatedAt || client.authPasswordResetAt) &&
+       !client.passwordChangedAt)));
   const currentDateId = formatDateId(date);
   const todayYmd=ymdInArgentina();
   const upcomingRenewal=getUpcomingRenewal(client?.startDate,todayYmd);
@@ -793,6 +802,15 @@ export default function StudentView({ clientId }) {
   return (
     <div className="min-h-screen bg-zinc-950 text-white font-sans flex flex-col relative overflow-x-hidden">
         <ConnectionBanner/>
+        {temporaryPasswordRequired && (
+          <StudentFirstAccessModal clientId={clientId}
+            onCompleted={() => setClient(previous => previous ? ({
+              ...previous,
+              passwordChangeRequired: false,
+              passwordChangedAt: new Date()
+            }) : previous)}/>
+        )}
+
       
       {studentToast && (
         <div role="status" aria-live="polite" className="fixed left-4 right-4 bottom-24 z-[130] sm:max-w-md sm:left-auto sm:right-4 bg-zinc-900 border border-yellow-400/50 p-4 rounded-2xl shadow-2xl flex items-start gap-3">
