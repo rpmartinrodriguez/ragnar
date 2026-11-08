@@ -175,6 +175,15 @@ export default function App() {
         String(rest.email || '').trim().toLowerCase()) {
       throw new Error('El correo de un alumno activado debe cambiarse también en Authentication. Operación cancelada.');
     }
+    // Las pantallas de edición reutilizan un objeto de ficha completo. Excluir
+    // campos administrados por Auth/servidor evita que un coach con una copia
+    // antigua del perfil reactive por accidente la contraseña temporal ya cambiada.
+    for (const field of [
+      'studentUserId', 'legacyStudentUserId', 'accountAccessStatus',
+      'accountActivatedAt', 'authPasswordResetAt', 'authPasswordResetBy',
+      'passwordChangeRequired', 'passwordTemporaryIssuedAt',
+      'passwordChangedAt', 'passwordChangedBy', 'trainerId', 'createdAt'
+    ]) delete rest[field];
     await updateDoc(doc(db, 'clients', id), rest);
   };
 
