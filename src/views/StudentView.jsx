@@ -48,6 +48,9 @@ import CommunityView from './CommunityView';
 import ProgressChart from '../components/ProgressChart';
 import StudentChangePassword from '../components/StudentChangePassword';
 import StudentWorkoutNote from '../components/StudentWorkoutNote';
+import StudentAlertsPanel from '../components/StudentAlertsPanel';
+import { studentAlertRequest, studentForegroundListener } from '../utils/studentPush';
+import { getUpcomingRenewal, ymdInArgentina } from '../utils/billingCycle';
 import { notifyCoachAboutStudentEvent } from '../utils/ragnarPush';
 
 // --- BASE DE DATOS DE MEDALLAS ---
@@ -118,7 +121,13 @@ export default function StudentView({ clientId }) {
 
   // --- ESTADOS DE INTERFAZ Y GAMIFICACIÓN ---
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [currentView, setCurrentView] = useState('calendar'); 
+  const [currentView, setCurrentView] = useState(() =>
+    new URLSearchParams(window.location.search).get('view')==='student-alerts'?'alerts':'home'
+  );
+  const [todayWorkout, setTodayWorkout] = useState(null);
+  const [studentUnreadCount, setStudentUnreadCount] = useState(0);
+  const [studentToast, setStudentToast] = useState(null);
+  const [renewalPaid, setRenewalPaid] = useState(null); 
   const [showShareModal, setShowShareModal] = useState(false);
   const [newMedalAlert, setNewMedalAlert] = useState(null);
 
@@ -149,6 +158,51 @@ export default function StudentView({ clientId }) {
   };
 
   const currentDateId = formatDateId(date);
+  const todayYmd=ymdInArgentina();
+  const upcomingRenewal=getUpcomingRenewal(client?.startDate,todayYmd);
+
+  // El inicio es útil incluso cuando el alumno todavía no tiene rutina hoy.
+  useEffect(()=>{
+    if(!clientId)return;
+    const ref=doc(db,'clients',clientId,'sessions',todayYmd);
+    return onSnapshot(ref,snap=>{
+      const data=snap.exists()?snap.data():null;
+      setTodayWorkout(data && Array.isArray(data.exercises)&&data.exercises.length
+        ? {count:data.exercises.length,finalized:data.isFinalized===true,
+            sets:data.exercises.reduce((acc,ex)=>acc+
+              (Array.isArray(ex.plannedSets)?ex.plannedSets.length:
+                Math.max(1,parseInt(ex.sets)||1)),0)}
+        : null);
+    },()=>setTodayWorkout(null));
+  },[clientId,todayYmd]);
+
+  useEffect(()=>{
+    if(!clientId||!upcomingRenewal||upcomingRenewal.daysUntil>3){
+      setRenewalPaid(null);return;
+    }
+    let live=true;
+    getDoc(doc(db,'clients',clientId,'payments',upcomingRenewal.periodId))
+      .then(snap=>{if(live)setRenewalPaid(snap.exists()&&snap.data().status==='paid');})
+      .catch(()=>{if(live)setRenewalPaid(null);});
+    return ()=>{live=false;};
+  },[clientId,upcomingRenewal?.periodId,upcomingRenewal?.daysUntil]);
+
+  useEffect(()=>{
+    if(!clientId||!client?.studentUserId)return;
+    // Verificación autorizada del servidor: evita avisar de períodos ya abonados.
+    void studentAlertRequest('check-renewal',clientId).catch(()=>{});
+    void studentAlertRequest('list',clientId)
+      .then(r=>setStudentUnreadCount((r.notifications||[]).filter(n=>!n.read).length))
+      .catch(()=>{});
+    let disposed=false,unsubscribe=()=>{};
+    studentForegroundListener(alert=>{
+      if(!disposed){
+        setStudentUnreadCount(n=>n+1);
+        setStudentToast(alert);
+      }
+    }).then(off=>{if(disposed)off();else unsubscribe=off;}).catch(()=>{});
+    return ()=>{disposed=true;unsubscribe();};
+  },[clientId,client?.studentUserId]);
 
   // --- EFECTO 1: CARGA DE DATOS Y LÓGICA DE DÍAS DE GRACIA (SINC RONIZADA CON COACH) ---
   useEffect(() => {
