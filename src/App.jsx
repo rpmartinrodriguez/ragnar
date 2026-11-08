@@ -301,7 +301,7 @@ export default function App() {
                <span className="font-black italic text-base sm:text-lg tracking-tighter truncate"><span className="text-yellow-400">RAGNAR</span><span className="text-white hidden min-[375px]:inline">-TRAINING</span></span>
             </div>
             <div className="flex items-center gap-1 shrink-0">
-               <button onClick={() => navigateTo('notifications')> className="relative p-2 text-zinc-400"><Bell size={24}/>{unreadCount > 0 && <span className="absolute top-1 right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-black"></span>}</button>
+               <button onClick={() => navigateTo('notifications')} className="relative p-2 text-zinc-400"><Bell size={24}/>{unreadCount > 0 && <span className="absolute top-1 right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-black"></span>}</button>
                <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 text-zinc-400"><Menu size={24} /></button>
             </div>
           </header>
