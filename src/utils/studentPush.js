@@ -29,6 +29,40 @@ async function getLiveRegistration(){
   if(!ready.active)throw new Error('El componente de notificaciones todavía no está activo. Actualizá Ragnar.');
   return ready;
 }
+// Comprobación silenciosa de ESTE dispositivo. No solicita permisos ni crea
+// nuevas suscripciones: solo identifica una suscripción push ya existente.
+export async function getStudentPushDeviceStatus(clientId,vapidKey) {
+  const compatible=await supportsStudentPush();
+  const permission=typeof Notification==='undefined'?'unsupported':Notification.permission;
+  let subscribed=0;
+  if(!compatible || permission!=='granted' || !vapidKey){
+    const status=await studentAlertRequest('status',clientId);
+    return {supported:compatible,permission,active:false,
+      subscribed:status.subscribed||0};
+  }
+  const registration=await navigator.serviceWorker.getRegistration('/');
+  const subscription=registration?.active
+    ? await registration.pushManager.getSubscription() : null;
+  if(!subscription) {
+    const status=await studentAlertRequest('status',clientId);
+    return {supported:compatible,permission,active:false,
+      subscribed:status.subscribed||0};
+  }
+  try{
+    const token=await getToken(getMessaging(app),{
+      vapidKey:String(vapidKey).trim(),serviceWorkerRegistration:registration
+    });
+    const status=await studentAlertRequest('status',clientId,{token});
+    return {supported:compatible,permission,
+      active:Boolean(token&&status.registered),subscribed:status.subscribed||0};
+  }catch(error){
+    // No afirmar que están activadas cuando hay un problema de token.
+    const status=await studentAlertRequest('status',clientId);
+    return {supported:compatible,permission,active:false,
+      subscribed:status.subscribed||0,error:error?.message||'Error de FCM'};
+  }
+}
+
 export async function enableStudentPush(clientId,vapidKey){
   if(!window.isSecureContext||!('serviceWorker' in navigator)||
      !('Notification' in window)||!('PushManager' in window))
