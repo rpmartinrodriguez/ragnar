@@ -874,30 +874,6 @@ export default function StudentView({ clientId }) {
     }
   };
 
-  const handleShareStory = async () => {
-    let totalCompletedSets = 0;
-    dailySession.forEach(ex => {
-      if (ex.actualSets) {
-        totalCompletedSets += ex.actualSets.filter(s => s.completed).length;
-      }
-    });
-
-    const shareData = {
-      title: '¡Entrenamiento Completado!',
-      text: `🐺 RAGNAR TRAINING\n\nHoy destruí mi rutina: ${date.toLocaleDateString('es-ES', { weekday: 'long' })}\n\n🏋️‍♂️ Ejercicios: ${dailySession.length}\n🔥 Series Completadas: ${totalCompletedSets}\n🔥 Racha Actual: ${client.currentStreak || 1} Días\n\n¡Súmate al equipo! 🐺💪`
-    };
-
-    if (navigator.share) {
-      try {
-        await navigator.share(shareData);
-      } catch (err) {
-        console.error('Error al compartir:', err);
-      }
-    } else {
-      alert("Tu dispositivo no soporta compartir directamente. ¡Toma una captura de pantalla a la tarjeta!");
-    }
-  };
-
   const handleSendMessage = async (e) => {
     e.preventDefault();
     if (!newMessage.trim()) return;
@@ -930,14 +906,6 @@ export default function StudentView({ clientId }) {
     await signOut(auth); 
     window.location.reload(); 
   };
-
-  const getTotalSets = () => {
-    return dailySession.reduce((acc, ex) => {
-      return acc + (ex.plannedSets ? ex.plannedSets.length : parseInt(ex.sets || 0));
-    }, 0);
-  };
-  
-  const getEstimatedTime = () => getTotalSets() * 3;
 
   if (loading) {
     return (
