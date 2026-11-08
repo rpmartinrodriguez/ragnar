@@ -26,6 +26,7 @@ export default function ClientsView({
     name: '',
     email: '',
     plan: '',
+    trainingMode: 'plan',
     startDate: ''
   });
 
@@ -60,6 +61,7 @@ export default function ClientsView({
       name: '',
       email: '',
       plan: safePlans[0],
+      trainingMode: 'plan',
       startDate: new Date().toISOString().split('T')[0]
     });
     setIsModalOpen(true);
@@ -77,6 +79,7 @@ export default function ClientsView({
       name: String(client.name || ''),
       email: String(client.email || ''),
       plan: String(planStr),
+      trainingMode: client.trainingMode === 'presencial' ? 'presencial' : 'plan',
       startDate: client.startDate ? String(client.startDate) : new Date().toISOString().split('T')[0]
     });
     setIsModalOpen(true);
@@ -134,6 +137,7 @@ export default function ClientsView({
       name,
       email,
       plan: String(formData.plan||safePlans[0]),
+      trainingMode: formData.trainingMode==='presencial'?'presencial':'plan',
       startDate:String(formData.startDate)
     };
     setIsSaving(true);setFormError('');
@@ -239,6 +243,11 @@ export default function ClientsView({
               
               <div className="space-y-1 mb-4">
                 <div className="flex items-center gap-2 text-xs text-zinc-400">
+                  <span className="border border-zinc-700 rounded-md px-2 py-1 text-[10px] uppercase font-bold">
+                    {client.trainingMode==='presencial'?'Presencial':'Plan de entrenamiento'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 text-xs text-zinc-400">
                   <Dumbbell size={12} className="text-yellow-400"/> 
                   {typeof client.plan === 'object' && client.plan !== null ? client.plan.name : (client.plan || 'Plan Base')}
                 </div>
@@ -325,6 +334,15 @@ export default function ClientsView({
                 <select className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-white outline-none focus:border-yellow-400 transition-colors text-sm" value={formData.plan} onChange={e => setFormData({...formData, plan: e.target.value})}>
                   {safePlans.map((planName, index) => <option key={index} value={planName}>{planName}</option>)}
                 </select>
+              </div>
+              <div>
+                <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Modalidad de entrenamiento</label>
+                <select value={formData.trainingMode||'plan'} onChange={e=>setFormData({...formData,trainingMode:e.target.value})}
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-white text-sm outline-none focus:border-yellow-400">
+                  <option value="plan">Plan de entrenamiento (el alumno registra sus series)</option>
+                  <option value="presencial">Presencial (el coach también puede registrar series)</option>
+                </select>
+                <p className="mt-2 text-xs text-zinc-500">Podés cambiar la modalidad sin perder rutinas, pesos, sesiones ni pagos.</p>
               </div>
               <div>
                 <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Fecha Base de Cobro</label>
