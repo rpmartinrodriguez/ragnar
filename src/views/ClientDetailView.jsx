@@ -77,6 +77,7 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
   
   const [allSessionsIds, setAllSessionsIds] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [sessionLoadError, setSessionLoadError] = useState('');
 
   // --- ESTADOS DE PORTAPAPELES (COPIAR Y PEGAR) ---
   const [clipboardType, setClipboardType] = useState(null); // 'day' | 'range'
@@ -118,37 +119,41 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
 
   const currentDateId = formatDateId(date);
 
-  // --- ESCUCHA DE RUTINAS EN TIEMPO REAL ---
+  // Calendario: cargar una vez por alumno, no volver a consultar todo su
+  // historial cada vez que elegimos una fecha del calendario.
   useEffect(() => {
-    if (!client?.id) {
-      return;
-    }
+    if (!client?.id) return;
+    let active=true;
+    getDocs(collection(db,'clients',client.id,'sessions'))
+      .then(snapshot=>{
+        if (!active) return;
+        setAllSessionsIds(snapshot.docs
+          .filter(d=>Array.isArray(d.data().exercises)&&d.data().exercises.length>0)
+          .map(d=>d.id));
+      })
+      .catch(error=>{
+        if(active) setSessionLoadError('No se pudo cargar el calendario: '+(error?.code||'error de conexión'));
+      });
+    return ()=>{active=false;};
+  }, [client?.id]);
 
-    const fetchAllSessions = async () => {
-      try {
-        const querySnapshot = await getDocs(collection(db, 'clients', client.id, 'sessions'));
-        const ids = querySnapshot.docs
-          .filter(docSnap => docSnap.data().exercises && docSnap.data().exercises.length > 0)
-          .map(docSnap => docSnap.id);
-        setAllSessionsIds(ids);
-      } catch (error) { 
-        console.error(error); 
-      }
-    };
-    fetchAllSessions();
-
-    const sessionDocRef = doc(db, 'clients', client.id, 'sessions', currentDateId);
-    const unsubDaily = onSnapshot(sessionDocRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setDailySession(data.exercises || []);
-        setIsSessionFinalized(data.isFinalized || false);
-        setStudentNote(String(data.studentNote || ''));
-        setStudentNoteUpdatedAt(data.studentNoteUpdatedAt || null);
-        setHydrationTarget(data.targetHydration || '');
-        setCardioTargetMinutes(data.targetCardioMinutes || '');
-        setCardioTargetIntensity(data.targetCardioIntensity || 'Baja');
-      } else {
+  // Rutina del día: suscripción independiente, en tiempo real.
+  useEffect(() => {
+    if(!client?.id)return;
+    setLoading(true);
+    setSessionLoadError('');
+    const sessionDocRef=doc(db,'clients',client.id,'sessions',currentDateId);
+    const unsubDaily=onSnapshot(sessionDocRef,snapshot=>{
+      if(snapshot.exists()){
+        const data=snapshot.data();
+        setDailySession(Array.isArray(data.exercises)?data.exercises:[]);
+        setIsSessionFinalized(data.isFinalized||false);
+        setStudentNote(String(data.studentNote||''));
+        setStudentNoteUpdatedAt(data.studentNoteUpdatedAt||null);
+        setHydrationTarget(data.targetHydration||'');
+        setCardioTargetMinutes(data.targetCardioMinutes||'');
+        setCardioTargetIntensity(data.targetCardioIntensity||'Baja');
+      }else{
         setDailySession([]);
         setIsSessionFinalized(false);
         setStudentNote('');
@@ -158,10 +163,12 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
         setCardioTargetIntensity('Baja');
       }
       setLoading(false);
+    },error=>{
+      setLoading(false);
+      setSessionLoadError('No se pudo cargar esta rutina: '+(error?.code||'revisá tu conexión'));
     });
-
-    return () => unsubDaily();
-  }, [client, currentDateId]);
+    return ()=>unsubDaily();
+  }, [client?.id, currentDateId]);
 
   // --- ESCUCHA DE CHAT EN TIEMPO REAL ---
   useEffect(() => {
@@ -718,6 +725,12 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
                     <p className="text-xs text-zinc-500 mt-3">Guardada el {studentNoteUpdatedAt.toDate().toLocaleString('es-AR')}</p>
                   )}
                 </section>
+              )}
+
+              {sessionLoadError && (
+                <p role="alert" className="mb-4 rounded-xl border border-red-500/30 bg-red-500/10 p-3 text-red-300 text-sm">
+                  {sessionLoadError}
+                </p>
               )}
 
               <div className="space-y-4 flex-1">
