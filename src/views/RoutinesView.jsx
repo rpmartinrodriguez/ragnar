@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { 
-  Layout, Plus, Trash2, Dumbbell, Save, ChevronRight, X, Video 
+  Layout, Plus, Trash2, Dumbbell, Save, ChevronRight, X, Video, Search, Copy, AlertCircle 
 } from 'lucide-react';
 import { collection, onSnapshot, doc, setDoc, deleteDoc, addDoc } from 'firebase/firestore';
 import { db } from '../firebase';
@@ -10,6 +10,12 @@ export default function RoutinesView({ exercisesLibrary }) {
   const [selectedRoutine, setSelectedRoutine] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
   const [newRoutineName, setNewRoutineName] = useState('');
+  const [search, setSearch] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState('');
+  const visibleRoutines = useMemo(() => [...routines].filter(r =>
+    String(r.name || '').toLocaleLowerCase('es').includes(search.trim().toLocaleLowerCase('es'))
+  ).sort((a,b)=>String(a.name||'').localeCompare(String(b.name||''),'es')), [routines,search]);
   
   // --- ESTADOS DEL MODAL DE EJERCICIO (NUEVA ESTRUCTURA DINÁMICA) ---
   const [isAddingEx, setIsAddingEx] = useState(false);
@@ -25,7 +31,11 @@ export default function RoutinesView({ exercisesLibrary }) {
   // --- ESCUCHA DE RUTINAS GLOBALES ---
   useEffect(() => {
     const unsub = onSnapshot(collection(db, 'routines'), (snapshot) => {
-      setRoutines(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+      const list=snapshot.docs.map(d => ({ id:d.id, ...d.data() }));
+      setRoutines(list);
+      setSelectedRoutine(current => current ? (list.find(r=>r.id===current.id)||null) : null);
+    }, error => {
+      setError('No se pudieron cargar las plantillas: ' + (error?.code || 'error de conexión'));
     });
     return () => unsub();
   }, []);
@@ -33,34 +43,66 @@ export default function RoutinesView({ exercisesLibrary }) {
   // --- CREAR NUEVA PLANTILLA ---
   const handleCreateRoutine = async (e) => {
     e.preventDefault();
-    if (!newRoutineName.trim()) return;
+    if (isSaving) return;
+    const name = newRoutineName.trim().replace(/\s+/g,' ');
+    if (!name) return setError('Ingresá un nombre para la plantilla.');
+    if (routines.some(r=>String(r.name||'').trim().toLowerCase()===name.toLowerCase())) {
+      return setError('Ya existe una plantilla con ese nombre.');
+    }
+    setIsSaving(true);setError('');
     try {
-      await addDoc(collection(db, 'routines'), { 
-        name: newRoutineName, 
-        exercises: [], 
-        createdAt: new Date() 
+      const ref=await addDoc(collection(db,'routines'),{
+        name,exercises:[],createdAt:new Date()
       });
+      setSelectedRoutine({id:ref.id,name,exercises:[]});
       setNewRoutineName('');
       setIsCreating(false);
-    } catch (error) { 
-      console.error(error); 
+    }catch(error){
+      setError('No se pudo crear la plantilla: ' + (error?.message||'revisá la conexión'));
+    }finally{setIsSaving(false);}
+  };
+
+  const handleDuplicateRoutine = async (routine) => {
+    if (isSaving) return;
+    const base=String(routine.name||'Plantilla').trim();
+    let name=base+' (copia)';
+    let counter=2;
+    while(routines.some(r=>String(r.name||'').toLowerCase()===name.toLowerCase())){
+      name=base+' (copia '+counter+++')';
     }
+    if(!window.confirm('¿Duplicar «'+base+'» como «'+name+'»? Se creará una plantilla independiente; los entrenamientos asignados no cambiarán.'))return;
+    setIsSaving(true);setError('');
+    try {
+      const exercises=(routine.exercises||[]).map(ex=>({
+        ...ex,
+        id:Date.now()+'-'+Math.random().toString(36).slice(2,9),
+        plannedSets:(ex.plannedSets||[]).map(set=>({...set})),
+        actualSets:[]
+      }));
+      const ref=await addDoc(collection(db,'routines'),{name,exercises,createdAt:new Date()});
+      setSelectedRoutine({id:ref.id,name,exercises});
+      setSearch('');
+    }catch(error){
+      setError('No se pudo duplicar la plantilla: '+(error?.message||'error de conexión'));
+    }finally{setIsSaving(false);}
   };
 
   // --- ELIMINAR PLANTILLA ---
   const handleDeleteRoutine = async (id) => {
-    if (window.confirm('¿Seguro que deseas eliminar esta plantilla por completo?')) {
-      try {
-        await deleteDoc(doc(db, 'routines', id));
-        if (selectedRoutine?.id === id) setSelectedRoutine(null);
-      } catch (error) {
-        console.error(error);
-      }
-    }
+    if(isSaving)return;
+    if(!window.confirm('¿Eliminar esta plantilla? Las sesiones YA asignadas a alumnos no se eliminarán. Esta acción no se puede deshacer.'))return;
+    setIsSaving(true);setError('');
+    try{
+      await deleteDoc(doc(db,'routines',id));
+      if(selectedRoutine?.id===id)setSelectedRoutine(null);
+    }catch(error){
+      setError('No se pudo eliminar la plantilla: '+(error?.message||'error de conexión'));
+    }finally{setIsSaving(false);}
   };
 
   // --- ABRIR MODAL PARA AGREGAR EJERCICIO ---
   const handleOpenAddModal = () => {
+    setError('');
     setNewExData({
       name: exercisesLibrary?.length > 0 ? exercisesLibrary[0].name : '',
       videoUrl: exercisesLibrary?.length > 0 ? exercisesLibrary[0].videoUrl : '',
@@ -100,8 +142,13 @@ export default function RoutinesView({ exercisesLibrary }) {
   const handleSaveExerciseToRoutine = async (e) => {
     e.preventDefault();
     
-    if (!newExData.name || !selectedRoutine || newExData.plannedSets.length === 0) {
-      alert("Por favor selecciona un ejercicio y configura al menos una serie.");
+    if(isSaving)return;
+    if(!newExData.name || !selectedRoutine || newExData.plannedSets.length === 0){
+      setError('Elegí un ejercicio y configurá al menos una serie.');
+      return;
+    }
+    if(newExData.plannedSets.some(set=>!String(set.reps||'').trim())){
+      setError('Completá las repeticiones de cada serie.');
       return;
     }
     
@@ -118,26 +165,29 @@ export default function RoutinesView({ exercisesLibrary }) {
 
     const updatedExercises = [...(selectedRoutine.exercises || []), exerciseToSave];
     
+    setIsSaving(true);setError('');
     try {
       await setDoc(doc(db, 'routines', selectedRoutine.id), { exercises: updatedExercises }, { merge: true });
       setSelectedRoutine({ ...selectedRoutine, exercises: updatedExercises });
       setIsAddingEx(false);
       setNewExData({ name: '', videoUrl: '', plannedSets: [{ reps: '', rir: '2' }] });
-    } catch (error) { 
-      console.error(error); 
-    }
+    }catch(error){
+      setError('No se pudo guardar el ejercicio: '+(error?.message||'revisá la conexión'));
+    }finally{setIsSaving(false);}
   };
 
   // --- REMOVER EJERCICIO DE LA PLANTILLA ---
   const handleRemoveExerciseFromRoutine = async (index) => {
-    if (!window.confirm('¿Quitar este ejercicio de la plantilla?')) return;
-    const updatedExercises = selectedRoutine.exercises.filter((_, i) => i !== index);
-    try {
-      await setDoc(doc(db, 'routines', selectedRoutine.id), { exercises: updatedExercises }, { merge: true });
-      setSelectedRoutine({ ...selectedRoutine, exercises: updatedExercises });
-    } catch (error) { 
-      console.error(error); 
-    }
+    if(isSaving || !selectedRoutine)return;
+    if (!window.confirm('¿Quitar este ejercicio de la plantilla? Las sesiones ya asignadas se conservan.')) return;
+    const updatedExercises=(selectedRoutine.exercises||[]).filter((_,i)=>i!==index);
+    setIsSaving(true);setError('');
+    try{
+      await setDoc(doc(db,'routines',selectedRoutine.id),{exercises:updatedExercises},{merge:true});
+      setSelectedRoutine({...selectedRoutine,exercises:updatedExercises});
+    }catch(error){
+      setError('No se pudo quitar el ejercicio: '+(error?.message||'revisá la conexión'));
+    }finally{setIsSaving(false);}
   };
 
   return (
