@@ -21,7 +21,8 @@ export default function RoutinesView({ exercisesLibrary }) {
   const [isAddingEx, setIsAddingEx] = useState(false);
   const [newExData, setNewExData] = useState({ 
     name: '', 
-    videoUrl: '', 
+    videoUrl: '',
+    trainingRegion: 'unknown',
     plannedSets: [{ reps: '', rir: '2' }] 
   });
 
@@ -107,6 +108,7 @@ export default function RoutinesView({ exercisesLibrary }) {
     setNewExData({
       name: exercisesLibrary?.length > 0 ? exercisesLibrary[0].name : '',
       videoUrl: exercisesLibrary?.length > 0 ? exercisesLibrary[0].videoUrl : '',
+      trainingRegion: exercisesLibrary?.[0]?.trainingRegion || 'unknown',
       plannedSets: [{ reps: '', rir: '2' }]
     });
     setIsAddingEx(true);
@@ -115,7 +117,7 @@ export default function RoutinesView({ exercisesLibrary }) {
   const handleSelectExercise = (e) => {
     const name = e.target.value;
     const found = exercisesLibrary.find(ex => ex.name === name);
-    setNewExData({ ...newExData, name, videoUrl: found?.videoUrl || '' });
+    setNewExData({ ...newExData, name, videoUrl: found?.videoUrl || '', trainingRegion: found?.trainingRegion || 'unknown' });
   };
 
   // --- MANEJO DE SERIES DINÁMICAS DENTRO DEL MODAL ---
@@ -158,6 +160,7 @@ export default function RoutinesView({ exercisesLibrary }) {
       id: Date.now(),
       name: String(newExData.name),
       videoUrl: String(newExData.videoUrl || ''),
+      trainingRegion: newExData.trainingRegion || 'unknown',
       sets: String(newExData.plannedSets.length),
       reps: String(newExData.plannedSets[0]?.reps || ''),
       rir: String(newExData.plannedSets[0]?.rir || '2'),
@@ -171,7 +174,7 @@ export default function RoutinesView({ exercisesLibrary }) {
       await setDoc(doc(db, 'routines', selectedRoutine.id), { exercises: updatedExercises }, { merge: true });
       setSelectedRoutine({ ...selectedRoutine, exercises: updatedExercises });
       setIsAddingEx(false);
-      setNewExData({ name: '', videoUrl: '', plannedSets: [{ reps: '', rir: '2' }] });
+      setNewExData({ name: '', videoUrl: '', trainingRegion: 'unknown', plannedSets: [{ reps: '', rir: '2' }] });
     }catch(error){
       setError('No se pudo guardar el ejercicio: '+(error?.message||'revisá la conexión'));
     }finally{setIsSaving(false);}
