@@ -113,7 +113,7 @@ export default function StudentAccessPanel({ clients = [], onOpenClients }) {
       'Usuario: ' + issued.email + '\n' +
       'Contraseña temporal: ' + issued.password + '\n\n' +
       'Este es el enlace de PRUEBA; no instales todavía la PWA definitiva. ' +
-      'No uses la aplicación antigua. Cambiá la clave desde Mi Perfil una vez que entres.';
+      'No uses la aplicación antigua. Al ingresar, Ragnar te abrirá automáticamente el cambio de contraseña. Solo tenés que elegir y confirmar tu nueva clave.';
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
