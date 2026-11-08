@@ -120,6 +120,7 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
   const [exForm, setExForm] = useState({
     name: '',
     videoUrl: '',
+    trainingRegion: 'unknown',
     plannedSets: [{ reps: '', rir: '2' }] 
   });
 
@@ -425,6 +426,7 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
         return {
           name: String(ex.name || 'Ejercicio'),
           videoUrl: String(ex.videoUrl || ''),
+          trainingRegion:ex.trainingRegion || exercisesLibrary.find(item=>item.name===ex.name)?.trainingRegion || 'unknown',
           sets: String(safePlannedSets.length),
           reps: String(safePlannedSets[0]?.reps || '10'),
           rir: String(safePlannedSets[0]?.rir || '2'),
@@ -483,12 +485,13 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
           rir: String(ex.rir || '2')
         }));
       }
-      setExForm({ name: ex.name || '', videoUrl: ex.videoUrl || '', plannedSets: loadedSets.map(set=>({...set})) });
+      setExForm({ name: ex.name || '', videoUrl: ex.videoUrl || '', trainingRegion: ex.trainingRegion || 'unknown', plannedSets: loadedSets.map(set=>({...set})) });
       setEditingExerciseIndex(index);
     } else {
       setExForm({
         name: exercisesLibrary?.length > 0 ? exercisesLibrary[0].name : '',
         videoUrl: exercisesLibrary?.length > 0 ? exercisesLibrary[0].videoUrl : '',
+        trainingRegion: exercisesLibrary?.[0]?.trainingRegion || 'unknown',
         plannedSets: [{ reps: '', rir: '2' }]
       });
       setEditingExerciseIndex(null);
@@ -513,6 +516,7 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
     const exerciseToSave = {
       name: String(exForm.name),
       videoUrl: String(exForm.videoUrl || ''),
+      trainingRegion:exercisesLibrary.find(item=>item.name===exForm.name)?.trainingRegion || exForm.trainingRegion || 'unknown',
       sets: String(exForm.plannedSets.length),
       reps: String(exForm.plannedSets[0]?.reps || ''), 
       rir: String(exForm.plannedSets[0]?.rir || '2'),
