@@ -94,7 +94,9 @@ export async function activateStudentAccount(client) {
       const patch = {
         studentUserId: newlyCreatedUser.uid,
         accountAccessStatus: 'activated',
-        accountActivatedAt: serverTimestamp()
+        accountActivatedAt: serverTimestamp(),
+        passwordChangeRequired: true,
+        passwordTemporaryIssuedAt: serverTimestamp()
       };
       if (historicalUid && historicalUid !== newlyCreatedUser.uid) {
         patch.legacyStudentUserId = data.legacyStudentUserId || historicalUid;
