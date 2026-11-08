@@ -40,7 +40,8 @@ export async function saveAndDeliverStudentAlert(app,db,clientId,key,title,body,
     await notifRef.create({
       type,title:String(title).slice(0,110),body:String(body).slice(0,220),
       sourceId:String(sourceId).slice(0,160),
-      read:false,createdAt:FieldValue.serverTimestamp()
+      // Las pruebas confirman entrega pero no deben encender la campanita.
+      read:type==='test',createdAt:FieldValue.serverTimestamp()
     });
   } catch(error){
     if(error.code===6 || error.code==='already-exists')return {success:true,sent:0,duplicate:true};
