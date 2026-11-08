@@ -347,26 +347,33 @@ export default function StudentView({ clientId }) {
     checkYesterday();
   }, [client]);
 
-  // --- EFECTO 3: SINCRONIZACIÓN DE RUTINAS ---
-  useEffect(() => {
-    if (!client || !hasPaidMonth) return;
-    
-    const unsubSessions = onSnapshot(collection(db, 'clients', client.id, 'sessions'), (snapshot) => {
-      setAllSessionsIds(snapshot.docs.map(doc => doc.id));
-    });
-    
-    const sessionDocRef = doc(db, 'clients', client.id, 'sessions', currentDateId);
-    const unsubDaily = onSnapshot(sessionDocRef, (docSnap) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        setDailySession(data.exercises || []);
-        setIsSessionFinalized(data.isFinalized || false);
-        setRecordedEffort(data.perceivedEffort ?? null);
-        setPerceivedEffort(String(data.perceivedEffort ?? '6'));
-        setHydration(data.hydration || '');
-        setCardioMinutes(data.cardioMinutes || '');
-        setCardioIntensity(data.cardioIntensity || 'Baja');
-      } else {
+  // --- EFECTO 3: PLANIFICACIÓN DEL ALUMNO EN TIEMPO REAL ---
+  // La lista de días se escucha UNA sola vez por alumno. Cambiar de fecha no
+  // vuelve a descargar todo el calendario, solo la sesión seleccionada.
+  useEffect(()=>{
+    if(!client?.id||!hasPaidMonth)return;
+    const ref=collection(db,'clients',client.id,'sessions');
+    return onSnapshot(ref,snapshot=>{
+      setAllSessionsIds(snapshot.docs
+        .filter(d=>Array.isArray(d.data().exercises)&&d.data().exercises.length>0)
+        .map(d=>d.id));
+    },error=>console.warn('Calendario de alumno:',error?.code||error));
+  },[client?.id,hasPaidMonth]);
+
+  useEffect(()=>{
+    if(!client?.id||!hasPaidMonth)return;
+    const ref=doc(db,'clients',client.id,'sessions',currentDateId);
+    return onSnapshot(ref,snapshot=>{
+      if(snapshot.exists()){
+        const data=snapshot.data();
+        setDailySession(Array.isArray(data.exercises)?data.exercises:[]);
+        setIsSessionFinalized(data.isFinalized===true);
+        setRecordedEffort(data.perceivedEffort??null);
+        setPerceivedEffort(String(data.perceivedEffort??'6'));
+        setHydration(data.hydration||'');
+        setCardioMinutes(data.cardioMinutes||'');
+        setCardioIntensity(data.cardioIntensity||'Baja');
+      }else{
         setDailySession([]);
         setIsSessionFinalized(false);
         setRecordedEffort(null);
@@ -375,13 +382,8 @@ export default function StudentView({ clientId }) {
         setCardioMinutes('');
         setCardioIntensity('Baja');
       }
-    });
-
-    return () => { 
-      unsubSessions(); 
-      unsubDaily(); 
-    };
-  }, [date, client, currentDateId, hasPaidMonth]);
+    },error=>console.warn('Rutina seleccionada:',error?.code||error));
+  },[client?.id,currentDateId,hasPaidMonth]);
 
   // --- EFECTO 4: HISTORIAL DE SOBRECARGA PROGRESIVA ---
   useEffect(() => {
