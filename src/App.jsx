@@ -27,6 +27,8 @@ import NotificationsView from './views/NotificationsView';
 import SettingsView from './views/SettingsView';
 import MigrationAuditPanel from './components/MigrationAuditPanel';
 import StudentAccessPanel from './components/StudentAccessPanel';
+import CoachPushPanel from './components/CoachPushPanel';
+import CoachPushForeground from './components/CoachPushForeground';
 import CommunityView from './views/CommunityView'; 
 import PaymentsView from './views/PaymentsView'; 
 
@@ -40,7 +42,10 @@ export default function App() {
   const [inviteId, setInviteId] = useState(null);
 
   // Estados de navegación y datos
-  const [activeView, setActiveView] = useState('dashboard');
+  const [activeView, setActiveView] = useState(() => {
+    const incoming = new URLSearchParams(window.location.search).get('view');
+    return incoming === 'notifications' ? 'notifications' : 'dashboard';
+  });
   const [selectedClient, setSelectedClient] = useState(null);
   const [clients, setClients] = useState([]);
   const [exercises, setExercises] = useState([]);
@@ -288,6 +293,7 @@ export default function App() {
             {activeView === 'settings' && (
               <div className="space-y-6">
                 <MigrationAuditPanel clients={clients} coachUid={user.uid} />
+                <CoachPushPanel />
                 <SettingsView settings={settings} onUpdateSettings={handleUpdateSettings} />
               </div>
             )}
@@ -317,6 +323,7 @@ export default function App() {
         </div>
       )}
       {renderMainContent()}
+      {user && userRole === 'trainer' && <CoachPushForeground onOpenNotifications={() => navigateTo('notifications')} />}
     </>
   );
 }
