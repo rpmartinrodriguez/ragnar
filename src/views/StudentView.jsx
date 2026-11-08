@@ -718,15 +718,24 @@ export default function StudentView({ clientId }) {
     setWeeklySummary(null);
     setShowWeeklySummary(false);
     try {
-      const durationFromClock=workoutStartedAt?
-        Math.ceil((Date.now()-workoutStartedAt.getTime())/60000):null;
-      const validDuration=durationFromClock>=1&&durationFromClock<=720?durationFromClock:null;
       const savedRpe=Math.max(1,Math.min(10,parseInt(perceivedEffort,10)||6));
-      await updateDoc(doc(db, 'clients', clientId, 'sessions', currentDateId), {
-        isFinalized:true,
-        completedAt:new Date(),
-        perceivedEffort:savedRpe,
-        ...(validDuration!==null?{workoutDurationMinutes:validDuration}:{})
+      const targetSession=doc(db,'clients',clientId,'sessions',currentDateId);
+      let validDuration=null;
+      // Finalización atómica: si la sesión se terminó en otro dispositivo,
+      // no generar medallas, publicaciones ni push duplicados.
+      await runTransaction(db,async tx=>{
+        const snapshot=await tx.get(targetSession);
+        if(!snapshot.exists())throw new Error('La sesión seleccionada ya no existe.');
+        if(snapshot.data().isFinalized)throw new Error('Esta rutina ya se finalizó en otro dispositivo.');
+        const started=snapshot.data().workoutStartedAt?.toDate?.();
+        const candidate=started?Math.ceil((Date.now()-started.getTime())/60000):null;
+        validDuration=candidate>=1&&candidate<=720?candidate:null;
+        tx.update(targetSession,{
+          isFinalized:true,
+          completedAt:serverTimestamp(),
+          perceivedEffort:savedRpe,
+          ...(validDuration!==null?{workoutDurationMinutes:validDuration}:{})
+        });
       });
       setRecordedDuration(validDuration);
       setRecordedEffort(savedRpe);
@@ -781,23 +790,25 @@ export default function StudentView({ clientId }) {
         newMedalsUnlocked.push('cardio_king'); 
       }
 
+      let profileSaved=false;
       try{
         await updateDoc(doc(db,'clients',clientId),{
           lastWorkoutDate:currentDateId,
           currentStreak:newStreak,
           medals:earnedMedals
         });
+        profileSaved=true;
       }catch(error){
         console.warn('Sesión guardada pero no se pudieron actualizar medallas:',error?.message||error);
         newMedalsUnlocked=[];
       }
-      
-      setClient(prev => ({
-        ...prev,
-        lastWorkoutDate: currentDateId,
-        currentStreak: newStreak,
-        medals: earnedMedals
-      }));
+      if(profileSaved){
+        setClient(prev=>({...prev,
+          lastWorkoutDate:currentDateId,
+          currentStreak:newStreak,
+          medals:earnedMedals
+        }));
+      }
 
       try{
         await addDoc(collection(db,'trainerNotifications'),{
