@@ -128,6 +128,8 @@ export default function StudentView({ clientId }) {
   const [currentView, setCurrentView] = useState(() =>
     new URLSearchParams(window.location.search).get('view')==='student-alerts'?'alerts':'home'
   );
+  const currentViewRef=useRef(currentView);
+  useEffect(()=>{currentViewRef.current=currentView;},[currentView]);
   const [todayWorkout, setTodayWorkout] = useState(null);
   const [studentUnreadCount, setStudentUnreadCount] = useState(0);
   const [studentAlertsRevision,setStudentAlertsRevision] = useState(0);
@@ -213,11 +215,21 @@ export default function StudentView({ clientId }) {
     document.addEventListener('visibilitychange',onVisible);
     window.addEventListener('focus',updateCount);
     studentForegroundListener(alert=>{
-      if(!disposed){
+      if(disposed)return;
+      const view=currentViewRef.current;
+      const section=alert.type==='coach_message'&&view==='chat'?'chat':
+        alert.type==='routine_updated'&&['calendar','workout'].includes(view)?'calendar':
+        alert.type==='renewal'&&view==='profile'?'profile':null;
+      if(section){
+        // El aviso ya se atendió porque el alumno está mirando esa sección.
+        void studentAlertRequest('mark-section',clientId,{section})
+          .then(updateCount).catch(updateCount);
+        setStudentToast(null);
+      }else{
         updateCount();
-        setStudentAlertsRevision(value=>value+1);
         setStudentToast(alert);
       }
+      setStudentAlertsRevision(value=>value+1);
     }).then(off=>{if(disposed)off();else unsubscribe=off;}).catch(()=>{});
     return ()=>{
       disposed=true;unsubscribe();
