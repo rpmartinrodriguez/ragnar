@@ -273,3 +273,27 @@ body {
     max-width: 100%;
   }
 }
+
+/* Compartir victorias no debe quedar fuera de pantalla en iPhone SE. */
+@media (max-width: 639px) {
+  .ragnar-student-shell #ragnar-story-card {
+    width: min(100%, 340px, 35dvh);
+    max-width: 100%;
+    min-height: 0;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .ragnar-student-shell .fixed.inset-0 > :is(div, section, form) {
+    min-width: 0;
+    box-sizing: border-box;
+  }
+  .ragnar-coach-shell .fixed.inset-0 > :is(div, section, form) {
+    min-width: 0;
+    max-width: calc(100vw - 24px);
+    box-sizing: border-box;
+  }
+  .ragnar-student-shell .grid input[type="number"] {
+    width: 100%;
+    min-width: 0;
+  }
+}
