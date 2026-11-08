@@ -31,13 +31,18 @@ export async function webPushSupported() {
 }
 
 export async function enableCoachPush(vapidKey) {
-  if(!await webPushSupported()) throw new Error('Este navegador no admite FCM web push o no está instalado como PWA compatible.');
+  if(typeof window==='undefined' || !window.isSecureContext ||
+     !('serviceWorker' in navigator) || !('Notification' in window) ||
+     !('PushManager' in window)) {
+    throw new Error('Este navegador no admite push web. En iPhone, instalá Ragnar desde Safari en la pantalla de inicio.');
+  }
   if(!vapidKey || !/^[A-Za-z0-9_-]{40,}$/.test(vapidKey.trim())) {
     throw new Error('Primero configurá la clave pública VAPID de Firebase.');
   }
-  // Pedir permiso desde la interacción explícita del coach.
+  // La solicitud se realiza de inmediato, en el clic del usuario (exigencia iOS).
   const permission=await Notification.requestPermission();
   if(permission!=='granted') throw new Error('No se concedió permiso de notificaciones. Revisá los permisos del navegador.');
+  if(!await webPushSupported()) throw new Error('FCM no está disponible en este navegador o sistema operativo.');
   const reg=await navigator.serviceWorker.register(FCM_SW,{scope:'/'});
   const messaging=getMessaging(app);
   const token=await getToken(messaging,{vapidKey:vapidKey.trim(),serviceWorkerRegistration:reg});
