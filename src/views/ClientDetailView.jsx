@@ -32,12 +32,14 @@ import {
   query, 
   orderBy, 
   updateDoc,
-  runTransaction
+  runTransaction, serverTimestamp
 } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
 import { db } from '../firebase';
 import ProgressChart from '../components/ProgressChart';
 import CoachSetLogger from '../components/CoachSetLogger';
 import { sessionHasProtectedHistory } from '../utils/sessionSafety';
+import { notifyStudentAboutCoachEvent } from '../utils/notifyStudent';
 
 function assertSessionUnmodified(snapshot, sessionRef, expectedExercises = null) {
   if (snapshot.exists() && sessionHasProtectedHistory(snapshot.data())) {
@@ -51,13 +53,24 @@ function assertSessionUnmodified(snapshot, sessionRef, expectedExercises = null)
 }
 
 async function safelyWritePlannedSession(sessionRef, patch, expectedExercises = null) {
-  // La lectura y escritura comparten una transacción: si alguien completa una
-  // sesión entre ambos pasos, Firebase reintenta y el control detecta actividad.
-  return runTransaction(db, async tx => {
-    const current = await tx.get(sessionRef);
-    assertSessionUnmodified(current, sessionRef, expectedExercises);
-    tx.set(sessionRef, patch, { merge: true });
+  // La lectura y escritura comparten una transacción: protege la rutina
+  // y registra un evento nuevo que puede verificarse en el servidor.
+  const coachUid=getAuth().currentUser?.uid;
+  if(!coachUid)throw new Error('Ingresá nuevamente como entrenador.');
+  await runTransaction(db, async tx => {
+    const current=await tx.get(sessionRef);
+    assertSessionUnmodified(current,sessionRef,expectedExercises);
+    const prior=current.exists() && Array.isArray(current.data()?.exercises) &&
+      current.data().exercises.length>0;
+    tx.set(sessionRef,{
+      ...patch,
+      coachPlanningUpdatedAt:serverTimestamp(),
+      coachPlanningUpdatedBy:coachUid,
+      coachPlanningKind:prior?'updated':'assigned'
+    },{merge:true});
   });
+  const clientId=sessionRef.parent.parent?.id;
+  if(clientId)void notifyStudentAboutCoachEvent('routine_updated',clientId,sessionRef.id);
 }
 
 export default function ClientDetailView({ client, goBack, exercisesLibrary = [], routines = [] }) {
@@ -203,12 +216,13 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
       return;
     }
     try {
-      await addDoc(collection(db, 'clients', client.id, 'messages'), { 
-        text: newMessage, 
-        sender: 'trainer', 
-        createdAt: new Date(), 
-        read: false 
+      const savedMessage=await addDoc(collection(db, 'clients', client.id, 'messages'), {
+        text:newMessage,
+        sender:'trainer',
+        createdAt:new Date(),
+        read:false
       });
+      void notifyStudentAboutCoachEvent('coach_message',client.id,savedMessage.id);
       setNewMessage('');
     } catch (error) { 
       console.error(error); 
@@ -364,8 +378,21 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
           const snapshots=[];
           for(const w of writes) snapshots.push(await tx.get(w.ref));
           snapshots.forEach((snapshot,i)=>assertSessionUnmodified(snapshot,writes[i].ref));
-          writes.forEach(w=>tx.set(w.ref,w.data,{merge:true}));
+          const coachUid=getAuth().currentUser?.uid;
+          if(!coachUid)throw new Error('Ingresá nuevamente como entrenador.');
+          writes.forEach((w,i)=>{
+            const prior=snapshots[i].exists() &&
+              Array.isArray(snapshots[i].data()?.exercises) &&
+              snapshots[i].data().exercises.length>0;
+            tx.set(w.ref,{
+              ...w.data,
+              coachPlanningUpdatedAt:serverTimestamp(),
+              coachPlanningUpdatedBy:coachUid,
+              coachPlanningKind:prior?'updated':'assigned'
+            },{merge:true});
+          });
         });
+        writes.forEach(w=>void notifyStudentAboutCoachEvent('routine_updated',client.id,w.id));
         setAllSessionsIds(prev=>Array.from(new Set([...prev,...writes.map(w=>w.id)])));
         window.alert('Se copiaron '+writes.length+' días sin sobrescribir historiales de entrenamiento.');
       }catch(error){
