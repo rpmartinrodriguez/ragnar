@@ -83,7 +83,7 @@ export default async function handler(request) {
     if(raw.length>5000) return reject('Solicitud demasiado grande',413);
     body=JSON.parse(raw);
   } catch { return reject('Solicitud inválida'); }
-  if (!['register','unregister','status','test','event'].includes(body?.action)) return reject('Acción inválida');
+  if (!['register','unregister','status','test','event','preferences','update-preferences'].includes(body?.action)) return reject('Acción inválida');
   let app;
   try { app=admin(); }
   catch { return reject('Configuración privada de Firebase incorrecta en Netlify',503); }
@@ -103,6 +103,22 @@ export default async function handler(request) {
     if(body.action==='status') {
       const list=await coachDevices(db,uid);
       return reply({success:true,subscribed:list.length});
+    }
+    if(body.action==='preferences'){
+      const docSnap=await db.doc('coaches/'+uid).get();
+      return reply({success:true,preferences:docSnap.get('pushPreferences')||{}});
+    }
+    if(body.action==='update-preferences'){
+      const keys=['workout_completed','student_message','missed_workout','student_note'];
+      const incoming=body.preferences||{};
+      if(!incoming||typeof incoming!=='object'||Array.isArray(incoming)||
+         Object.keys(incoming).some(key=>!keys.includes(key))||
+         Object.values(incoming).some(value=>typeof value!=='boolean')){
+        return reject('Preferencias de avisos inválidas',400);
+      }
+      const preferences=Object.fromEntries(keys.map(key=>[key,incoming[key]!==false]));
+      await db.doc('coaches/'+uid).update({pushPreferences:preferences});
+      return reply({success:true,preferences});
     }
     if(body.action==='register') {
       const token=body.token;
@@ -181,6 +197,11 @@ export default async function handler(request) {
       const coaches=await db.collection('coaches').where('enabled','==',true).limit(2).get();
       if(coaches.size!==1) return reject('Falta asignar un entrenador autorizado a esta ficha',409);
       coachUid=coaches.docs[0].id;
+    }
+    const coachSnap=await db.doc('coaches/'+coachUid).get();
+    const preferences=coachSnap.get('pushPreferences')||{};
+    if(preferences[type]===false){
+      return reply({success:true,sent:0,muted:true,reason:'El entrenador desactivó este aviso push'});
     }
     const devices=await coachDevices(db,coachUid);
     if(!devices.length) return reply({success:true,sent:0,reason:'Entrenador sin dispositivos push registrados'});
