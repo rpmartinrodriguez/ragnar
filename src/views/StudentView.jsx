@@ -1140,7 +1140,7 @@ export default function StudentView({ clientId }) {
             onRead={setStudentUnreadCount}
             openChat={()=>setCurrentView('chat')}
             openCalendar={(sourceId)=>{
-              if(sourceId && /^\\d{4}-\\d{2}-\\d{2}$/.test(sourceId)){
+              if(sourceId && /^\d{4}-\d{2}-\d{2}$/.test(sourceId)){
                 setDate(new Date(sourceId+'T12:00:00'));
               }
               setCurrentView('calendar');
@@ -1618,12 +1618,18 @@ export default function StudentView({ clientId }) {
       )}
 
       {/* --- NAV BAR INFERIOR --- */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-zinc-950/95 backdrop-blur-md border-t border-zinc-800 p-2 pb-6 flex justify-between items-center z-[40]">
+      <nav className="fixed bottom-0 left-0 right-0 bg-zinc-950/95 backdrop-blur-md border-t border-zinc-800 p-2 flex justify-between items-center z-[40]"
+        style={{paddingBottom:'max(12px, env(safe-area-inset-bottom))'}} aria-label="Navegación del alumno">
+        <button type="button" onClick={()=>setCurrentView('home')}
+          className={`flex flex-col items-center justify-center gap-1 w-1/6 min-h-12 transition-colors ${currentView==='home'?'text-yellow-400':'text-zinc-500'}`}>
+          <Dumbbell size={20}/>
+          <span className="text-[9px] font-black uppercase">Inicio</span>
+        </button>
         
         <button 
           disabled={!hasPaidMonth} 
           onClick={() => setCurrentView('calendar')} 
-          className={`flex flex-col items-center justify-center gap-1.5 w-1/5 transition-colors ${!hasPaidMonth ? 'opacity-30 cursor-not-allowed' : (['calendar', 'workout'].includes(currentView) ? 'text-yellow-400' : 'text-zinc-500')}`}
+          className={`flex flex-col items-center justify-center gap-1.5 w-1/6 transition-colors ${!hasPaidMonth ? 'opacity-30 cursor-not-allowed' : (['calendar', 'workout'].includes(currentView) ? 'text-yellow-400' : 'text-zinc-500')}`}
         >
           <CalendarIcon size={20}/>
           <span className="text-[9px] font-black uppercase tracking-wider mt-1">Agenda</span>
@@ -1632,7 +1638,7 @@ export default function StudentView({ clientId }) {
         <button 
           disabled={!hasPaidMonth} 
           onClick={() => setCurrentView('community')} 
-          className={`flex flex-col items-center justify-center gap-1.5 w-1/5 transition-colors ${!hasPaidMonth ? 'opacity-30 cursor-not-allowed' : (currentView === 'community' ? 'text-yellow-400' : 'text-zinc-500')}`}
+          className={`flex flex-col items-center justify-center gap-1.5 w-1/6 transition-colors ${!hasPaidMonth ? 'opacity-30 cursor-not-allowed' : (currentView === 'community' ? 'text-yellow-400' : 'text-zinc-500')}`}
         >
           <Users size={20}/>
           <span className="text-[9px] font-black uppercase tracking-wider mt-1">Salón</span>
@@ -1641,7 +1647,7 @@ export default function StudentView({ clientId }) {
         <button 
           disabled={!hasPaidMonth} 
           onClick={() => setCurrentView('stats')} 
-          className={`flex flex-col items-center justify-center gap-1.5 w-1/5 transition-colors ${!hasPaidMonth ? 'opacity-30 cursor-not-allowed' : (currentView === 'stats' ? 'text-yellow-400' : 'text-zinc-500')}`}
+          className={`flex flex-col items-center justify-center gap-1.5 w-1/6 transition-colors ${!hasPaidMonth ? 'opacity-30 cursor-not-allowed' : (currentView === 'stats' ? 'text-yellow-400' : 'text-zinc-500')}`}
         >
           <TrendingUp size={20}/>
           <span className="text-[9px] font-black uppercase tracking-wider mt-1">Progreso</span>
@@ -1649,7 +1655,7 @@ export default function StudentView({ clientId }) {
         
         <button 
           onClick={() => setCurrentView('chat')} 
-          className={`flex flex-col items-center justify-center gap-1.5 w-1/5 relative transition-colors ${currentView === 'chat' ? 'text-yellow-400' : 'text-zinc-500'}`}
+          className={`flex flex-col items-center justify-center gap-1.5 w-1/6 relative transition-colors ${currentView === 'chat' ? 'text-yellow-400' : 'text-zinc-500'}`}
         >
           <MessageSquare size={20}/>
           {unreadCount > 0 && (
@@ -1660,7 +1666,7 @@ export default function StudentView({ clientId }) {
         
         <button 
           onClick={() => setCurrentView('profile')} 
-          className={`flex flex-col items-center justify-center gap-1.5 w-1/5 transition-colors ${currentView === 'profile' ? 'text-yellow-400' : 'text-zinc-500'}`}
+          className={`flex flex-col items-center justify-center gap-1.5 w-1/6 transition-colors ${currentView === 'profile' ? 'text-yellow-400' : 'text-zinc-500'}`}
         >
           <User size={20}/>
           <span className="text-[9px] font-black uppercase tracking-wider mt-1">Perfil</span>
