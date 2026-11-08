@@ -40,12 +40,16 @@ import {
   query, 
   orderBy, 
   updateDoc, 
-  getDocs 
+  getDocs,
+  runTransaction, serverTimestamp
 } from 'firebase/firestore';
 import { getAuth, signOut } from 'firebase/auth';
 import { db } from '../firebase';
 import CommunityView from './CommunityView';
 import ProgressChart from '../components/ProgressChart';
+import WeeklyRecap from '../components/WeeklyRecap';
+import WorkoutShareCard from '../components/WorkoutShareCard';
+import {weeklyInsights,isFridayFinalSession} from '../utils/trainingInsights';
 import StudentChangePassword from '../components/StudentChangePassword';
 import StudentFirstAccessModal from '../components/StudentFirstAccessModal';
 import StudentWorkoutNote from '../components/StudentWorkoutNote';
@@ -109,6 +113,13 @@ export default function StudentView({ clientId }) {
   const [isFinishing, setIsFinishing] = useState(false);
   const [perceivedEffort, setPerceivedEffort] = useState('6');
   const [recordedEffort,setRecordedEffort] = useState(null);
+  const [workoutStartedAt,setWorkoutStartedAt] = useState(null);
+  const [recordedDuration,setRecordedDuration] = useState(null);
+  const [elapsedMinutes,setElapsedMinutes] = useState(null);
+  const [clockBusy,setClockBusy] = useState(false);
+  const [clockError,setClockError] = useState('');
+  const [weeklySummary,setWeeklySummary] = useState(null);
+  const [showWeeklySummary,setShowWeeklySummary] = useState(false);
   const finalizingRef = useRef(false);
   const [allSessionsIds, setAllSessionsIds] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -424,6 +435,8 @@ export default function StudentView({ clientId }) {
         setIsSessionFinalized(data.isFinalized===true);
         setRecordedEffort(data.perceivedEffort??null);
         setPerceivedEffort(String(data.perceivedEffort??'6'));
+        setWorkoutStartedAt(data.workoutStartedAt?.toDate?.()||null);
+        setRecordedDuration(data.workoutDurationMinutes??null);
         setHydration(data.hydration||'');
         setCardioMinutes(data.cardioMinutes||'');
         setCardioIntensity(data.cardioIntensity||'Baja');
@@ -432,12 +445,38 @@ export default function StudentView({ clientId }) {
         setIsSessionFinalized(false);
         setRecordedEffort(null);
         setPerceivedEffort('6');
+        setWorkoutStartedAt(null);
+        setRecordedDuration(null);
         setHydration('');
         setCardioMinutes('');
         setCardioIntensity('Baja');
       }
     },error=>console.warn('Rutina seleccionada:',error?.code||error));
   },[client?.id,currentDateId,hasPaidMonth]);
+
+  // El cronómetro no mide descansos por separado: marca inicio de la sesión.
+  // No se estima tiempo de sesiones en las que nunca se inició la medición.
+  useEffect(()=>{
+    if(!workoutStartedAt||isSessionFinalized){setElapsedMinutes(null);return;}
+    const tick=()=>setElapsedMinutes(Math.max(0,Math.floor((Date.now()-workoutStartedAt.getTime())/60000)));
+    tick();const id=setInterval(tick,15000);return()=>clearInterval(id);
+  },[workoutStartedAt,isSessionFinalized]);
+
+  const startWorkoutClock=async(targetId=currentDateId)=>{
+    if(clockBusy||targetId!==todayYmd){return;}
+    setClockBusy(true);setClockError('');
+    try{
+      const ref=doc(db,'clients',clientId,'sessions',targetId);
+      await runTransaction(db,async tx=>{
+        const snap=await tx.get(ref);
+        if(!snap.exists()||!Array.isArray(snap.data().exercises)||!snap.data().exercises.length)
+          throw new Error('Este día todavía no tiene ejercicios asignados.');
+        if(snap.data().isFinalized)throw new Error('El entrenamiento ya está finalizado.');
+        if(!snap.data().workoutStartedAt)tx.update(ref,{workoutStartedAt:serverTimestamp()});
+      });
+    }catch(error){setClockError(error?.message||'No se pudo iniciar el cronómetro.');}
+    finally{setClockBusy(false);}
+  };
 
   // --- EFECTO 4: HISTORIAL DE SOBRECARGA PROGRESIVA ---
   useEffect(() => {
@@ -674,11 +713,18 @@ export default function StudentView({ clientId }) {
     finalizingRef.current = true;
     setIsFinishing(true);
     try {
-      await updateDoc(doc(db, 'clients', clientId, 'sessions', currentDateId), { 
-        isFinalized: true, 
-        completedAt: new Date(),
-        perceivedEffort:Math.max(1,Math.min(10,parseInt(perceivedEffort,10)||6))
+      const durationFromClock=workoutStartedAt?
+        Math.ceil((Date.now()-workoutStartedAt.getTime())/60000):null;
+      const validDuration=durationFromClock>=1&&durationFromClock<=720?durationFromClock:null;
+      const savedRpe=Math.max(1,Math.min(10,parseInt(perceivedEffort,10)||6));
+      await updateDoc(doc(db, 'clients', clientId, 'sessions', currentDateId), {
+        isFinalized:true,
+        completedAt:new Date(),
+        perceivedEffort:savedRpe,
+        ...(validDuration!==null?{workoutDurationMinutes:validDuration}:{})
       });
+      setRecordedDuration(validDuration);
+      setRecordedEffort(savedRpe);
 
       // LÓGICA DE RACHAS (STREAKS)
       const lastDateStr = client.lastWorkoutDate || null;
@@ -762,14 +808,28 @@ export default function StudentView({ clientId }) {
         reactions: { fire: [], power: [] }
       });
 
-      // Solo tras guardar sesión + notificación Firestore enviamos aviso externo.
+      // Solo tras guardar sesión enviamos un aviso externo. Un error de push
+      // no modifica el resultado del entrenamiento.
       void notifyCoachAboutStudentEvent('workout_completed', clientId, currentDateId);
       setIsSessionFinalized(true);
       setTimerEndTime(null);
 
-      if (newMedalsUnlocked.length > 0) {
+      let recap=null;
+      if(currentDateId===todayYmd && isFridayFinalSession(currentDateId,allSessionsIds)){
+        try{
+          const history=await getDocs(collection(db,'clients',clientId,'sessions'));
+          recap=weeklyInsights(history.docs.map(d=>({id:d.id,...d.data()})),currentDateId);
+          if(recap)setWeeklySummary(recap);
+        }catch(error){
+          console.warn('Entrenamiento guardado; resumen semanal no disponible:',error?.message||error);
+        }
+      }
+
+      if(newMedalsUnlocked.length>0){
         setNewMedalAlert(MEDALS_DB[newMedalsUnlocked[0]]);
-      } else {
+      }else if(recap){
+        setShowWeeklySummary(true);
+      }else{
         setShowShareModal(true);
       }
 
@@ -889,8 +949,9 @@ export default function StudentView({ clientId }) {
           
           <button 
             onClick={() => { 
-              setNewMedalAlert(null); 
-              setShowShareModal(true); 
+              setNewMedalAlert(null);
+              if(weeklySummary)setShowWeeklySummary(true);
+              else setShowShareModal(true); 
             }}
             className="bg-yellow-400 text-black font-black px-8 py-4 rounded-2xl uppercase tracking-widest active:scale-95 transition-transform"
           >
