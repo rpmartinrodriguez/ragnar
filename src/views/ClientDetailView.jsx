@@ -85,6 +85,7 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
   const [cardioTargetMinutes, setCardioTargetMinutes] = useState('');
   const [cardioTargetIntensity, setCardioTargetIntensity] = useState('Baja');
   const [isSessionFinalized, setIsSessionFinalized] = useState(false);
+  const [perceivedEffort,setPerceivedEffort] = useState(null);
   const [studentNote, setStudentNote] = useState('');
   const [studentNoteUpdatedAt, setStudentNoteUpdatedAt] = useState(null);
   
@@ -163,6 +164,7 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
         const data=snapshot.data();
         setDailySession(Array.isArray(data.exercises)?data.exercises:[]);
         setIsSessionFinalized(data.isFinalized||false);
+        setPerceivedEffort(data.perceivedEffort ?? null);
         setStudentNote(String(data.studentNote||''));
         setStudentNoteUpdatedAt(data.studentNoteUpdatedAt||null);
         setHydrationTarget(data.targetHydration||'');
@@ -171,6 +173,7 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
       }else{
         setDailySession([]);
         setIsSessionFinalized(false);
+        setPerceivedEffort(null);
         setStudentNote('');
         setStudentNoteUpdatedAt(null);
         setHydrationTarget('');
@@ -732,6 +735,7 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
                   <div>
                     <h4 className="text-green-500 font-black uppercase text-sm tracking-widest">Sesión Finalizada</h4>
                     <p className="text-green-500/70 text-xs font-medium">El alumno ya completó este día.</p>
+                    {perceivedEffort!==null && <p className="text-emerald-300 text-xs font-bold mt-1">Esfuerzo percibido: {perceivedEffort}/10</p>}
                   </div>
                 </div>
               )}
