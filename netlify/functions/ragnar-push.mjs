@@ -158,6 +158,11 @@ export default async function handler(request) {
       if(!session.exists) return reject('No se encontró esa sesión',409);
       if(type==='workout_completed'&&session.get('isFinalized')!==true) return reject('La rutina todavía no figura finalizada',409);
       if(type==='missed_workout'&&typeof session.get('missedReason')!=='string') return reject('No existe la justificación',409);
+      const eventDate=type==='workout_completed'?session.get('completedAt'):session.get('missedReasonAt');
+      const eventTime=eventDate?.toMillis?.();
+      if(!eventTime || Math.abs(Date.now()-eventTime)>15*60*1000) {
+        return reject('La notificación corresponde a una actividad anterior; no reenviar',409);
+      }
       title=type==='workout_completed'?'Entrenamiento finalizado':'Ausencia justificada';
       bodyText=(clientSnap.get('name')||'Un alumno')+
         (type==='workout_completed'?' terminó su rutina':' informó un motivo de ausencia');
