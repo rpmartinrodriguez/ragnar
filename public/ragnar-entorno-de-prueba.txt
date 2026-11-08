@@ -1,0 +1,5 @@
+Ragnar Training - Entorno de prueba
+Rama GitHub: staging/ragnar-5f8d7
+Proyecto Firebase: ragnar-5f8d7
+NO es la version principal.
+Este archivo permite verificar que Netlify haya publicado la rama correcta.
