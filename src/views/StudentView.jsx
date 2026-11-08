@@ -105,6 +105,7 @@ export default function StudentView({ clientId }) {
   const [dailySession, setDailySession] = useState([]);
   const [isSessionFinalized, setIsSessionFinalized] = useState(false);
   const [isFinishing, setIsFinishing] = useState(false);
+  const [perceivedEffort, setPerceivedEffort] = useState('6');
   const finalizingRef = useRef(false);
   const [allSessionsIds, setAllSessionsIds] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -330,6 +331,9 @@ export default function StudentView({ clientId }) {
         const data = docSnap.data();
         setDailySession(data.exercises || []);
         setIsSessionFinalized(data.isFinalized || false);
+        if(data.perceivedEffort!==undefined && data.perceivedEffort!==null){
+          setPerceivedEffort(String(data.perceivedEffort));
+        }
         setHydration(data.hydration || '');
         setCardioMinutes(data.cardioMinutes || '');
         setCardioIntensity(data.cardioIntensity || 'Baja');
@@ -585,7 +589,8 @@ export default function StudentView({ clientId }) {
     try {
       await updateDoc(doc(db, 'clients', clientId, 'sessions', currentDateId), { 
         isFinalized: true, 
-        completedAt: new Date() 
+        completedAt: new Date(),
+        perceivedEffort:Math.max(1,Math.min(10,parseInt(perceivedEffort,10)||6))
       });
 
       // LÓGICA DE RACHAS (STREAKS)
@@ -1440,6 +1445,26 @@ export default function StudentView({ clientId }) {
               <StudentWorkoutNote clientId={clientId} dateId={currentDateId}/>
             )}
 
+            {dailySession.length > 0 && !isSessionFinalized && (
+              <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4 space-y-2 mt-4">
+                <label htmlFor="ragnar-effort" className="block text-white font-black text-sm uppercase">
+                  Esfuerzo percibido · del 1 al 10
+                </label>
+                <p className="text-zinc-400 text-xs">1 significa muy fácil; 10, máximo esfuerzo. Ayuda al coach a ajustar tu planificación.</p>
+                <select id="ragnar-effort" disabled={isFinishing} value={perceivedEffort}
+                  onChange={e=>setPerceivedEffort(e.target.value)}
+                  className="w-full bg-zinc-950 border border-zinc-700 rounded-xl p-3 text-white text-sm outline-none focus:border-yellow-400">
+                  {Array.from({length:10},(_,i)=>i+1).map(value=>(
+                    <option key={value} value={value}>{value} / 10{value===1?' · Muy fácil':value===10?' · Máximo esfuerzo':''}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+            {dailySession.length>0&&isSessionFinalized&&(
+              <div className="text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 text-sm">
+                Entrenamiento finalizado · esfuerzo {perceivedEffort}/10
+              </div>
+            )}
             {dailySession.length > 0 && !isSessionFinalized && (
               <button 
                 onClick={handleFinishWorkout}
