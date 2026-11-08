@@ -25,7 +25,7 @@ export default function NotificationsView({ navigateTo, clients = [] }) {
     const emit = () => {
       if (!alive) return;
       const timestamp = value => value?.toDate?.()?.getTime?.() ??
-        (value instanceof Date ? value.getTime() : new Date(value || 0).getTime()) || 0;
+        ((value instanceof Date ? value.getTime() : new Date(value || 0).getTime()) || 0);
       const combined = [...system, ...messages].sort((a,b)=> timestamp(b.createdAt) - timestamp(a.createdAt));
       setNotifications(combined);
       if (sysReady && msgReady) setLoading(false);
