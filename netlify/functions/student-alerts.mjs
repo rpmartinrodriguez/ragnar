@@ -153,7 +153,9 @@ export default async function handler(request){
     let cursor=null,updated=0;
     // Paginar sin índices compuestos, procesando únicamente avisos de la sección.
     for(let page=0;page<12;page++){
-      let q=notifications.orderBy('createdAt','desc').limit(100);
+      // Una consulta de solo pendientes evita releer el historial completo
+      // cada vez que el alumno abre Chat o Agenda. Usa índice simple de read.
+      let q=notifications.where('read','==',false).limit(100);
       if(cursor)q=q.startAfter(cursor);
       const snapshot=await q.get();
       if(snapshot.empty)break;
