@@ -32,10 +32,34 @@ import {
   query, 
   orderBy, 
   updateDoc,
-  writeBatch
+  writeBatch,
+  getDocFromServer
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import ProgressChart from '../components/ProgressChart';
+
+// Evitamos sobrescribir días en los que el alumno ya entrenó, dejó notas o
+// informó una ausencia. Reutilizable para pegado individual, rango y plantillas.
+function sessionHasProtectedHistory(data = {}) {
+  if (data.isFinalized || data.completedAt ||
+      String(data.studentNote || '').trim() ||
+      String(data.missedReason || '').trim()) return true;
+  return Array.isArray(data.exercises) && data.exercises.some(ex =>
+    Array.isArray(ex.actualSets) && ex.actualSets.some(set =>
+      set && (set.completed === true ||
+        String(set.reps ?? '').trim() !== '' ||
+        String(set.weight ?? '').trim() !== '')
+    )
+  );
+}
+
+async function ensureSessionIsSafeToPlan(sessionRef) {
+  const snapshot = await getDocFromServer(sessionRef);
+  if (snapshot.exists() && sessionHasProtectedHistory(snapshot.data())) {
+    throw new Error('La fecha ' + sessionRef.id +
+      ' ya tiene actividad registrada o una observación del alumno. Por seguridad no se sobrescribió.');
+  }
+}
 
 export default function ClientDetailView({ client, goBack, exercisesLibrary = [], routines = [] }) {
   // --- ESTADOS DE PESTAÑAS Y NAVEGACIÓN ---
@@ -250,104 +274,93 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
     }
   };
 
-  // --- OPERACIÓN 3: PEGAR INTELIGENTE (SOPORTA DÍA Y RANGOS EXACTOS) ---
+  // --- COPIA/PEGADO PROTEGIDO: NUNCA BORRAR SESIONES HISTÓRICAS ---
   const handlePasteClipboard = async () => {
-    if (!clipboardType) {
+    if(!clipboardType || loading) return;
+
+    if(clipboardType === 'day' && clipboardSingleDay) {
+      if(!window.confirm('¿Pegar una copia LIMPIA de la rutina en ' +
+          date.toLocaleDateString('es-AR') +
+          '? Se reemplazará la planificación si todavía no hay actividad registrada.')) return;
+      setLoading(true);
+      try {
+        const targetRef=doc(db,'clients',client.id,'sessions',currentDateId);
+        await ensureSessionIsSafeToPlan(targetRef);
+        const cleanExercises=clipboardSingleDay.exercises.map(ex=>({
+          ...ex, plannedSets:Array.isArray(ex.plannedSets)?ex.plannedSets.map(set=>({...set})):ex.plannedSets,
+          actualSets:[]
+        }));
+        await setDoc(targetRef,{
+          date:currentDateId,
+          exercises:cleanExercises,
+          targetHydration:clipboardSingleDay.hydration||'',
+          targetCardioMinutes:clipboardSingleDay.cardioMin||'',
+          targetCardioIntensity:clipboardSingleDay.cardioInt||'Baja',
+          isFinalized:false
+        },{merge:true});
+        setAllSessionsIds(prev=>prev.includes(currentDateId)?prev:[...prev,currentDateId]);
+        window.alert('La rutina se copió al día seleccionado. No se modificaron sesiones realizadas.');
+      }catch(error){
+        window.alert('No se pudo pegar la rutina: '+(error?.message||'revisá tu conexión'));
+      }finally{setLoading(false);}
       return;
     }
 
-    // CASO A: PEGAR UN DÍA SUELTO
-    if (clipboardType === 'day' && clipboardSingleDay) {
-      if (!window.confirm(`¿Pegar la rutina copiada en el día ${date.toLocaleDateString()}? Se sobrescribirá el contenido.`)) {
-        return;
-      }
-      try {
-        const cleanExercises = clipboardSingleDay.exercises.map(ex => ({
-          ...ex,
-          actualSets: [] // Forzamos limpieza absoluta de la ejecución
-        }));
-
-        await setDoc(doc(db, 'clients', client.id, 'sessions', currentDateId), {
-          date: currentDateId,
-          exercises: cleanExercises,
-          targetHydration: clipboardSingleDay.hydration,
-          targetCardioMinutes: clipboardSingleDay.cardioMin,
-          targetCardioIntensity: clipboardSingleDay.cardioInt,
-          isFinalized: false
-        }, { merge: true });
-
-        if (!allSessionsIds.includes(currentDateId)) {
-          setAllSessionsIds([...allSessionsIds, currentDateId]);
-        }
-        alert("Rutina del día pegada correctamente.");
-      } catch (error) {
-        console.error(error);
-      }
-    }
-
-    // CASO B: PEGAR UN RANGO COMPLETO CON ALINEACIÓN INTELIGENTE DE DÍAS
-    if (clipboardType === 'range' && clipboardRangeData.length > 0) {
-      const targetDayOfWeek = date.getDay();
-      let pasteStartDate = new Date(date);
-
-      if (targetDayOfWeek !== clipboardStartDayOfWeek) {
-        const dayNames = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-        if (window.confirm(`El rango copiado originalmente comenzaba un ${dayNames[clipboardStartDayOfWeek]}.\n\n¿Deseas alinear automáticamente el pegado al ${dayNames[clipboardStartDayOfWeek]} de esta semana para mantener exactos tus días de entrenamiento y descanso?`)) {
-          const diff = clipboardStartDayOfWeek - targetDayOfWeek;
-          pasteStartDate.setDate(pasteStartDate.getDate() + diff);
+    if(clipboardType==='range' && clipboardRangeData.length) {
+      const targetDayOfWeek=date.getDay();
+      const pasteStartDate=new Date(date);
+      if(targetDayOfWeek!==clipboardStartDayOfWeek) {
+        const names=['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
+        if(window.confirm('El bloque comenzaba un '+names[clipboardStartDayOfWeek]+
+          '. ¿Querés alinearlo al mismo día de esta semana?')) {
+          pasteStartDate.setDate(pasteStartDate.getDate()+
+            (clipboardStartDayOfWeek-targetDayOfWeek));
         }
       }
-
-      if (!window.confirm(`¿Confirmas pegar el bloque de entrenamientos a partir del día ${pasteStartDate.toLocaleDateString()}? Se procesará de forma masiva.`)) {
+      const source=[...clipboardRangeData].sort((a,b)=>a.id.localeCompare(b.id));
+      if(source.length>90){
+        window.alert('Por seguridad, copiá bloques de hasta 90 jornadas con ejercicios.');
         return;
       }
-
-      try {
-        setLoading(true);
-        const batch = writeBatch(db);
-        const newSessionIds = [...allSessionsIds];
-
-        const originalStartStr = clipboardRangeData.sort((a,b) => a.id.localeCompare(b.id))[0].id;
-        const originalStartDate = new Date(originalStartStr + 'T12:00:00Z');
-
-        clipboardRangeData.forEach(session => {
-          const sessionDate = new Date(session.id + 'T12:00:00Z');
-          const timeDiff = sessionDate.getTime() - originalStartDate.getTime();
-          const daysDiff = Math.round(timeDiff / (1000 * 60 * 60 * 24));
-
-          const targetProjectedDate = new Date(pasteStartDate);
-          targetProjectedDate.setDate(targetProjectedDate.getDate() + daysDiff);
-          const targetId = formatDateId(targetProjectedDate);
-
-          const cleanExercises = session.exercises.map(ex => ({
-            ...ex,
-            actualSets: [] 
-          }));
-
-          const docRef = doc(db, 'clients', client.id, 'sessions', targetId);
-          batch.set(docRef, {
-            date: targetId,
-            exercises: cleanExercises,
-            targetHydration: session.targetHydration || '',
-            targetCardioMinutes: session.targetCardioMinutes || '',
-            targetCardioIntensity: session.targetCardioIntensity || 'Baja',
-            isFinalized: false
-          }, { merge: true });
-
-          if (!newSessionIds.includes(targetId)) {
-            newSessionIds.push(targetId);
-          }
+      if(!window.confirm('¿Copiar '+source.length+' días de entrenamiento a partir del '+
+        pasteStartDate.toLocaleDateString('es-AR')+
+        '? La operación se cancela si alguna fecha ya tiene actividad o notas del alumno.')) return;
+      setLoading(true);
+      try{
+        const originalStart=new Date(source[0].id+'T12:00:00');
+        const writes=source.map(session=>{
+          const original=new Date(session.id+'T12:00:00');
+          const offset=Math.round((original-originalStart)/86400000);
+          const targetDate=new Date(pasteStartDate);
+          targetDate.setDate(targetDate.getDate()+offset);
+          const id=formatDateId(targetDate);
+          const ref=doc(db,'clients',client.id,'sessions',id);
+          return {ref,id, data:{
+            date:id,
+            exercises:session.exercises.map(ex=>({
+              ...ex,
+              plannedSets:Array.isArray(ex.plannedSets)?ex.plannedSets.map(set=>({...set})):ex.plannedSets,
+              actualSets:[]
+            })),
+            targetHydration:session.targetHydration||'',
+            targetCardioMinutes:session.targetCardioMinutes||'',
+            targetCardioIntensity:session.targetCardioIntensity||'Baja',
+            isFinalized:false
+          }};
         });
-
+        if(new Set(writes.map(w=>w.id)).size!==writes.length){
+          throw new Error('Las fechas del bloque se superponen; revisá el rango copiado.');
+        }
+        // Verificamos todas las fechas ANTES de ejecutar el batch.
+        await Promise.all(writes.map(w=>ensureSessionIsSafeToPlan(w.ref)));
+        const batch=writeBatch(db);
+        writes.forEach(w=>batch.set(w.ref,w.data,{merge:true}));
         await batch.commit();
-        setAllSessionsIds(newSessionIds);
-        alert("¡Bloque de entrenamientos pegado y sincronizado perfectamente!");
-      } catch (error) {
-        console.error(error);
-        alert("Error al procesar el pegado masivo.");
-      } finally {
-        setLoading(false);
-      }
+        setAllSessionsIds(prev=>Array.from(new Set([...prev,...writes.map(w=>w.id)])));
+        window.alert('Se copiaron '+writes.length+' días sin sobrescribir historiales de entrenamiento.');
+      }catch(error){
+        window.alert('No se aplicó el bloque: '+(error?.message||'revisá tu conexión'));
+      }finally{setLoading(false);}
     }
   };
 
@@ -378,17 +391,19 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
         };
       });
 
-      await setDoc(doc(db, 'clients', client.id, 'sessions', currentDateId), {
+      const targetRef=doc(db,'clients',client.id,'sessions',currentDateId);
+      await ensureSessionIsSafeToPlan(targetRef);
+      await setDoc(targetRef, {
         date: currentDateId,
         exercises: formattedExercises,
-        isFinalized: false 
+        isFinalized: false
       }, { merge: true });
 
       if (!allSessionsIds.includes(currentDateId)) {
         setAllSessionsIds([...allSessionsIds, currentDateId]);
       }
-    } catch (error) { 
-      console.error(error); 
+    } catch (error) {
+      window.alert('No se pudo asignar la plantilla: '+(error?.message||'revisá tu conexión'));
     }
   };
 
