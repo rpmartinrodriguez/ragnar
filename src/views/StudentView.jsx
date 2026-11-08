@@ -1092,7 +1092,8 @@ export default function StudentView({ clientId }) {
       )}
 
       {/* HEADER DE BIENVENIDA CON RACHA */}
-      <div className="bg-yellow-400 text-black px-3 sm:px-4 pt-4 pb-10 rounded-b-[2rem] sm:rounded-b-[3rem] shadow-xl relative z-10 shrink-0 w-full min-w-0">
+      <div className="bg-yellow-400 text-black px-3 sm:px-4 pt-4 pb-10 rounded-b-[2rem] sm:rounded-b-[3rem] shadow-xl relative z-10 shrink-0 w-full min-w-0"
+        style={{paddingTop:'max(16px, env(safe-area-inset-top))'}}>
           <div className="flex justify-between items-center gap-2 min-w-0 w-full max-w-2xl mx-auto">
             
             <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
