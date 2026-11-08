@@ -130,6 +130,7 @@ export default function StudentView({ clientId }) {
   );
   const [todayWorkout, setTodayWorkout] = useState(null);
   const [studentUnreadCount, setStudentUnreadCount] = useState(0);
+  const [studentAlertsRevision,setStudentAlertsRevision] = useState(0);
   const [studentToast, setStudentToast] = useState(null);
   const [renewalPaid, setRenewalPaid] = useState(null); 
   const [showShareModal, setShowShareModal] = useState(false);
@@ -201,18 +202,50 @@ export default function StudentView({ clientId }) {
     if(!clientId||!client?.studentUserId)return;
     // Verificación autorizada del servidor: evita avisar de períodos ya abonados.
     void studentAlertRequest('check-renewal',clientId).catch(()=>{});
-    void studentAlertRequest('list',clientId)
-      .then(r=>setStudentUnreadCount((r.notifications||[]).filter(n=>!n.read).length))
-      .catch(()=>{});
     let disposed=false,unsubscribe=()=>{};
+    const updateCount=()=>{
+      void studentAlertRequest('list',clientId)
+        .then(r=>{if(!disposed)setStudentUnreadCount((r.notifications||[]).filter(n=>!n.read).length);})
+        .catch(()=>{});
+    };
+    updateCount();
+    const onVisible=()=>{if(!document.hidden)updateCount();};
+    document.addEventListener('visibilitychange',onVisible);
+    window.addEventListener('focus',updateCount);
     studentForegroundListener(alert=>{
       if(!disposed){
-        setStudentUnreadCount(n=>n+1);
+        updateCount();
+        setStudentAlertsRevision(value=>value+1);
         setStudentToast(alert);
       }
     }).then(off=>{if(disposed)off();else unsubscribe=off;}).catch(()=>{});
-    return ()=>{disposed=true;unsubscribe();};
+    return ()=>{
+      disposed=true;unsubscribe();
+      document.removeEventListener('visibilitychange',onVisible);
+      window.removeEventListener('focus',updateCount);
+    };
   },[clientId,client?.studentUserId]);
+
+  // Al acceder al contenido asociado a un aviso, todos los de esa categoría
+  // pasan a leídos: no hay que tocar cada notificación del mismo chat.
+  useEffect(()=>{
+    if(!client?.id)return;
+    const section=currentView==='chat'?'chat':
+      (currentView==='calendar'||currentView==='workout')&&hasPaidMonth?'calendar':
+      currentView==='profile'?'profile':null;
+    if(!section)return;
+    let active=true;
+    void studentAlertRequest('mark-section',clientId,{section})
+      .then(()=>studentAlertRequest('list',clientId))
+      .then(result=>{
+        if(active){
+          setStudentUnreadCount((result.notifications||[]).filter(n=>!n.read).length);
+          setStudentAlertsRevision(x=>x+1);
+        }
+      })
+      .catch(error=>console.warn('No se pudo sincronizar la campanita:',error?.message||error));
+    return()=>{active=false;};
+  },[clientId,client?.id,currentView,hasPaidMonth]);
 
   // --- EFECTO 1: CARGA DE DATOS Y LÓGICA DE DÍAS DE GRACIA (SINC RONIZADA CON COACH) ---
   useEffect(() => {
@@ -1117,7 +1150,7 @@ export default function StudentView({ clientId }) {
                <button onClick={() => setCurrentView('alerts')} aria-label="Mis notificaciones"
                  className="relative p-2 bg-black/5 rounded-lg">
                  <Bell size={24}/>
-                 {(studentUnreadCount+unreadCount)>0 && <span className="absolute top-0 right-0 min-w-4 h-4 px-1 bg-red-600 text-white font-black rounded-full text-[10px] border border-black flex items-center justify-center">{studentUnreadCount+unreadCount}</span>}
+                 {(studentUnreadCount>0||unreadCount>0) && <span className="absolute top-0 right-0 min-w-4 h-4 px-1 bg-red-600 text-white font-black rounded-full text-[10px] border border-black flex items-center justify-center">{studentUnreadCount||unreadCount}</span>}
                </button>
                <button onClick={() => setIsMenuOpen(true)} className="p-2 bg-black/5 rounded-lg">
                  <Menu size={28}/>
@@ -1209,6 +1242,7 @@ export default function StudentView({ clientId }) {
         {currentView==='alerts' && (
           <StudentAlertsPanel clientId={clientId}
             vapidKey={trainerSettings.webPushVapidPublicKey||''}
+            refreshSignal={studentAlertsRevision}
             onRead={setStudentUnreadCount}
             openChat={()=>setCurrentView('chat')}
             openCalendar={(sourceId)=>{
