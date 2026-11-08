@@ -17,6 +17,7 @@ import {
   getDocs 
 } from 'firebase/firestore';
 import { db } from '../firebase';
+import CoachDailyPulse from '../components/CoachDailyPulse';
 
 export default function DashboardView({ clients, settings, navigateTo }) {
   // --- ESTADOS ---
@@ -119,6 +120,8 @@ export default function DashboardView({ clients, settings, navigateTo }) {
           <Bell size={24} className="group-hover:animate-pulse"/>
         </button>
       </div>
+
+      <CoachDailyPulse clients={clients} navigateTo={navigateTo}/>
 
       {/* GRID DE MÉTRICAS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
