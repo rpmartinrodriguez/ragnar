@@ -106,6 +106,7 @@ export default function StudentView({ clientId }) {
   const [isSessionFinalized, setIsSessionFinalized] = useState(false);
   const [isFinishing, setIsFinishing] = useState(false);
   const [perceivedEffort, setPerceivedEffort] = useState('6');
+  const [recordedEffort,setRecordedEffort] = useState(null);
   const finalizingRef = useRef(false);
   const [allSessionsIds, setAllSessionsIds] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -331,15 +332,16 @@ export default function StudentView({ clientId }) {
         const data = docSnap.data();
         setDailySession(data.exercises || []);
         setIsSessionFinalized(data.isFinalized || false);
-        if(data.perceivedEffort!==undefined && data.perceivedEffort!==null){
-          setPerceivedEffort(String(data.perceivedEffort));
-        }
+        setRecordedEffort(data.perceivedEffort ?? null);
+        setPerceivedEffort(String(data.perceivedEffort ?? '6'));
         setHydration(data.hydration || '');
         setCardioMinutes(data.cardioMinutes || '');
         setCardioIntensity(data.cardioIntensity || 'Baja');
       } else {
         setDailySession([]);
         setIsSessionFinalized(false);
+        setRecordedEffort(null);
+        setPerceivedEffort('6');
         setHydration('');
         setCardioMinutes('');
         setCardioIntensity('Baja');
@@ -1462,7 +1464,7 @@ export default function StudentView({ clientId }) {
             )}
             {dailySession.length>0&&isSessionFinalized&&(
               <div className="text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 text-sm">
-                Entrenamiento finalizado · esfuerzo {perceivedEffort}/10
+                Entrenamiento finalizado {recordedEffort!==null && '· esfuerzo '+recordedEffort+'/10'}
               </div>
             )}
             {dailySession.length > 0 && !isSessionFinalized && (
