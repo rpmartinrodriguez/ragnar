@@ -140,33 +140,33 @@ button, a, input, select, textarea { touch-action: manipulation; }
   color: #a1a1aa !important;
   text-decoration: none !important;
 }
-.react-calendar__month-view__days__day--weekend {
+.react-calendar .react-calendar__month-view__days__day--weekend {
   color: #fda4af !important;
 }
-.react-calendar__month-view__days__day--neighboringMonth {
+.react-calendar .react-calendar__month-view__days__day--neighboringMonth {
   color: #71717a !important;
 }
-.react-calendar__tile--now:not(.react-calendar__tile--active) {
+.react-calendar .react-calendar__tile--now:not(.react-calendar__tile--active) {
   border: 1px solid #facc15 !important;
   background: #27272a !important;
   color: #facc15 !important;
 }
-.react-calendar__tile--active,
-.react-calendar__tile--range,
-.react-calendar__tile--rangeStart,
-.react-calendar__tile--rangeEnd,
-.react-calendar__tile--hasActive {
+.react-calendar .react-calendar__tile--active,
+.react-calendar .react-calendar__tile--range,
+.react-calendar .react-calendar__tile--rangeStart,
+.react-calendar .react-calendar__tile--rangeEnd,
+.react-calendar .react-calendar__tile--hasActive {
   background: #facc15 !important;
   color: #09090b !important;
   font-weight: 800 !important;
 }
-.react-calendar__tile--active:hover,
-.react-calendar__tile--range:hover,
-.react-calendar__tile--hasActive:hover {
+.react-calendar .react-calendar__tile--active:hover,
+.react-calendar .react-calendar__tile--range:hover,
+.react-calendar .react-calendar__tile--hasActive:hover {
   background: #fde047 !important;
   color: #09090b !important;
 }
-.react-calendar__tile--range:not(.react-calendar__tile--rangeStart):not(.react-calendar__tile--rangeEnd):not(.react-calendar__tile--active) {
+.react-calendar .react-calendar__tile--range:not(.react-calendar__tile--rangeStart):not(.react-calendar__tile--rangeEnd):not(.react-calendar__tile--active) {
   background: #713f12 !important;
   color: #fef08a !important;
 }
