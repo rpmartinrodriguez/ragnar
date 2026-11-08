@@ -100,6 +100,8 @@ export default function StudentView({ clientId }) {
   const [date, setDate] = useState(new Date());
   const [dailySession, setDailySession] = useState([]);
   const [isSessionFinalized, setIsSessionFinalized] = useState(false);
+  const [isFinishing, setIsFinishing] = useState(false);
+  const finalizingRef = useRef(false);
   const [allSessionsIds, setAllSessionsIds] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -519,8 +521,11 @@ export default function StudentView({ clientId }) {
 
   // --- MAGIA GAMIFICACIÓN: FINALIZAR SESIÓN Y EVALUAR MEDALLAS ---
   const handleFinishWorkout = async () => {
-    if (!window.confirm('¿Confirmas que has terminado el entrenamiento de hoy?')) return;
-    
+    if (isSessionFinalized || finalizingRef.current) return;
+    if (!window.confirm('¿Confirmás que terminaste el entrenamiento de hoy?')) return;
+
+    finalizingRef.current = true;
+    setIsFinishing(true);
     try {
       await updateDoc(doc(db, 'clients', clientId, 'sessions', currentDateId), { 
         isFinalized: true, 
@@ -620,8 +625,12 @@ export default function StudentView({ clientId }) {
         setShowShareModal(true);
       }
 
-    } catch (error) { 
-      console.error(error); 
+    } catch (error) {
+      console.error(error);
+      alert('No se pudo terminar la sesión. Revisá tu conexión e intentá nuevamente.');
+    } finally {
+      finalizingRef.current = false;
+      setIsFinishing(false);
     }
   };
 
@@ -1276,10 +1285,11 @@ export default function StudentView({ clientId }) {
             
             {dailySession.length > 0 && !isSessionFinalized && (
               <button 
-                onClick={handleFinishWorkout} 
-                className="w-full bg-green-500 text-black font-black py-5 mt-6 rounded-[2rem] uppercase tracking-widest shadow-lg shadow-green-500/10 transition-transform active:scale-95 flex justify-center items-center gap-2"
+                onClick={handleFinishWorkout}
+                disabled={isFinishing}
+                className="w-full bg-green-500 text-black font-black py-5 mt-6 rounded-[2rem] uppercase tracking-widest shadow-lg shadow-green-500/10 transition-transform active:scale-95 flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-wait"
               >
-                <Trophy size={20} /> Finalizar Sesión
+                <Trophy size={20} /> {isFinishing ? 'Guardando entrenamiento...' : 'Finalizar Sesión'}
               </button>
             )}
 
