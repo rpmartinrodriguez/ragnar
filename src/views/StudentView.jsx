@@ -960,7 +960,14 @@ export default function StudentView({ clientId }) {
           </div>
           
           <div className="flex flex-col gap-6 text-2xl font-black uppercase italic">
-            
+            <button onClick={()=>{setCurrentView('home');setIsMenuOpen(false);}}
+              className={`text-left flex items-center gap-3 ${currentView==='home'?'text-yellow-400':'text-zinc-300'}`}>
+              <Dumbbell size={20}/> Mi inicio
+            </button>
+            <button onClick={()=>{setCurrentView('alerts');setIsMenuOpen(false);}}
+              className={`text-left flex items-center gap-3 ${currentView==='alerts'?'text-yellow-400':'text-zinc-300'}`}>
+              <Bell size={20}/> Notificaciones {studentUnreadCount>0?'('+studentUnreadCount+')':''}
+            </button>
             <button 
               disabled={!hasPaidMonth} 
               onClick={() => { setCurrentView('calendar'); setIsMenuOpen(false); }} 
@@ -1035,9 +1042,10 @@ export default function StudentView({ clientId }) {
             </div>
             
             <div className="flex items-center gap-2">
-               <button onClick={() => setCurrentView('chat')} className="relative p-2 bg-black/5 rounded-lg">
+               <button onClick={() => setCurrentView('alerts')} aria-label="Mis notificaciones"
+                 className="relative p-2 bg-black/5 rounded-lg">
                  <Bell size={24}/>
-                 {unreadCount > 0 && <span className="absolute top-1 right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white"></span>}
+                 {(studentUnreadCount+unreadCount)>0 && <span className="absolute top-0 right-0 min-w-4 h-4 px-1 bg-red-600 text-white font-black rounded-full text-[10px] border border-black flex items-center justify-center">{studentUnreadCount+unreadCount}</span>}
                </button>
                <button onClick={() => setIsMenuOpen(true)} className="p-2 bg-black/5 rounded-lg">
                  <Menu size={28}/>
@@ -1049,7 +1057,96 @@ export default function StudentView({ clientId }) {
 
       {/* CONTENIDO PRINCIPAL DINÁMICO */}
       <main className="flex-1 max-w-2xl mx-auto w-full px-4 -mt-6 pb-40 relative z-20 flex flex-col">
-        
+
+        {currentView==='home' && (
+          <section className="space-y-4 animate-in fade-in">
+            <div className="rounded-[2rem] border border-yellow-400/30 bg-zinc-900 p-6 shadow-xl">
+              <div className="flex items-center gap-2 text-yellow-400 mb-3">
+                <Dumbbell size={22}/>
+                <span className="font-black uppercase tracking-wider text-xs">Mi entrenamiento de hoy</span>
+              </div>
+              <h2 className="text-white text-2xl font-black uppercase tracking-tight">
+                {todayWorkout ? todayWorkout.finalized?'¡Entrenamiento completado!':'Listo para entrenar' : 'Tu próxima sesión'}
+              </h2>
+              <p className="text-zinc-400 text-sm mt-2">
+                {todayWorkout
+                  ? todayWorkout.count+' ejercicios · '+todayWorkout.sets+' series planificadas'
+                  : allSessionsIds.some(id=>id>todayYmd)
+                    ? 'Próxima rutina programada: '+allSessionsIds.filter(id=>id>todayYmd).sort()[0].split('-').reverse().join('/')
+                    : 'Todavía no tenés una rutina asignada para hoy. Consultá el calendario o escribile a tu entrenador.'}
+              </p>
+              {hasPaidMonth ? (
+                <button type="button" onClick={()=>{
+                  if(todayWorkout){setDate(new Date());setCurrentView('workout');}
+                  else {setCurrentView('calendar');}
+                }} className="mt-5 w-full py-4 bg-yellow-400 text-black font-black uppercase text-xs rounded-xl flex items-center justify-center gap-2">
+                  <Dumbbell size={18}/>
+                  {todayWorkout ? todayWorkout.finalized?'Ver mi entrenamiento':'Comenzar / continuar entrenamiento':'Ver mi agenda'}
+                </button>
+              ) : (
+                <button type="button" onClick={()=>setCurrentView('profile')}
+                  className="mt-4 w-full py-3 bg-amber-500/10 border border-amber-400/30 text-amber-200 rounded-xl font-bold text-sm">
+                  Revisar mi suscripción
+                </button>
+              )}
+            </div>
+            {upcomingRenewal && upcomingRenewal.daysUntil>=0 &&
+              upcomingRenewal.daysUntil<=3 && renewalPaid===false && (
+              <div className="border border-amber-400/30 bg-amber-500/10 rounded-2xl p-4 flex items-start gap-3">
+                <Clock size={21} className="text-amber-300 shrink-0"/>
+                <div>
+                  <p className="text-amber-200 text-sm font-black">
+                    {upcomingRenewal.daysUntil===0?'Tu plan renueva hoy':
+                      'Tu plan se renueva en '+upcomingRenewal.daysUntil+' día'+(upcomingRenewal.daysUntil===1?'':'s')}
+                  </p>
+                  <p className="text-zinc-300 text-xs mt-1">
+                    Fecha base de cobro: {upcomingRenewal.dueYmd.split('-').reverse().join('/')}. Si ya abonaste, consultá al entrenador.
+                  </p>
+                </div>
+              </div>
+            )}
+            <div className="grid grid-cols-2 gap-3">
+              <button onClick={()=>setCurrentView('stats')} disabled={!hasPaidMonth}
+                className="bg-zinc-900 border border-zinc-800 text-left rounded-2xl p-4 disabled:opacity-40">
+                <TrendingUp className="text-yellow-400" size={24}/>
+                <p className="text-white font-black text-sm mt-3">Mi evolución</p>
+                <p className="text-xs text-zinc-400 mt-1">Series, cargas y progreso</p>
+              </button>
+              <button onClick={()=>setCurrentView('alerts')}
+                className="bg-zinc-900 border border-zinc-800 text-left rounded-2xl p-4">
+                <Bell className="text-yellow-400" size={24}/>
+                <p className="text-white font-black text-sm mt-3">Mis avisos</p>
+                <p className="text-xs text-zinc-400 mt-1">{studentUnreadCount} avisos pendientes</p>
+              </button>
+              <button onClick={()=>setCurrentView('chat')}
+                className="bg-zinc-900 border border-zinc-800 text-left rounded-2xl p-4">
+                <MessageSquare className="text-yellow-400" size={24}/>
+                <p className="text-white font-black text-sm mt-3">Mi entrenador</p>
+                <p className="text-xs text-zinc-400 mt-1">{unreadCount} mensajes sin leer</p>
+              </button>
+              <button onClick={()=>setCurrentView('calendar')} disabled={!hasPaidMonth}
+                className="bg-zinc-900 border border-zinc-800 text-left rounded-2xl p-4 disabled:opacity-40">
+                <CalendarIcon className="text-yellow-400" size={24}/>
+                <p className="text-white font-black text-sm mt-3">Calendario</p>
+                <p className="text-xs text-zinc-400 mt-1">Planificación de mis días</p>
+              </button>
+            </div>
+          </section>
+        )}
+
+        {currentView==='alerts' && (
+          <StudentAlertsPanel clientId={clientId}
+            vapidKey={trainerSettings.webPushVapidPublicKey||''}
+            onRead={setStudentUnreadCount}
+            openChat={()=>setCurrentView('chat')}
+            openCalendar={(sourceId)=>{
+              if(sourceId && /^\\d{4}-\\d{2}-\\d{2}$/.test(sourceId)){
+                setDate(new Date(sourceId+'T12:00:00'));
+              }
+              setCurrentView('calendar');
+            }}/>
+        )}
+
         {/* --- VISTA: CALENDARIO --- */}
         {currentView === 'calendar' && hasPaidMonth && (
           <div className="space-y-6 animate-in fade-in">
