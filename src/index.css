@@ -63,3 +63,27 @@ body {
   background-color: #facc15;
   border-radius: 50%;
 }
+
+
+/* Revisión UX: accesibilidad, navegación táctil y PWA iPhone */
+:root { color-scheme: dark; }
+html { overflow-x: hidden; }
+body { min-height: 100dvh; -webkit-tap-highlight-color: transparent; }
+button, a, input, select, textarea { touch-action: manipulation; }
+:where(button, a, input, select, textarea):focus-visible {
+  outline: 2px solid #facc15;
+  outline-offset: 3px;
+}
+@supports (padding: env(safe-area-inset-bottom)) {
+  nav.fixed.bottom-0 {
+    padding-bottom: max(1rem, env(safe-area-inset-bottom));
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
