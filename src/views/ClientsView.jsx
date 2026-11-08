@@ -159,15 +159,15 @@ export default function ClientsView({
       {/* Header con Buscador y Botón */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div>
-          <h2 className="text-2xl font-bold text-white uppercase">Mis Clientes</h2>
-          <p className="text-zinc-500 text-sm">Gestión de atletas y suscripciones.</p>
+          <h2 className="text-2xl font-black text-white uppercase">Mis Atletas</h2>
+          <p className="text-zinc-400 text-sm">Perfiles, suscripciones y estado de acceso de tus alumnos.</p>
         </div>
         <div className="flex w-full md:w-auto gap-2">
           <div className="relative flex-1 md:w-72">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500" size={18} />
             <input 
-              type="text" 
-              placeholder="Buscar atleta..." 
+              type="search" aria-label="Buscar atleta por nombre, correo o plan"
+              placeholder="Buscar nombre, correo o plan..." 
               className="pl-10 pr-4 py-3 bg-zinc-900 border border-zinc-800 rounded-xl w-full text-white placeholder:text-zinc-600 focus:outline-none focus:ring-1 focus:ring-yellow-400 focus:border-yellow-400 transition-all text-sm"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -177,19 +177,36 @@ export default function ClientsView({
             onClick={openAddModal}
             className="bg-yellow-400 hover:bg-yellow-300 text-black px-4 py-3 rounded-xl font-black uppercase text-xs flex items-center gap-2 transition-colors shadow-lg shrink-0"
           >
-            <Plus size={18}/> <span className="hidden sm:inline">Nuevo Atleta</span>
+            <Plus size={18}/> <span className="hidden sm:inline">Nuevo Atleta</span><span className="sm:hidden">Nuevo</span>
           </button>
         </div>
       </div>
 
-      {/* Grilla de Clientes */}
+      {/* Controles rápidos de gestión: sin consultar subcolecciones ni modificar datos. */}
+      <div className="flex flex-wrap items-center gap-2 mb-5" aria-label="Filtros de atletas">
+        {[
+          {id:'all',label:'Todos',count:safeClients.length},
+          {id:'active',label:'Activos',count:activeCount},
+          {id:'activated',label:'Con acceso',count:activatedCount},
+          {id:'pending',label:'Sin activar',count:safeClients.length-activatedCount},
+          {id:'archived',label:'Archivados',count:safeClients.length-activeCount}
+        ].map(option=>(
+          <button key={option.id} type="button" onClick={()=>setStatusFilter(option.id)}
+            aria-pressed={statusFilter===option.id}
+            className={`px-3 py-2 min-h-10 rounded-xl text-xs font-bold border transition-colors ${statusFilter===option.id?'bg-yellow-400 border-yellow-400 text-black':'border-zinc-700 bg-zinc-900 text-zinc-300 hover:border-yellow-400/50'}`}>
+            {option.label} <span className="ml-1 opacity-70">{option.count}</span>
+          </button>
+        ))}
+        <span className="ml-auto text-xs text-zinc-500" role="status">{filteredClients.length} mostrados</span>
+      </div>
+      {/* Grilla de atletas */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredClients.length > 0 ? (
           filteredClients.map(client => (
             <div 
               key={client.id} 
               onClick={() => { if(typeof navigateTo === 'function') navigateTo('client-detail', client) }}
-              className="bg-zinc-900 p-5 rounded-xl border border-zinc-800 hover:border-yellow-400/50 transition-all cursor-pointer group relative overflow-hidden flex flex-col justify-between"
+              className="bg-zinc-900 p-5 rounded-2xl border border-zinc-800 hover:border-yellow-400/50 focus-within:border-yellow-400/60 transition-all cursor-pointer group relative overflow-hidden flex flex-col justify-between"
             >
               <div className="absolute top-0 left-0 w-1 h-full bg-yellow-400 transform -translate-x-1 group-hover:translate-x-0 transition-transform duration-200"></div>
 
@@ -199,9 +216,14 @@ export default function ClientsView({
                 </div>
                 
                 <div className="flex flex-col items-end gap-1">
-                  <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${client.studentUserId ? 'bg-green-900/30 text-green-400 border border-green-900' : 'bg-amber-900/30 text-amber-500 border border-amber-900'}`}>
-                    {client.studentUserId ? 'UID histórico' : 'Sin UID'}
+                  <span className={`px-2 py-1 rounded text-[10px] font-bold uppercase tracking-wider ${client.accountAccessStatus==='activated' ? 'bg-emerald-500/10 text-emerald-300 border border-emerald-500/30' : 'bg-amber-500/10 text-amber-300 border border-amber-500/30'}`}>
+                    {client.accountAccessStatus==='activated' ? 'Acceso activado' : 'Acceso pendiente'}
                   </span>
+                  {client.active===false && (
+                    <span className="px-2 py-1 rounded text-[10px] font-bold uppercase bg-zinc-800 text-zinc-300 border border-zinc-700">
+                      Archivado
+                    </span>
+                  )}
                   {/* Etiqueta visible si tiene días de gracia activos */}
                   {client.graceDays > 0 && (
                     <span className="px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-widest bg-blue-500/20 text-blue-400 border border-blue-500/30 flex items-center gap-1">
@@ -211,7 +233,8 @@ export default function ClientsView({
                 </div>
               </div>
 
-              <h3 className="font-bold text-lg text-white group-hover:text-yellow-400 transition-colors mb-1">{client.name}</h3>
+              <h3 className="font-bold text-lg text-white group-hover:text-yellow-400 transition-colors mb-1 break-words">{client.name}</h3>
+              <p className="text-xs text-zinc-500 mb-3 break-all">{client.email || 'Sin correo de acceso'}</p>
               
               <div className="space-y-1 mb-4">
                 <div className="flex items-center gap-2 text-xs text-zinc-400">
@@ -247,8 +270,11 @@ export default function ClientsView({
                   <Edit size={16}/>
                 </button>
 
-                <button onClick={(e) => handleDelete(client.id, e)} className="p-2 text-zinc-400 hover:text-red-500 rounded-lg hover:bg-zinc-800 transition-colors" title="Eliminar Atleta">
-                  <Trash2 size={16}/>
+                <button type="button" onClick={(e) => handleDelete(client.id, e)}
+                  className="p-2.5 text-zinc-400 hover:text-yellow-400 rounded-lg hover:bg-zinc-800 transition-colors"
+                  title={client.active===false?'Restaurar atleta':'Archivar atleta sin perder historial'}
+                  aria-label={client.active===false?'Restaurar '+client.name:'Archivar '+client.name}>
+                  {client.active===false?<ArchiveRestore size={17}/>:<Archive size={17}/>}
                 </button>
                 
                 <div className="ml-auto text-zinc-600 group-hover:text-yellow-400 transition-colors">
@@ -260,7 +286,8 @@ export default function ClientsView({
         ) : (
           <div className="col-span-full flex flex-col items-center justify-center py-20 bg-zinc-900/30 rounded-[2rem] border border-dashed border-zinc-800">
             <User size={48} className="mb-4 opacity-20 text-zinc-500" />
-            <p className="text-zinc-500 font-bold uppercase tracking-widest text-sm">No se encontraron atletas</p>
+            <p className="text-zinc-400 font-bold uppercase tracking-widest text-sm">{safeClients.length===0?'Todavía no hay atletas':'No hay atletas con estos filtros'}</p>
+            {(searchTerm||statusFilter!=='all') && <button type="button" onClick={()=>{setSearchTerm('');setStatusFilter('all');}} className="mt-4 text-yellow-400 font-bold text-sm underline">Limpiar búsqueda y filtros</button>}
           </div>
         )}
       </div>
@@ -268,7 +295,7 @@ export default function ClientsView({
       {/* MODAL PRINCIPAL CREAR / EDITAR */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-in fade-in">
-          <div className="bg-zinc-950 w-full max-w-md rounded-[2rem] border border-zinc-800 shadow-2xl relative overflow-hidden">
+          <div role="dialog" aria-modal="true" aria-label={editingClient?'Editar atleta':'Nuevo atleta'} className="bg-zinc-950 w-full max-w-md max-h-[90dvh] overflow-y-auto rounded-[2rem] border border-zinc-800 shadow-2xl relative">
             <div className="flex justify-between items-center p-6 border-b border-zinc-800 bg-zinc-900/50">
               <h2 className="text-xl font-black text-white uppercase italic tracking-tighter flex items-center gap-2">
                 {editingClient ? 'Editar Atleta' : 'Nuevo Atleta'}
@@ -285,7 +312,12 @@ export default function ClientsView({
               </div>
               <div>
                 <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Correo Electrónico (Opcional)</label>
-                <input type="email" className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-white outline-none focus:border-yellow-400 transition-colors" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+                <input type="email" autoComplete="off" disabled={editingClient?.accountAccessStatus==='activated'}
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-white outline-none focus:border-yellow-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+                {editingClient?.accountAccessStatus==='activated' && (
+                  <p className="mt-2 text-xs text-amber-300">El correo de este atleta ya está vinculado a Firebase Authentication. Para cambiarlo necesitaremos actualizar también su cuenta de acceso.</p>
+                )}
               </div>
               <div>
                 <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Plan de Suscripción</label>
@@ -297,10 +329,11 @@ export default function ClientsView({
                 <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Fecha Base de Cobro</label>
                 <input type="date" required className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-white outline-none focus:border-yellow-400 transition-colors [color-scheme:dark]" value={formData.startDate} onChange={e => setFormData({...formData, startDate: e.target.value})} />
               </div>
+              {formError && <p role="alert" className="rounded-xl p-3 bg-red-500/10 border border-red-500/20 text-red-300 text-xs">{formError}</p>}
               <div className="pt-4 border-t border-zinc-800 flex gap-3">
                 <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-4 text-zinc-400 font-bold uppercase text-xs rounded-xl bg-black border border-zinc-800 hover:bg-zinc-900 transition-colors">Cancelar</button>
-                <button type="submit" className="flex-1 bg-yellow-400 hover:bg-yellow-300 text-black font-black py-4 rounded-xl uppercase text-xs tracking-widest transition-colors shadow-lg shadow-yellow-400/20">
-                  {editingClient ? 'Guardar Cambios' : 'Crear Atleta'}
+                <button type="submit" disabled={isSaving} className="flex-1 bg-yellow-400 hover:bg-yellow-300 text-black font-black py-4 rounded-xl uppercase text-xs tracking-widest transition-colors shadow-lg shadow-yellow-400/20 disabled:opacity-50">
+                  {isSaving ? 'Guardando...' : editingClient ? 'Guardar Cambios' : 'Crear Atleta'}
                 </button>
               </div>
             </form>
@@ -327,6 +360,7 @@ export default function ClientsView({
               </p>
 
               <form onSubmit={handleGraceSubmit}>
+                {formError && <p role="alert" className="mb-4 text-red-300 text-xs">{formError}</p>
                 <div className="mb-6 text-left">
                   <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2 text-center">
                     Días adicionales de acceso
@@ -343,8 +377,9 @@ export default function ClientsView({
                       type="number" 
                       min="0"
                       className="w-24 bg-zinc-900 border border-blue-500/30 rounded-xl p-3 text-white text-center font-black text-2xl outline-none focus:border-blue-500 transition-colors" 
-                      value={graceDays} 
-                      onChange={e => setGraceDays(parseInt(e.target.value) || 0)} 
+                      value={graceDays}
+                      max="365"
+                      onChange={e => setGraceDays(Math.max(0,Math.min(365,parseInt(e.target.value)||0)))} 
                     />
                     <button 
                       type="button"
@@ -371,10 +406,10 @@ export default function ClientsView({
                     Cancelar
                   </button>
                   <button 
-                    type="submit" 
-                    className="flex-1 bg-blue-500 hover:bg-blue-400 text-white font-black py-4 rounded-xl uppercase text-xs tracking-widest transition-colors shadow-lg shadow-blue-500/20"
+                    type="submit" disabled={isSaving}
+                    className="flex-1 bg-blue-500 hover:bg-blue-400 text-white font-black py-4 rounded-xl uppercase text-xs tracking-widest transition-colors shadow-lg shadow-blue-500/20 disabled:opacity-50"
                   >
-                    Confirmar
+                    {isSaving?'Guardando...':'Confirmar'}
                   </button>
                 </div>
               </form>
