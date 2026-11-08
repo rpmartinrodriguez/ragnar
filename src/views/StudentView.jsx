@@ -28,7 +28,8 @@ import {
   Share2, 
   Flame, 
   Award, 
-  Medal
+  Medal,
+  ShieldCheck
 } from 'lucide-react';
 import { 
   doc, 
@@ -1647,7 +1648,8 @@ export default function StudentView({ clientId }) {
 
         {/* --- VISTA: SALÓN RAGNAR --- */}
         {currentView === 'community' && hasPaidMonth && (
-          <CommunityView currentUserId={clientId} userName={client?.name} />
+          <CommunityView currentUserId={clientId} userName={client?.name}
+            onOpenProgress={()=>setCurrentView('stats')}/>
         )}
 
         {/* --- VISTA: ESTADÍSTICAS --- */}
