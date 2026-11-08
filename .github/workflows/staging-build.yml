@@ -19,12 +19,17 @@ jobs:
       - run: npm install --prefix netlify/functions --no-package-lock --no-audit --no-fund
       - run: node --input-type=module -e "await import('./netlify/functions/reset-student-password.mjs')"
       - run: node --test tests/sessionSafety.test.mjs
+      - run: node --test tests/billingCycle.test.mjs
       - run: npm run build
       - run: node --check scripts/migration/import-backup.mjs
       - run: node --check scripts/migration/create-student-auth.mjs
       - run: node --check netlify/functions/reset-student-password.mjs
       - run: node --check netlify/functions/ragnar-push.mjs
       - run: node --input-type=module -e "await import('./netlify/functions/ragnar-push.mjs')"
+      - run: node --check netlify/functions/student-alerts.mjs
+      - run: node --check netlify/functions/renewal-reminders.mjs
+      - run: node --input-type=module -e "await import('./netlify/functions/student-alerts.mjs')"
+      - run: node --input-type=module -e "await import('./netlify/functions/renewal-reminders.mjs')"
       - name: Validar archivos para Netlify
         run: |
           test -f dist/index.html
