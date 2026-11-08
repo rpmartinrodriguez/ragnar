@@ -53,7 +53,7 @@ export default function StudentFirstAccessModal({clientId,onCompleted}){
   };
 
   return(
-    <div className="fixed inset-0 z-[9000] bg-black/95 backdrop-blur-lg flex items-center justify-center p-3 sm:p-6"
+    <div className="ragnar-first-access-modal fixed inset-0 z-[9000] bg-black/95 backdrop-blur-lg flex items-center justify-center p-3 sm:p-6 overflow-y-auto overscroll-contain"
       style={{paddingTop:'max(12px, env(safe-area-inset-top))',paddingBottom:'max(12px, env(safe-area-inset-bottom))'}}>
       <div role="dialog" aria-modal="true" aria-labelledby="ragnar-first-login-title"
         className="w-full max-w-md max-h-full overflow-y-auto overscroll-contain bg-zinc-950 border border-yellow-400/50 rounded-3xl shadow-2xl p-5 sm:p-7">
@@ -93,7 +93,7 @@ export default function StudentFirstAccessModal({clientId,onCompleted}){
               </label>
               <div className="relative">
                 <input id="ragnar-new-login-password" type={show?'text':'password'}
-                  autoComplete="new-password" autoFocus required minLength={10} maxLength={128}
+                  autoComplete="new-password" required minLength={10} maxLength={128}
                   value={newPassword} onChange={e=>setNewPassword(e.target.value)}
                   className="w-full rounded-xl bg-zinc-900 border border-zinc-700 p-3 pr-12 text-base text-white outline-none focus:border-yellow-400"
                   placeholder="Elegí tu nueva clave"/>
