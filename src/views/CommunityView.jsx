@@ -40,7 +40,7 @@ export default function CommunityView({currentUserId,userName,onOpenProgress}){
 
   const weekly=useMemo(()=>posts.filter(p=>{
     const date=postTimestamp(p);
-    const id=date.toISOString().slice(0,10);
+    const id=ymdInArgentina(date);
     return !!thisWeek && id>=thisWeek.start&&id<=thisWeek.end;
   }),[posts,thisWeek?.start,thisWeek?.end]);
   const weeklyWorkouts=weekly.filter(p=>p.type==='workout_completed');
