@@ -119,6 +119,8 @@ export default function StudentView({ clientId }) {
   const [clockBusy,setClockBusy] = useState(false);
   const [clockError,setClockError] = useState('');
   const [weeklySummary,setWeeklySummary] = useState(null);
+  const [sharingBusy,setSharingBusy] = useState(false);
+  const [sharingError,setSharingError] = useState('');
   const [showWeeklySummary,setShowWeeklySummary] = useState(false);
   const finalizingRef = useRef(false);
   const [allSessionsIds, setAllSessionsIds] = useState([]);
@@ -778,11 +780,16 @@ export default function StudentView({ clientId }) {
         newMedalsUnlocked.push('cardio_king'); 
       }
 
-      await updateDoc(doc(db, 'clients', clientId), {
-          lastWorkoutDate: currentDateId,
-          currentStreak: newStreak,
-          medals: earnedMedals
-      });
+      try{
+        await updateDoc(doc(db,'clients',clientId),{
+          lastWorkoutDate:currentDateId,
+          currentStreak:newStreak,
+          medals:earnedMedals
+        });
+      }catch(error){
+        console.warn('Sesión guardada pero no se pudieron actualizar medallas:',error?.message||error);
+        newMedalsUnlocked=[];
+      }
       
       setClient(prev => ({
         ...prev,
@@ -791,24 +798,35 @@ export default function StudentView({ clientId }) {
         medals: earnedMedals
       }));
 
-      await addDoc(collection(db, 'trainerNotifications'), {
-        type: 'workout_completed', 
-        clientId: client.id, 
-        clientName: client.name, 
-        date: currentDateId, 
-        read: false, 
-        createdAt: new Date(), 
-        performance: "Entrenamiento completado"
-      });
+      try{
+        await addDoc(collection(db,'trainerNotifications'),{
+          type:'workout_completed',
+          clientId:client.id,
+          clientName:client.name,
+          date:currentDateId,
+          read:false,
+          createdAt:new Date(),
+          performance:'Entrenamiento completado'
+        });
+      }catch(error){
+        console.warn('Sesión finalizada pero no se pudo crear aviso interno:',error?.message||error);
+      }
       
-      await addDoc(collection(db, 'communityFeed'), {
-        type: 'workout_completed', 
-        userId: clientId, 
-        userName: client.name, 
-        workoutName: date.toLocaleDateString('es-ES', { weekday: 'long' }), 
-        createdAt: new Date(), 
-        reactions: { fire: [], power: [] }
-      });
+      // La publicación comunitaria es independiente del guardado de la sesión.
+      // Respetar preferencia de privacidad y usar un ID fijo por atleta+día.
+      if(client.shareWorkoutsToSalon!==false){
+        try{
+          const postRef=doc(db,'communityFeed',clientId+'_'+currentDateId);
+          await setDoc(postRef,{
+            type:'workout_completed',
+            userId:clientId,
+            userName:client.name,
+            workoutName:date.toLocaleDateString('es-ES',{weekday:'long'}),
+            createdAt:new Date(),
+            reactions:{fire:[],power:[]}
+          },{merge:true});
+        }catch(error){console.warn('Sesión guardada; no se pudo publicar en el Salón:',error?.message||error);}
+      }
 
       // Solo tras guardar sesión enviamos un aviso externo. Un error de push
       // no modifica el resultado del entrenamiento.
@@ -883,6 +901,17 @@ export default function StudentView({ clientId }) {
     } catch (error) {
       console.error(error);
     }
+  };
+
+  const toggleSalonSharing=async()=>{
+    if(sharingBusy||!clientId)return;
+    const next=client?.shareWorkoutsToSalon===false;
+    setSharingBusy(true);setSharingError('');
+    try{
+      await updateDoc(doc(db,'clients',clientId),{shareWorkoutsToSalon:next});
+      setClient(prev=>prev?{...prev,shareWorkoutsToSalon:next}:prev);
+    }catch(error){setSharingError('No se pudo cambiar la privacidad: '+(error?.message||'revisá tu conexión'));}
+    finally{setSharingBusy(false);}
   };
 
   const handleLogout = async () => { 
@@ -1746,6 +1775,20 @@ export default function StudentView({ clientId }) {
                </div>
              </div>
              
+             <section className="bg-zinc-900 rounded-[2rem] p-5 sm:p-6 border border-zinc-800 space-y-3">
+               <h3 className="text-white font-black uppercase text-sm flex items-center gap-2">
+                 <ShieldCheck size={19} className="text-yellow-400"/> Mi privacidad en el Salón
+               </h3>
+               <label className="flex items-center gap-3 text-zinc-200 text-sm cursor-pointer">
+                 <input type="checkbox" checked={client?.shareWorkoutsToSalon!==false}
+                   disabled={sharingBusy} onChange={toggleSalonSharing}
+                   className="w-5 h-5 shrink-0 accent-yellow-400"/>
+                 Compartir mis rutinas finalizadas en el Salón Ragnar
+               </label>
+               <p className="text-zinc-500 text-xs">Al desactivarlo, las nuevas rutinas finalizadas no se publicarán en el muro. No cambia tus sesiones privadas ni borra publicaciones antiguas.</p>
+               {sharingError&&<p role="alert" className="text-red-300 text-xs">{sharingError}</p>}
+             </section>
+
              <StudentChangePassword />
 
              <button 
