@@ -1,9 +1,10 @@
 import React,{useEffect,useMemo,useState} from 'react';
 import {collection,onSnapshot} from 'firebase/firestore';
 import {db} from '../firebase';
-import {Activity,ArrowUpRight,CalendarCheck,Clock,Dumbbell,Info,TrendingUp} from 'lucide-react';
+import {Activity,ArrowUpRight,CalendarCheck,Clock,Dumbbell,Info,TrendingUp,CalendarDays} from 'lucide-react';
+import WeeklyRecap from './WeeklyRecap';
 import {regionOfExercise,regionLabels,groupProgress,exerciseHistorySeries,
-  weeklyInsights,dateKey} from '../utils/trainingInsights';
+  weeklyInsights,dateKey,isFridayFinalSession} from '../utils/trainingInsights';
 import {ymdInArgentina} from '../utils/billingCycle';
 
 const REGIONS=['all','upper','lower','core','cardio'];
@@ -15,6 +16,7 @@ export default function ProgressChart({clientId}){
   const [selectedExercise,setSelectedExercise]=useState('');
   const [loading,setLoading]=useState(true);
   const [error,setError]=useState('');
+  const [showWeeklyRecap,setShowWeeklyRecap]=useState(false);
   const today=ymdInArgentina();
 
   useEffect(()=>{
@@ -30,6 +32,14 @@ export default function ProgressChart({clientId}){
 
   const progress=useMemo(()=>groupProgress(sessions,today,region),[sessions,today,region]);
   const week=progress.insight;
+  const lastFriday=useMemo(()=>{
+    const ids=sessions.filter(s=>Array.isArray(s.exercises)&&s.exercises.length)
+      .map(dateKey);
+    return sessions.filter(s=>s.isFinalized===true&&isFridayFinalSession(dateKey(s),ids))
+      .map(dateKey).sort().at(-1)||null;
+  },[sessions]);
+  const lastFridaySummary=useMemo(()=>lastFriday
+    ?weeklyInsights(sessions,lastFriday):null,[sessions,lastFriday]);
   const options=progress.exerciseNames;
   useEffect(()=>{
     if(!options.includes(selectedExercise))setSelectedExercise(options[0]||'');
@@ -101,6 +111,22 @@ export default function ProgressChart({clientId}){
               </div>
             ):<p className="text-zinc-500 text-xs">Las mejoras de carga aparecen cuando hay series comparables con la semana anterior.</p>}
           </div>}
+
+          {lastFridaySummary&&(
+            <div className="rounded-2xl border border-yellow-400/20 bg-yellow-400/5 p-4 space-y-3">
+              <button type="button" onClick={()=>setShowWeeklyRecap(v=>!v)}
+                className="w-full text-left flex items-center justify-between gap-3">
+                <span className="flex items-center gap-2 font-black uppercase text-yellow-300 text-xs">
+                  <CalendarDays size={19}/> {showWeeklyRecap?'Ocultar resumen del viernes':'Ver mi último cierre semanal'}
+                </span>
+                <span className="text-zinc-400 text-xs">
+                  {lastFriday.split('-').reverse().join('/')}
+                </span>
+              </button>
+              {showWeeklyRecap&&<WeeklyRecap summary={lastFridaySummary}
+                onClose={()=>setShowWeeklyRecap(false)}/>}
+            </div>
+          )}
 
           <div className="rounded-3xl bg-zinc-900 border border-zinc-800 p-4 sm:p-6">
             <p className="font-black uppercase text-white text-sm">Mi fuerza por ejercicio</p>
