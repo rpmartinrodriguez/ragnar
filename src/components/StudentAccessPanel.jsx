@@ -47,10 +47,10 @@ export default function StudentAccessPanel({ clients = [], onOpenClients }) {
     if (!issued) return;
     const text = 'RAGNAR TRAINING\n' +
       'Alumno: ' + issued.name + '\n' +
-      'Ingresá desde: https://ragnar-entrenamienrto.netlify.app/\n' +
+      'Ingresá desde: ' + window.location.origin + '/\n' +
       'Usuario: ' + issued.email + '\n' +
       'Contraseña temporal: ' + issued.password + '\n\n' +
-      'Importante: el enlace definitivo se habilitará al finalizar las pruebas. ' +
+      'Este es el enlace de PRUEBA; no instales todavía la PWA definitiva. ' +
       'No uses la aplicación antigua. Cambiá la clave desde Mi Perfil una vez que entres.';
     try {
       await navigator.clipboard.writeText(text);
@@ -146,7 +146,7 @@ export default function StudentAccessPanel({ clients = [], onOpenClients }) {
               {copied ? <Check size={18}/> : <Copy size={18}/>}
               {copied ? 'Credenciales copiadas' : 'Copiar usuario y contraseña'}
             </button>
-            <p className="text-xs text-zinc-400">La contraseña no se almacena en Ragnar ni se puede volver a visualizar. Pasala directamente al alumno y pedile que la cambie desde su perfil. El enlace que se copia corresponde a la app definitiva, que todavía está en pruebas.</p>
+            <p className="text-xs text-zinc-400">La contraseña no se almacena en Ragnar ni se puede volver a visualizar. Pasala directamente al alumno y pedile que la cambie desde su perfil. El enlace que se copia corresponde a ESTA versión de prueba; no lo compartas masivamente ni pidas instalar la PWA hasta validar y publicar la versión definitiva.</p>
           </div>
         </div>
       )}
