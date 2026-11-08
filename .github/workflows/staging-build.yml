@@ -18,6 +18,7 @@ jobs:
       - run: npm ci
       - run: npm install --prefix netlify/functions --no-package-lock --no-audit --no-fund
       - run: node --input-type=module -e "await import('./netlify/functions/reset-student-password.mjs')"
+      - run: node --test tests/sessionSafety.test.mjs
       - run: npm run build
       - run: node --check scripts/migration/import-backup.mjs
       - run: node --check scripts/migration/create-student-auth.mjs
