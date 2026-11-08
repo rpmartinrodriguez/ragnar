@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { Check, Copy, KeyRound, Search, ShieldCheck, ShieldAlert, Users, UserPlus, X } from 'lucide-react';
 import { activateStudentAccount } from '../utils/activateStudentAccount';
+import { getAuth } from 'firebase/auth';
 
 function hasEmail(email) {
   return typeof email === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
@@ -38,6 +39,54 @@ export default function StudentAccessPanel({ clients = [], onOpenClients }) {
       setCopied(false);
     } catch (error) {
       setNotice({ id: client.id, success: false, text: error?.message || 'No se pudo activar la cuenta.' });
+    } finally {
+      setBusy(null);
+    }
+  };
+
+  const resetPassword = async (client) => {
+    if (issued || busy) return;
+    if (!window.confirm(
+      '¿Querés generar otra contraseña temporal para ' + (client.name || 'este alumno') +
+      '?\n\nLa contraseña anterior dejará de servir. No se creará otra cuenta ni se alterará su historial.'
+    )) return;
+    setBusy(client.id);
+    setNotice(null);
+    try {
+      const auth = getAuth();
+      if (auth.app.options.projectId !== 'ragnar-5f8d7' || !auth.currentUser) {
+        throw new Error('Iniciá sesión en Ragnar de prueba con tu usuario entrenador.');
+      }
+      const bearer = await auth.currentUser.getIdToken(true);
+      const response = await fetch('/.netlify/functions/reset-student-password', {
+        method: 'POST',
+        headers: {
+          'content-type': 'application/json',
+          authorization: 'Bearer ' + bearer
+        },
+        cache: 'no-store',
+        body: JSON.stringify({clientId:client.id})
+      });
+      let result;
+      try { result = await response.json(); }
+      catch {
+        throw new Error('La función de recuperación no respondió correctamente. Revisá el deploy de Netlify.');
+      }
+      if (!response.ok || !result?.success || !result?.password) {
+        throw new Error(result?.error || 'No fue posible generar otra contraseña.');
+      }
+      setIssued({
+        ...result,
+        name: client.name || 'Alumno',
+        mode: 'reset'
+      });
+      setCopied(false);
+    } catch (error) {
+      setNotice({
+        id: client.id,
+        success:false,
+        text: error?.message || 'No se pudo restablecer la contraseña.'
+      });
     } finally {
       setBusy(null);
     }
@@ -111,7 +160,15 @@ export default function StudentAccessPanel({ clients = [], onOpenClients }) {
                 </button>
               )}
               {!valid && <p className="text-xs text-amber-300">Este alumno necesita una dirección de acceso válida y única. Editala en Mis Atletas.</p>}
-              {activated && <p className="text-xs text-zinc-400">Su cuenta quedó vinculada a esta ficha. El coach no puede ver ni recuperar la contraseña actual.</p>}
+              {activated && (
+                <div className="space-y-2">
+                  <p className="text-xs text-zinc-400">La ficha está vinculada a un UID nuevo, pero eso no garantiza que la última clave copiada sea correcta. Podés generar otra clave temporal sin perder el historial.</p>
+                  <button type="button" disabled={!!busy || !!issued} onClick={() => resetPassword(client)}
+                    className="inline-flex items-center gap-2 px-4 py-3 rounded-lg border border-yellow-400/30 text-yellow-300 text-xs font-black hover:bg-yellow-400/10 disabled:opacity-40">
+                    <KeyRound size={16}/>{busy === client.id ? 'Restableciendo...' : 'Generar otra contraseña temporal'}
+                  </button>
+                </div>
+              )}
               {notice?.id === client.id && <p role="status" className={'text-xs p-3 rounded-lg ' + (notice.success ? 'bg-emerald-500/10 text-emerald-300' : 'bg-red-500/10 text-red-300')}>{notice.text}</p>}
             </div>
           );
@@ -124,14 +181,14 @@ export default function StudentAccessPanel({ clients = [], onOpenClients }) {
           <div role="dialog" aria-modal="true" aria-label="Credenciales de alumno" className="max-w-lg w-full bg-zinc-950 border border-yellow-400/40 shadow-2xl rounded-2xl p-5 sm:p-7 space-y-4">
             <div className="flex items-start justify-between gap-3">
               <div>
-                <h3 className="text-xl font-black text-yellow-400">¡Alumno activado!</h3>
+                <h3 className="text-xl font-black text-yellow-400">{issued.mode === 'reset' ? '¡Nueva clave generada!' : '¡Alumno activado!'}</h3>
                 <p className="text-sm text-zinc-300">{issued.name}</p>
               </div>
               <button type="button" onClick={() => {
                 if (window.confirm('La contraseña se perderá al cerrar esta ventana. ¿Ya la copiaste y guardaste en un lugar seguro?')) setIssued(null);
               }} className="p-2 text-zinc-400" title="Cerrar"><X size={20}/></button>
             </div>
-            <p className="text-sm text-emerald-300">La ficha y todo el historial permanecen intactos. La cuenta nueva ya quedó vinculada al alumno.</p>
+            <p className="text-sm text-emerald-300">{issued.mode === 'reset' ? 'La contraseña anterior dejó de funcionar. La ficha y su historial no cambiaron.' : 'La ficha y todo el historial permanecen intactos. La cuenta nueva ya quedó vinculada al alumno.'}</p>
             <div className="space-y-2 text-sm">
               <div className="rounded-xl border border-zinc-800 bg-black p-3">
                 <p className="text-xs text-zinc-500">Usuario</p>
