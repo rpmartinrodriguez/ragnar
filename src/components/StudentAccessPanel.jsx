@@ -1,6 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { Check, Copy, KeyRound, Mail, Search, ShieldAlert, Users } from 'lucide-react';
-import { getAuth, sendPasswordResetEmail } from 'firebase/auth';
+import { Check, Copy, KeyRound, Search, ShieldCheck, ShieldAlert, Users, UserPlus, X } from 'lucide-react';
+import { activateStudentAccount } from '../utils/activateStudentAccount';
 
 function hasEmail(email) {
   return typeof email === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
@@ -8,9 +8,10 @@ function hasEmail(email) {
 
 export default function StudentAccessPanel({ clients = [], onOpenClients }) {
   const [search, setSearch] = useState('');
-  const [sending, setSending] = useState(null);
+  const [busy, setBusy] = useState(null);
   const [notice, setNotice] = useState(null);
-  const [copied, setCopied] = useState(null);
+  const [issued, setIssued] = useState(null);
+  const [copied, setCopied] = useState(false);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -23,47 +24,40 @@ export default function StudentAccessPanel({ clients = [], onOpenClients }) {
     );
   }, [clients, search]);
 
-  const copyEmail = async (client) => {
+  const activate = async (client) => {
+    if (issued || busy) return;
+    if (!window.confirm(
+      '¿Crear un acceso NUEVO para ' + (client.name || 'este alumno') +
+      '?\n\nSe generará un UID nuevo, pero mantendremos exactamente la misma ficha, sesiones, mensajes y pagos. La contraseña temporal solo se mostrará una vez. Primero probá con un único alumno.'
+    )) return;
+    setBusy(client.id);
+    setNotice(null);
     try {
-      await navigator.clipboard.writeText(client.email.trim());
-      setCopied(client.id);
-      setNotice({ id: client.id, success: true, text: 'Correo copiado para compartir información de acceso.' });
-    } catch {
-      setNotice({ id: client.id, success: false, text: 'No pude copiar automáticamente. Seleccioná el correo para copiarlo.' });
+      const result = await activateStudentAccount(client);
+      setIssued({ ...result, name: client.name || 'Alumno' });
+      setCopied(false);
+    } catch (error) {
+      setNotice({ id: client.id, success: false, text: error?.message || 'No se pudo activar la cuenta.' });
+    } finally {
+      setBusy(null);
     }
   };
 
-  const requestReset = async (client) => {
-    const email = String(client.email || '').trim();
-    if (!hasEmail(email)) {
-      setNotice({ id: client.id, success: false, text: 'La ficha no tiene un correo válido. Corregilo primero en Mis Atletas.' });
-      return;
-    }
-    if (!window.confirm('¿Solicitar a Firebase un enlace de restablecimiento para ' + client.name + ' (' + email + ')? El correo llegará directamente al alumno, si tiene una cuenta en Authentication del Firebase nuevo.')) return;
-
-    setNotice(null);
-    setSending(client.id);
+  const copyCredentials = async () => {
+    if (!issued) return;
+    const text = 'RAGNAR TRAINING\n' +
+      'Alumno: ' + issued.name + '\n' +
+      'Ingresá desde: https://ragnar-entrenamienrto.netlify.app/\n' +
+      'Usuario: ' + issued.email + '\n' +
+      'Contraseña temporal: ' + issued.password + '\n\n' +
+      'Importante: el enlace definitivo se habilitará al finalizar las pruebas. ' +
+      'No uses la aplicación antigua. Cambiá la clave desde Mi Perfil una vez que entres.';
     try {
-      const auth = getAuth();
-      // Nunca modificar la contraseña del entrenador ni recibir contraseñas del alumno.
-      if (auth.app.options.projectId !== 'ragnar-5f8d7') {
-        throw new Error('La app no está conectada al Firebase nuevo. Operación cancelada.');
-      }
-      auth.languageCode = 'es';
-      await sendPasswordResetEmail(auth, email);
-      setNotice({
-        id: client.id, success: true,
-        text: 'Firebase procesó la solicitud. Si esta cuenta existe en Authentication, enviará un enlace al correo del alumno. Esto NO verifica que el mensaje se haya recibido.'
-      });
+      await navigator.clipboard.writeText(text);
+      setCopied(true);
     } catch (error) {
-      const reason = error?.code === 'auth/too-many-requests'
-        ? 'Se alcanzó el límite de solicitudes. Probá más tarde.'
-        : error?.code === 'auth/invalid-email'
-          ? 'El correo no es válido.'
-          : 'No se pudo solicitar el restablecimiento: ' + (error?.code || error?.message || 'error');
-      setNotice({ id: client.id, success: false, text: reason });
-    } finally {
-      setSending(null);
+      setCopied(false);
+      setNotice({ id: issued.clientId, success: false, text: 'No se pudieron copiar automáticamente las credenciales; copialas manualmente antes de cerrar.' });
     }
   };
 
@@ -71,17 +65,17 @@ export default function StudentAccessPanel({ clients = [], onOpenClients }) {
     <section className="max-w-5xl mx-auto space-y-5 pb-20">
       <div>
         <h2 className="text-2xl font-black uppercase text-white flex items-center gap-3"><Users size={25} className="text-yellow-400"/> Accesos de alumnos</h2>
-        <p className="text-sm text-zinc-400 mt-2">Gestioná cómo recuperan su acceso al nuevo Ragnar. No se consultan ni almacenan contraseñas.</p>
+        <p className="text-sm text-zinc-400 mt-2">Activá alumnos en el Firebase nuevo conservando su ficha e historial original.</p>
       </div>
 
       <div className="border border-yellow-400/30 bg-zinc-900 rounded-2xl p-4 text-sm text-zinc-300 space-y-2">
-        <p className="text-yellow-300 font-bold flex gap-2 items-center"><ShieldAlert size={18}/> Migración de cuentas</p>
-        <p>El UID que aparece en la ficha es un dato recuperado de Firestore, <strong>no confirma que la cuenta de Authentication exista en el Firebase nuevo</strong>. Primero hay que recrear o vincular las cuentas de los alumnos.</p>
-        <p>Firebase no permite ver contraseñas anteriores. El entrenador puede enviar un correo de restablecimiento; cada alumno define su contraseña de manera privada.</p>
+        <p className="text-yellow-300 font-bold flex gap-2 items-center"><ShieldCheck size={18}/> Activación sin perder entrenamientos</p>
+        <p>Para cada alumno creamos un usuario de Authentication nuevo y asociamos su UID a la misma ficha Firestore. <strong>No modificamos el ID de la ficha, las sesiones, los pagos ni los mensajes anteriores.</strong> El UID original se conserva como «UID histórico».</p>
+        <p>El correo de acceso puede ser una dirección ficticia válida y única, pero no recibirá emails de recuperación. La contraseña temporal solo se muestra una vez. Si se pierde, necesitaremos la recuperación administrativa segura.</p>
+        <p className="text-amber-300 text-xs font-bold flex gap-2 items-start"><ShieldAlert size={16}/> Por ahora activá solamente un alumno de prueba, de quien tengas autorización. No envíes credenciales a todos hasta validar el ingreso y publicar la versión definitiva.</p>
         <button type="button" onClick={onOpenClients} className="text-yellow-300 font-bold hover:underline text-sm">
-          Ir a Mis Atletas para editar las fichas
+          Ir a Mis Atletas para editar correos
         </button>
-        <p className="text-xs text-zinc-500">Editar el correo de una ficha no cambia automáticamente el correo de Firebase Authentication.</p>
       </div>
 
       <div className="flex items-center gap-3 rounded-xl border border-zinc-800 bg-zinc-950 px-4 py-3">
@@ -93,33 +87,69 @@ export default function StudentAccessPanel({ clients = [], onOpenClients }) {
       <div className="space-y-3">
         {filtered.map(client => {
           const valid = hasEmail(client.email);
-          const uid = typeof client.studentUserId === 'string' && client.studentUserId.trim() ? client.studentUserId : null;
+          const activated = client.accountAccessStatus === 'activated';
+          const oldUid = client.legacyStudentUserId || (!activated ? client.studentUserId : null);
           return (
             <div key={client.id} className="bg-zinc-900 border border-zinc-800 rounded-xl p-4 space-y-3">
               <div className="flex items-start justify-between gap-2 flex-wrap">
                 <div className="min-w-0">
                   <p className="text-white font-bold text-base">{client.name || 'Alumno sin nombre'}</p>
                   <p className="text-sm text-zinc-300 break-all">{client.email || 'Sin correo registrado'}</p>
-                  <p className="text-xs text-zinc-500 mt-1">{uid ? 'UID antiguo en ficha: ' + uid : 'Sin UID de alumno en la ficha'}</p>
+                  {oldUid && <p className="text-xs text-zinc-500 mt-1 break-all">UID histórico: {oldUid}</p>}
                 </div>
-                <span className={uid ? 'text-amber-300 bg-amber-500/10 border border-amber-500/20 text-xs rounded-full px-3 py-1' : 'text-zinc-400 border border-zinc-700 rounded-full text-xs px-3 py-1'}>
-                  {uid ? 'Autenticación pendiente de verificar' : 'Vinculación pendiente'}
+                <span className={activated
+                  ? 'text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 text-xs rounded-full px-3 py-1'
+                  : 'text-amber-300 bg-amber-500/10 border border-amber-500/20 text-xs rounded-full px-3 py-1'}>
+                  {activated ? 'Activado en Ragnar nuevo' : 'Pendiente de activar'}
                 </span>
               </div>
-              <div className="flex gap-2 flex-wrap">
-                <button disabled={!valid || !!sending} type="button" onClick={()=>requestReset(client)} className="inline-flex items-center gap-2 px-3 py-2 bg-yellow-400 text-black rounded-lg text-xs font-bold hover:bg-yellow-300 disabled:opacity-40">
-                  <KeyRound size={15}/> {sending === client.id ? 'Solicitando...' : 'Enviar recuperación de contraseña'}
+
+              {!activated && (
+                <button disabled={!valid || !!busy || !!issued} type="button" onClick={() => activate(client)}
+                  className="inline-flex items-center gap-2 px-4 py-3 bg-yellow-400 text-black rounded-lg text-xs font-black hover:bg-yellow-300 disabled:opacity-40">
+                  <UserPlus size={16}/> {busy === client.id ? 'Creando cuenta...' : 'Activar cuenta y generar clave temporal'}
                 </button>
-                <button disabled={!valid || !!sending} type="button" onClick={()=>copyEmail(client)} className="inline-flex items-center gap-2 rounded-lg border border-zinc-600 text-zinc-200 px-3 py-2 text-xs hover:bg-zinc-800 disabled:opacity-40">
-                  {copied === client.id ? <Check size={15}/> : <Copy size={15}/>} Copiar correo
-                </button>
-              </div>
+              )}
+              {!valid && <p className="text-xs text-amber-300">Este alumno necesita una dirección de acceso válida y única. Editala en Mis Atletas.</p>}
+              {activated && <p className="text-xs text-zinc-400">Su cuenta quedó vinculada a esta ficha. El coach no puede ver ni recuperar la contraseña actual.</p>}
               {notice?.id === client.id && <p role="status" className={'text-xs p-3 rounded-lg ' + (notice.success ? 'bg-emerald-500/10 text-emerald-300' : 'bg-red-500/10 text-red-300')}>{notice.text}</p>}
             </div>
           );
         })}
         {filtered.length === 0 && <p className="text-center text-zinc-500 rounded-xl border border-zinc-800 p-8">No se encontraron alumnos con ese filtro.</p>}
       </div>
+
+      {issued && (
+        <div className="fixed inset-0 z-[100] bg-black/90 backdrop-blur-sm flex items-center justify-center p-4">
+          <div role="dialog" aria-modal="true" aria-label="Credenciales de alumno" className="max-w-lg w-full bg-zinc-950 border border-yellow-400/40 shadow-2xl rounded-2xl p-5 sm:p-7 space-y-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-xl font-black text-yellow-400">¡Alumno activado!</h3>
+                <p className="text-sm text-zinc-300">{issued.name}</p>
+              </div>
+              <button type="button" onClick={() => {
+                if (window.confirm('La contraseña se perderá al cerrar esta ventana. ¿Ya la copiaste y guardaste en un lugar seguro?')) setIssued(null);
+              }} className="p-2 text-zinc-400" title="Cerrar"><X size={20}/></button>
+            </div>
+            <p className="text-sm text-emerald-300">La ficha y todo el historial permanecen intactos. La cuenta nueva ya quedó vinculada al alumno.</p>
+            <div className="space-y-2 text-sm">
+              <div className="rounded-xl border border-zinc-800 bg-black p-3">
+                <p className="text-xs text-zinc-500">Usuario</p>
+                <p className="font-mono select-all break-all text-white">{issued.email}</p>
+              </div>
+              <div className="rounded-xl border border-zinc-800 bg-black p-3">
+                <p className="text-xs text-zinc-500">Contraseña temporal · mostrar una sola vez</p>
+                <p className="font-mono select-all break-all text-white text-lg tracking-wider">{issued.password}</p>
+              </div>
+            </div>
+            <button onClick={copyCredentials} type="button" className="w-full flex justify-center items-center gap-2 rounded-xl py-3 bg-yellow-400 text-black font-black">
+              {copied ? <Check size={18}/> : <Copy size={18}/>}
+              {copied ? 'Credenciales copiadas' : 'Copiar usuario y contraseña'}
+            </button>
+            <p className="text-xs text-zinc-400">La contraseña no se almacena en Ragnar ni se puede volver a visualizar. Pasala directamente al alumno y pedile que la cambie desde su perfil. El enlace que se copia corresponde a la app definitiva, que todavía está en pruebas.</p>
+          </div>
+        </div>
+      )}
     </section>
   );
 }
