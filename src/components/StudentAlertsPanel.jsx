@@ -38,6 +38,15 @@ export default function StudentAlertsPanel({clientId,vapidKey,onRead,openChat,op
   },[clientId,vapidKey,onRead]);
 
   useEffect(()=>{void refresh();},[refresh,refreshSignal]);
+  // Limpiar avisos de pruebas históricas (versiones anteriores los dejaban
+  // como no leídos) sin borrar el registro de entrega.
+  useEffect(()=>{
+    let alive=true;
+    void studentAlertRequest('mark-section',clientId,{section:'test'})
+      .then(result=>{if(alive&&result.updated>0)void refresh();})
+      .catch(()=>{});
+    return()=>{alive=false;};
+  },[clientId,refresh]);
   useEffect(()=>{
     const verify=async()=>{
       if(document.hidden)return;
