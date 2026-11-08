@@ -259,14 +259,15 @@ export default function App() {
     }
 
     return (
-      <div className="flex h-screen bg-black text-zinc-100 font-sans overflow-hidden">
+      <div className="ragnar-coach-shell flex w-full max-w-full min-w-0 h-[100dvh] min-h-0 bg-black text-zinc-100 font-sans overflow-hidden">
         <ConnectionBanner/>
         <div className="hidden md:block">
           <Sidebar activeView={activeView} navigateTo={navigateTo} notificationCount={unreadCount} />
         </div>
         
         {isMobileMenuOpen && (
-          <div className="fixed inset-0 z-50 bg-black/95 md:hidden flex flex-col animate-in fade-in backdrop-blur-sm">
+          <div className="fixed inset-0 z-50 bg-black/95 md:hidden flex flex-col min-h-0 overflow-hidden animate-in fade-in backdrop-blur-sm"
+            style={{paddingTop:'env(safe-area-inset-top)',paddingBottom:'env(safe-area-inset-bottom)'}}> 
             <div className="p-4 flex justify-between items-center border-b border-zinc-800 shrink-0">
               <h2 className="text-white font-bold text-xl uppercase tracking-tighter">Menú</h2>
               <button onClick={() => setIsMobileMenuOpen(false)} className="text-zinc-400 p-2"><X size={24} /></button>
@@ -293,18 +294,20 @@ export default function App() {
           </div>
         )}
 
-        <main className="flex-1 flex flex-col h-full overflow-hidden relative bg-black">
-          <header className="md:hidden flex items-center justify-between p-4 bg-zinc-950 border-b border-zinc-800 shadow-xl">
-            <div className="flex items-center gap-2">
-               <span className="font-black italic text-lg tracking-tighter"><span className="text-yellow-400">RAGNAR</span><span className="text-white">-TRAINING</span></span>
+        <main className="min-w-0 min-h-0 flex-1 flex flex-col h-full overflow-hidden relative bg-black">
+          <header className="md:hidden shrink-0 min-w-0 flex items-center justify-between gap-2 px-3 py-3 bg-zinc-950 border-b border-zinc-800 shadow-xl"
+            style={{paddingTop:'max(12px, env(safe-area-inset-top))'}}> 
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+               <span className="font-black italic text-base sm:text-lg tracking-tighter truncate"><span className="text-yellow-400">RAGNAR</span><span className="text-white hidden min-[375px]:inline">-TRAINING</span></span>
             </div>
-            <div className="flex items-center gap-1">
-               <button onClick={() => navigateTo('notifications')} className="relative p-2 text-zinc-400"><Bell size={24}/>{unreadCount > 0 && <span className="absolute top-1 right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-black"></span>}</button>
+            <div className="flex items-center gap-1 shrink-0">
+               <button onClick={() => navigateTo('notifications')> className="relative p-2 text-zinc-400"><Bell size={24}/>{unreadCount > 0 && <span className="absolute top-1 right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-black"></span>}</button>
                <button onClick={() => setIsMobileMenuOpen(true)} className="p-2 text-zinc-400"><Menu size={24} /></button>
             </div>
           </header>
 
-          <div className="flex-1 overflow-y-auto p-4 md:p-8 no-scrollbar">
+          <div className="ragnar-coach-content flex-1 min-h-0 min-w-0 max-w-full overflow-y-auto overflow-x-hidden overscroll-contain p-3 sm:p-4 md:p-8 no-scrollbar"
+            style={{WebkitOverflowScrolling:'touch',paddingBottom:'max(20px, env(safe-area-inset-bottom))'}}> 
             {activeView === 'dashboard' && <DashboardView clients={clients} settings={settings} navigateTo={navigateTo} onAddClient={handleAddClient} />}
             {activeView === 'notifications' && <NotificationsView navigateTo={navigateTo} clients={clients} />}
             {activeView === 'clients' && <ClientsView clients={clients} settings={settings} routines={routines} navigateTo={navigateTo} onAddClient={handleAddClient} onUpdateClient={handleUpdateClientData} onDeleteClient={handleDeleteClient} />}
