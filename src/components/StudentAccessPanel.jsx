@@ -13,6 +13,7 @@ export default function StudentAccessPanel({ clients = [], onOpenClients }) {
   const [notice, setNotice] = useState(null);
   const [issued, setIssued] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [copiedPassword, setCopiedPassword] = useState(false);
 
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -37,6 +38,7 @@ export default function StudentAccessPanel({ clients = [], onOpenClients }) {
       const result = await activateStudentAccount(client);
       setIssued({ ...result, name: client.name || 'Alumno' });
       setCopied(false);
+      setCopiedPassword(false);
     } catch (error) {
       setNotice({ id: client.id, success: false, text: error?.message || 'No se pudo activar la cuenta.' });
     } finally {
@@ -81,6 +83,7 @@ export default function StudentAccessPanel({ clients = [], onOpenClients }) {
         mode: 'reset'
       });
       setCopied(false);
+      setCopiedPassword(false);
     } catch (error) {
       setNotice({
         id: client.id,
@@ -89,6 +92,16 @@ export default function StudentAccessPanel({ clients = [], onOpenClients }) {
       });
     } finally {
       setBusy(null);
+    }
+  };
+
+  const copyPasswordOnly = async () => {
+    if (!issued) return;
+    try {
+      await navigator.clipboard.writeText(issued.password);
+      setCopiedPassword(true);
+    } catch {
+      setNotice({ id: issued.clientId, success: false, text: 'No se pudo copiar automáticamente la contraseña. Seleccioná solo el texto de la clave.' });
     }
   };
 
@@ -106,6 +119,7 @@ export default function StudentAccessPanel({ clients = [], onOpenClients }) {
       setCopied(true);
     } catch (error) {
       setCopied(false);
+      setCopiedPassword(false);
       setNotice({ id: issued.clientId, success: false, text: 'No se pudieron copiar automáticamente las credenciales; copialas manualmente antes de cerrar.' });
     }
   };
@@ -199,10 +213,16 @@ export default function StudentAccessPanel({ clients = [], onOpenClients }) {
                 <p className="font-mono select-all break-all text-white text-lg tracking-wider">{issued.password}</p>
               </div>
             </div>
-            <button onClick={copyCredentials} type="button" className="w-full flex justify-center items-center gap-2 rounded-xl py-3 bg-yellow-400 text-black font-black">
-              {copied ? <Check size={18}/> : <Copy size={18}/>}
-              {copied ? 'Credenciales copiadas' : 'Copiar usuario y contraseña'}
-            </button>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <button onClick={copyPasswordOnly} type="button" className="w-full flex justify-center items-center gap-2 rounded-xl py-3 bg-yellow-400 text-black font-black text-sm">
+                {copiedPassword ? <Check size={18}/> : <KeyRound size={18}/>}
+                {copiedPassword ? 'Clave copiada' : 'Copiar solo contraseña'}
+              </button>
+              <button onClick={copyCredentials} type="button" className="w-full flex justify-center items-center gap-2 rounded-xl py-3 border border-yellow-400/40 text-yellow-300 font-bold text-xs">
+                {copied ? <Check size={18}/> : <Copy size={18}/>}
+                {copied ? 'Datos copiados' : 'Copiar todos los datos'}
+              </button>
+            </div>
             <p className="text-xs text-zinc-400">La contraseña no se almacena en Ragnar ni se puede volver a visualizar. Pasala directamente al alumno y pedile que la cambie desde su perfil. El enlace que se copia corresponde a ESTA versión de prueba; no lo compartas masivamente ni pidas instalar la PWA hasta validar y publicar la versión definitiva.</p>
           </div>
         </div>
