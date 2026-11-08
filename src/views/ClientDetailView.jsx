@@ -37,6 +37,7 @@ import {
 } from 'firebase/firestore';
 import { db } from '../firebase';
 import ProgressChart from '../components/ProgressChart';
+import CoachSetLogger from '../components/CoachSetLogger';
 
 // Evitamos sobrescribir días en los que el alumno ya entrenó, dejó notas o
 // informó una ausencia. Reutilizable para pegado individual, rango y plantillas.
@@ -562,6 +563,7 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
               {client.name || 'Atleta'}
             </h2>
             <p className="text-zinc-500 text-xs font-bold mt-1">{client.email}</p>
+            <p className="text-yellow-300 text-[10px] font-black uppercase mt-2 tracking-wide">{client.trainingMode==='presencial'?'Modalidad presencial · registro del coach habilitado':'Plan de entrenamiento · registro del alumno'}</p>
           </div>
         </div>
       </div>
@@ -723,6 +725,13 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
                       </div>
                     </div>
                   )}
+                </div>
+              )}
+
+              {client.trainingMode==='presencial' && (
+                <div className="mb-6">
+                  <CoachSetLogger clientId={client.id} dateId={currentDateId}
+                    exercises={dailySession} finalized={isSessionFinalized}/>
                 </div>
               )}
 
