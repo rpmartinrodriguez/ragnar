@@ -764,6 +764,20 @@ export default function StudentView({ clientId }) {
     <div className="min-h-screen bg-zinc-950 text-white font-sans flex flex-col relative overflow-x-hidden">
         <ConnectionBanner/>
       
+      {studentToast && (
+        <div role="status" aria-live="polite" className="fixed left-4 right-4 bottom-24 z-[130] sm:max-w-md sm:left-auto sm:right-4 bg-zinc-900 border border-yellow-400/50 p-4 rounded-2xl shadow-2xl flex items-start gap-3">
+          <Bell size={22} className="text-yellow-400 shrink-0"/>
+          <button type="button" className="flex-1 min-w-0 text-left"
+            onClick={()=>{setStudentToast(null);setCurrentView('alerts');}}>
+            <span className="block text-white font-black text-sm">{studentToast.title}</span>
+            <span className="block text-zinc-300 text-xs mt-1">{studentToast.body}</span>
+            <span className="block text-yellow-300 text-xs mt-2 font-black">Abrir avisos</span>
+          </button>
+          <button type="button" onClick={()=>setStudentToast(null)}
+            className="text-zinc-400 p-1" aria-label="Cerrar aviso"><X size={17}/></button>
+        </div>
+      )}
+
       {/* MODAL DE NUEVA MEDALLA DESBLOQUEADA (CELEBRACIÓN) */}
       {newMedalAlert && (
         <div className="fixed inset-0 z-[300] bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center p-6 animate-in zoom-in-95 duration-500">
