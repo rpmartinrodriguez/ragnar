@@ -62,12 +62,12 @@ export default function LoginView({ onLoginSuccess }) {
   };
 
   return (
-    <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4 font-sans text-zinc-100">
+    <div className="ragnar-login-shell min-h-[100dvh] w-full max-w-full min-w-0 bg-black flex flex-col items-center justify-center px-3 py-6 sm:p-4 font-sans text-zinc-100 overflow-x-hidden">
       
       {/* Decoración de fondo */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg h-96 bg-yellow-400/10 rounded-full blur-[100px] pointer-events-none"></div>
 
-      <div className="w-full max-w-md z-10">
+      <div className="w-full max-w-md min-w-0 z-10">
         <div className="text-center mb-8">
           
           {/* AQUÍ CARGAMOS EL LOGO PRINCIPAL */}
@@ -82,7 +82,7 @@ export default function LoginView({ onLoginSuccess }) {
             />
           </div>
 
-          <h1 className="text-4xl font-black text-white tracking-tighter italic">
+          <h1 className="text-3xl sm:text-4xl font-black text-white tracking-tighter italic break-words">
             <span className="text-yellow-400">RAGNAR</span>
             <span className="text-white">-TRAINING</span>
           </h1>
@@ -90,7 +90,7 @@ export default function LoginView({ onLoginSuccess }) {
           <p className="text-yellow-300 text-xs mt-2 font-bold">Entorno de prueba · Firebase ragnar-5f8d7</p>
         </div>
 
-        <div className="bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-2xl p-8 shadow-2xl">
+        <div className="bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-2xl p-5 sm:p-8 shadow-2xl w-full min-w-0">
           <form onSubmit={handleLogin} className="space-y-5">
             
             <div>
