@@ -67,7 +67,7 @@ export default function WeeklyRecap({summary, onClose, onViewProgress, onShare})
         {onViewProgress&&<button type="button" onClick={onViewProgress}
           className="flex-1 bg-yellow-400 text-black rounded-xl px-4 py-3 font-black text-sm">Ver mi evolución</button>}
         {onShare&&<button type="button" onClick={onShare}
-          className="flex-1 rounded-xl border border-yellow-400/40 text-yellow-300 px-4 py-3 font-black text-sm">Compartir mi logro</button>}
+          className="flex-1 rounded-xl border border-yellow-400/40 text-yellow-300 px-4 py-3 font-black text-sm">Compartir tarjeta del viernes</button>}
         {onClose&&<button type="button" onClick={onClose}
           className="flex-1 rounded-xl border border-zinc-700 text-zinc-300 px-4 py-3 font-bold text-sm">Continuar</button>}
       </div>
