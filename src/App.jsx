@@ -309,7 +309,7 @@ export default function App() {
             {activeView === 'access' && <StudentAccessPanel clients={clients} onOpenClients={() => navigateTo('clients')} />}
             {activeView === 'exercises' && <ExercisesView exercises={exercises} exercisesLibrary={exercises} onAddExercise={handleAddExercise} onUpdateExercise={handleUpdateExercise} onDeleteExercise={handleDeleteExercise} />}
             {activeView === 'routines' && <RoutinesView routines={routines} exercisesLibrary={exercises} onAddRoutine={handleAddRoutine} onUpdateRoutine={handleUpdateRoutine} onDeleteRoutine={handleDeleteRoutine} />}
-            {activeView === 'client-detail' && selectedClient && <ClientDetailView client={selectedClient} goBack={() => navigateTo('clients')} exercisesLibrary={exercises} routines={routines} onUpdateClient={handleUpdateClientData} />}
+            {activeView === 'client-detail' && selectedClient && <ClientDetailView client={clients.find(c=>c.id===selectedClient.id)||selectedClient} goBack={() => navigateTo('clients')} exercisesLibrary={exercises} routines={routines} onUpdateClient={handleUpdateClientData} />}
             {activeView === 'calendar' && <CalendarView clients={clients} />}
             {activeView === 'settings' && (
               <div className="space-y-6">
