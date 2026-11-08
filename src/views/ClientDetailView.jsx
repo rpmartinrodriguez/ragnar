@@ -87,6 +87,8 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
 
   // --- ESTADOS DE MODALES ---
   const [isExerciseModalOpen, setIsExerciseModalOpen] = useState(false);
+  const [isSavingExercise, setIsSavingExercise] = useState(false);
+  const [exerciseSaveError, setExerciseSaveError] = useState('');
   const [isExtrasModalOpen, setIsExtrasModalOpen] = useState(false);
   const [isRangeModalOpen, setIsRangeModalOpen] = useState(false);
   const [editingExerciseIndex, setEditingExerciseIndex] = useState(null);
@@ -437,6 +439,8 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
 
   // --- ABRIR MODAL DE EJERCICIO ---
   const openExerciseModal = (index = null) => {
+    if (isSessionFinalized) return;
+    setExerciseSaveError('');
     if (index !== null) {
       const ex = dailySession[index];
       let loadedSets = ex.plannedSets;
@@ -447,7 +451,7 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
           rir: String(ex.rir || '2')
         }));
       }
-      setExForm({ name: ex.name || '', videoUrl: ex.videoUrl || '', plannedSets: loadedSets });
+      setExForm({ name: ex.name || '', videoUrl: ex.videoUrl || '', plannedSets: loadedSets.map(set=>({...set})) });
       setEditingExerciseIndex(index);
     } else {
       setExForm({
@@ -463,8 +467,13 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
   // --- GUARDAR EJERCICIO INDIVIDUAL ---
   const handleSaveExercise = async (e) => {
     e.preventDefault();
+    if (isSavingExercise) return;
+    if (isSessionFinalized) return setExerciseSaveError('La sesión ya está finalizada. No se pueden modificar los ejercicios realizados.');
     if (!exForm.name || !exForm.plannedSets || exForm.plannedSets.length === 0) {
-      return alert("Completa el nombre del ejercicio.");
+      return setExerciseSaveError('Elegí un ejercicio y al menos una serie.');
+    }
+    if (exForm.plannedSets.some(set=>!String(set.reps||'').trim())) {
+      return setExerciseSaveError('Completá las repeticiones de todas las series.');
     }
 
     let updatedSession = [...dailySession];
@@ -475,7 +484,7 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
       sets: String(exForm.plannedSets.length),
       reps: String(exForm.plannedSets[0]?.reps || ''), 
       rir: String(exForm.plannedSets[0]?.rir || '2'),
-      plannedSets: exForm.plannedSets,
+      plannedSets: exForm.plannedSets.map(set=>({...set})),
       actualSets: editingExerciseIndex !== null ? (updatedSession[editingExerciseIndex].actualSets || []) : []
     };
 
@@ -485,34 +494,35 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
       updatedSession.push(exerciseToSave);
     }
 
+    setIsSavingExercise(true);setExerciseSaveError('');
     try {
-      await setDoc(doc(db, 'clients', client.id, 'sessions', currentDateId), {
-        date: currentDateId, 
-        exercises: updatedSession
-      }, { merge: true });
+      const targetRef=doc(db,'clients',client.id,'sessions',currentDateId);
+      await ensureSessionIsSafeToPlan(targetRef);
+      await setDoc(targetRef,{
+        date:currentDateId,
+        exercises:updatedSession
+      },{merge:true});
       setIsExerciseModalOpen(false);
-      if (updatedSession.length === 1 && !allSessionsIds.includes(currentDateId)) {
-        setAllSessionsIds([...allSessionsIds, currentDateId]);
-      }
-    } catch (error) { 
-      console.error(error); 
-    }
+      if(updatedSession.length===1) setAllSessionsIds(prev=>prev.includes(currentDateId)?prev:[...prev,currentDateId]);
+    }catch(error){
+      setExerciseSaveError('No se pudo guardar el ejercicio: '+(error?.message||'revisá tu conexión'));
+    }finally{setIsSavingExercise(false);}
   };
 
   // --- ELIMINAR EJERCICIO ---
   const handleDeleteExercise = async (index) => {
-    if (!window.confirm('¿Seguro que deseas eliminar este ejercicio?')) {
-      return;
-    }
-    const updatedSession = dailySession.filter((_, i) => i !== index);
-    try {
-      await setDoc(doc(db, 'clients', client.id, 'sessions', currentDateId), { exercises: updatedSession }, { merge: true });
-      if (updatedSession.length === 0) {
-        setAllSessionsIds(allSessionsIds.filter(id => id !== currentDateId));
-      }
-    } catch (error) { 
-      console.error(error); 
-    }
+    if(isSessionFinalized || isSavingExercise) return;
+    if(!window.confirm('¿Quitar este ejercicio de la planificación? Si ya existen registros del alumno, no se permitirá borrar.')) return;
+    const updatedSession=dailySession.filter((_,i)=>i!==index);
+    setIsSavingExercise(true);
+    try{
+      const targetRef=doc(db,'clients',client.id,'sessions',currentDateId);
+      await ensureSessionIsSafeToPlan(targetRef);
+      await setDoc(targetRef,{exercises:updatedSession},{merge:true});
+      if(updatedSession.length===0)setAllSessionsIds(prev=>prev.filter(id=>id!==currentDateId));
+    }catch(error){
+      window.alert('No se pudo quitar el ejercicio: '+(error?.message||'revisá tu conexión'));
+    }finally{setIsSavingExercise(false);}
   };
 
   // --- GUARDAR EXTRAS ---
@@ -675,6 +685,7 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
 
                   <button 
                     onClick={() => openExerciseModal(null)}
+                    disabled={isSessionFinalized}
                     className="bg-yellow-400 hover:bg-yellow-300 text-black px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 transition-all shadow-lg"
                   >
                     <Plus size={16}/> Ejercicio
@@ -766,10 +777,10 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
                             </div>
                           </div>
                           <div className="flex items-center gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
-                            <button onClick={() => openExerciseModal(idx)} className="p-2 text-zinc-400 hover:text-blue-400 bg-zinc-900 hover:bg-zinc-800 rounded-lg border border-zinc-800 transition-colors" title="Editar">
+                            <button onClick={() => openExerciseModal(idx)} disabled={isSessionFinalized || isSavingExercise} className="p-2 text-zinc-400 hover:text-blue-400 bg-zinc-900 hover:bg-zinc-800 rounded-lg border border-zinc-800 transition-colors disabled:opacity-40" title={isSessionFinalized?'Sesión finalizada':'Editar'}>
                               <Edit size={16}/>
                             </button>
-                            <button onClick={() => handleDeleteExercise(idx)} className="p-2 text-zinc-400 hover:text-red-500 bg-zinc-900 hover:bg-zinc-800 rounded-lg border border-zinc-800 transition-colors" title="Eliminar">
+                            <button onClick={() => handleDeleteExercise(idx)} disabled={isSessionFinalized || isSavingExercise} className="p-2 text-zinc-400 hover:text-red-500 bg-zinc-900 hover:bg-zinc-800 rounded-lg border border-zinc-800 transition-colors disabled:opacity-40" title={isSessionFinalized?'Sesión finalizada':'Eliminar'}>
                               <Trash2 size={16}/>
                             </button>
                           </div>
@@ -922,7 +933,7 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
                 >
                   <option value="" disabled>Elige un ejercicio...</option>
                   {exercisesLibrary?.map(ex => (
-                    <option key={ex.id || Math.random()} value={ex.name}>{ex.name}</option>
+                    <option key={ex.id || ex.name} value={ex.name}>{ex.name}</option>
                   ))}
                 </select>
               </div>
@@ -969,10 +980,11 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
               </div>
             </div>
 
+            {exerciseSaveError && <p role="alert" className="px-6 pt-3 text-red-300 text-xs">{exerciseSaveError}</p>}
             <div className="p-6 bg-zinc-950 border-t border-zinc-800 flex gap-3 shrink-0">
-              <button type="button" onClick={() => setIsExerciseModalOpen(false)} className="flex-1 py-4 text-zinc-400 font-bold uppercase text-xs rounded-xl bg-black border border-zinc-800 hover:bg-zinc-900 transition-colors">Cancelar</button>
-              <button onClick={handleSaveExercise} type="button" className="flex-1 bg-yellow-400 hover:bg-yellow-300 text-black font-black py-4 rounded-xl uppercase text-xs tracking-widest transition-colors shadow-lg shadow-yellow-400/20">
-                {editingExerciseIndex !== null ? 'Guardar Cambios' : 'Agregar a Rutina'}
+              <button type="button" onClick={() => setIsExerciseModalOpen(false)} disabled={isSavingExercise} className="flex-1 py-4 text-zinc-400 font-bold uppercase text-xs rounded-xl bg-black border border-zinc-800 hover:bg-zinc-900 transition-colors disabled:opacity-40">Cancelar</button>
+              <button onClick={handleSaveExercise} type="button" disabled={isSavingExercise} className="flex-1 bg-yellow-400 hover:bg-yellow-300 text-black font-black py-4 rounded-xl uppercase text-xs tracking-widest transition-colors shadow-lg shadow-yellow-400/20 disabled:opacity-40">
+                {isSavingExercise ? 'Guardando...' : editingExerciseIndex !== null ? 'Guardar Cambios' : 'Agregar a Rutina'}
               </button>
             </div>
           </div>
