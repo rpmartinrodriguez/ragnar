@@ -47,6 +47,7 @@ import { db } from '../firebase';
 import CommunityView from './CommunityView';
 import ProgressChart from '../components/ProgressChart';
 import StudentChangePassword from '../components/StudentChangePassword';
+import StudentWorkoutNote from '../components/StudentWorkoutNote';
 import { notifyCoachAboutStudentEvent } from '../utils/ragnarPush';
 
 // --- BASE DE DATOS DE MEDALLAS ---
@@ -1284,6 +1285,10 @@ export default function StudentView({ clientId }) {
                 )}
             </div>
             
+            {dailySession.length > 0 && (
+              <StudentWorkoutNote clientId={clientId} dateId={currentDateId}/>
+            )}
+
             {dailySession.length > 0 && !isSessionFinalized && (
               <button 
                 onClick={handleFinishWorkout}
