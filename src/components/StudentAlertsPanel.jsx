@@ -2,49 +2,72 @@ import React,{useCallback,useEffect,useState} from 'react';
 import { Bell, BellOff, CheckCircle2, AlertCircle, RefreshCw, ShieldCheck,
   CalendarClock, MessageSquare, Dumbbell, Send } from 'lucide-react';
 import {
-  studentAlertRequest,enableStudentPush,disableStudentPush,supportsStudentPush
+  studentAlertRequest,enableStudentPush,disableStudentPush,getStudentPushDeviceStatus
 } from '../utils/studentPush';
 
 const iconByType={
   renewal:CalendarClock,coach_message:MessageSquare,routine_updated:Dumbbell,test:Bell
 };
 
-export default function StudentAlertsPanel({clientId,vapidKey,onRead,openChat,openCalendar}) {
+export default function StudentAlertsPanel({clientId,vapidKey,onRead,openChat,openCalendar,refreshSignal=0}) {
   const [alerts,setAlerts]=useState([]);
   const [loading,setLoading]=useState(true);
   const [supported,setSupported]=useState(null);
   const [permission,setPermission]=useState('default');
   const [subscribed,setSubscribed]=useState(0);
+  const [deviceActive,setDeviceActive]=useState(null);
+  const [showHistory,setShowHistory]=useState(false);
   const [busy,setBusy]=useState('');
   const [notice,setNotice]=useState(null);
 
   const refresh=useCallback(async()=>{
     setLoading(true);
     try{
-      const [list,status,compatible]=await Promise.all([
+      const [list,device]=await Promise.all([
         studentAlertRequest('list',clientId),
-        studentAlertRequest('status',clientId),
-        supportsStudentPush()
+        getStudentPushDeviceStatus(clientId,vapidKey)
       ]);
       setAlerts(list.notifications||[]);
-      setSubscribed(status.subscribed||0);
-      setSupported(compatible);
-      setPermission(typeof Notification==='undefined'?'unsupported':Notification.permission);
+      setSubscribed(device.subscribed||0);
+      setSupported(device.supported);
+      setPermission(device.permission);
+      setDeviceActive(device.active);
       onRead?.((list.notifications||[]).filter(a=>!a.read).length);
     }catch(error){setNotice({error:true,text:error?.message||'Error al obtener notificaciones'});}
     finally{setLoading(false);}
-  },[clientId,onRead]);
+  },[clientId,vapidKey,onRead]);
 
-  useEffect(()=>{void refresh();},[refresh]);
+  useEffect(()=>{void refresh();},[refresh,refreshSignal]);
+  useEffect(()=>{
+    const verify=async()=>{
+      if(document.hidden)return;
+      try{
+        const device=await getStudentPushDeviceStatus(clientId,vapidKey);
+        setDeviceActive(device.active);
+        setSubscribed(device.subscribed);
+        setSupported(device.supported);
+        setPermission(device.permission);
+      }catch{setDeviceActive(false);}
+    };
+    window.addEventListener('focus',verify);
+    document.addEventListener('visibilitychange',verify);
+    return ()=>{
+      window.removeEventListener('focus',verify);
+      document.removeEventListener('visibilitychange',verify);
+    };
+  },[clientId,vapidKey]);
 
   const enable=async()=>{
     setBusy('enable');setNotice(null);
     try{
       await enableStudentPush(clientId,vapidKey);
-      const status=await studentAlertRequest('status',clientId);
-      setSubscribed(status.subscribed);
-      setPermission(Notification.permission);
-      setNotice({error:false,text:'Push habilitadas en este dispositivo. Vas a recibir mensajes, cambios de rutina y recordatorios.'});
+      const device=await getStudentPushDeviceStatus(clientId,vapidKey);
+      setDeviceActive(device.active);
+      setSubscribed(device.subscribed);
+      setPermission(device.permission);
+      setNotice({error:!device.active,text:device.active
+        ? 'Notificaciones activas en este dispositivo.'
+        : 'La suscripción no se pudo verificar. Revisá los permisos e intentá nuevamente.'});
     }catch(error){setNotice({error:true,text:error?.message||'No se pudieron activar las notificaciones'});}
     finally{setBusy('');}
   };
@@ -52,8 +75,10 @@ export default function StudentAlertsPanel({clientId,vapidKey,onRead,openChat,op
     setBusy('disable');setNotice(null);
     try{
       await disableStudentPush(clientId,vapidKey);
-      const status=await studentAlertRequest('status',clientId);
-      setSubscribed(status.subscribed);
+      const device=await getStudentPushDeviceStatus(clientId,vapidKey);
+      setDeviceActive(false);
+      setSubscribed(device.subscribed);
+      setPermission(device.permission);
       setNotice({error:false,text:'Notificaciones desactivadas en este dispositivo.'});
     }catch(error){setNotice({error:true,text:error?.message||'No se pudieron desactivar'});}
     finally{setBusy('');}
@@ -63,8 +88,8 @@ export default function StudentAlertsPanel({clientId,vapidKey,onRead,openChat,op
     try{
       const status=await studentAlertRequest('test',clientId);
       setNotice({error:false,text:status.sent>0
-        ? 'Firebase aceptó el aviso de prueba. Revisá las notificaciones del dispositivo.'
-        : 'Aviso registrado en Ragnar. Para recibir push tenés que activar este dispositivo.'});
+        ? 'Se envió una prueba al dispositivo. Revisá la notificación.'
+        : 'La prueba se guardó en Ragnar, pero no hay un dispositivo push activo.'});
       await refresh();
     }catch(error){setNotice({error:true,text:error?.message||'No se pudo probar'});}
     finally{setBusy('');}
@@ -73,11 +98,9 @@ export default function StudentAlertsPanel({clientId,vapidKey,onRead,openChat,op
     if(!alert.read){
       try{
         await studentAlertRequest('mark',clientId,{notificationId:alert.id});
-        setAlerts(prev=>{
-          const next=prev.map(a=>a.id===alert.id?{...a,read:true}:a);
-          onRead?.(next.filter(a=>!a.read).length);
-          return next;
-        });
+        const updated=alerts.map(a=>a.id===alert.id?{...a,read:true}:a);
+        setAlerts(updated);
+        onRead?.(updated.filter(a=>!a.read).length);
       }catch(error){setNotice({error:true,text:error?.message||'No se pudo marcar como leído'});}
     }
     if(alert.type==='coach_message')openChat?.();
