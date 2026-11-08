@@ -5,7 +5,7 @@ import {
 } from 'lucide-react';
 import { 
   collection, query, orderBy, onSnapshot, doc, 
-  updateDoc, deleteDoc, collectionGroup, where, addDoc, getDocs 
+  updateDoc, deleteDoc, collectionGroup, where, addDoc, getDocs, getDoc 
 } from 'firebase/firestore';
 import { db } from '../firebase';
 
@@ -14,64 +14,56 @@ export default function NotificationsView({ navigateTo, clients = [] }) {
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState('unread'); // unread, history, messages, workouts, payments
 
-  // --- ESCUCHA DE DATOS EN TIEMPO REAL ---
+  // Dos suscripciones independientes: evitar registrar una nueva escucha de
+  // mensajes cada vez que cambia una alerta del sistema (fuga de listeners).
   useEffect(() => {
-    // 1. Escuchamos notificaciones del sistema (Entrenamientos, Pagos, Deudas)
-    const qSys = query(collection(db, 'trainerNotifications'), orderBy('createdAt', 'desc'));
-    
-    const unsubSys = onSnapshot(qSys, (sysSnap) => {
-      const sysData = sysSnap.docs.map(d => {
-        const data = d.data();
+    let system = [];
+    let messages = [];
+    let sysReady = false;
+    let msgReady = false;
+    let alive = true;
+    const emit = () => {
+      if (!alive) return;
+      const timestamp = value => value?.toDate?.()?.getTime?.() ??
+        (value instanceof Date ? value.getTime() : new Date(value || 0).getTime()) || 0;
+      const combined = [...system, ...messages].sort((a,b)=> timestamp(b.createdAt) - timestamp(a.createdAt));
+      setNotifications(combined);
+      if (sysReady && msgReady) setLoading(false);
+    };
+    const qSys = query(collection(db,'trainerNotifications'),orderBy('createdAt','desc'));
+    const qMsg = query(collectionGroup(db,'messages'),where('sender','==','student'),where('read','==',false));
+
+    const unsubSys = onSnapshot(qSys, snapshot => {
+      system = snapshot.docs.map(d=>({
+        id:d.id, _source:'system',ref:d.ref,
+        clientName:d.data().clientName||d.data().studentName||null,
+        clientId:d.data().clientId||null,...d.data()
+      }));
+      sysReady = true; emit();
+    }, error => {
+      console.error('Notificaciones entrenador:',error);
+      sysReady = true;emit();
+    });
+    const unsubMsg = onSnapshot(qMsg, snapshot => {
+      messages = snapshot.docs.map(d=>{
+        const data=d.data();
+        const clientId=d.ref.parent.parent?.id||null;
+        const client=clients.find(c=>c.id===clientId);
         return {
-          id: d.id, 
-          _source: 'system', 
-          ref: d.ref, 
-          clientName: data.clientName || data.studentName || null,
-          clientId: data.clientId || null,
-          ...data 
+          id:d.id,_source:'message',ref:d.ref,type:'message',
+          title:'Nuevo mensaje',
+          body:data.text||'Un alumno te envió un mensaje.',
+          clientName:client?.name||data.studentName||'Atleta',
+          clientId,createdAt:data.createdAt,read:false
         };
       });
-      
-      // 2. Escuchamos mensajes directos NO LEÍDOS por el coach
-      const qMsg = query(
-        collectionGroup(db, 'messages'), 
-        where('sender', '==', 'student'), 
-        where('read', '==', false)
-      );
-      
-      const unsubMsg = onSnapshot(qMsg, (msgSnap) => {
-        const msgData = msgSnap.docs.map(d => {
-          const data = d.data();
-          return {
-            id: d.id,
-            _source: 'message',
-            ref: d.ref,
-            type: 'message',
-            title: 'Nuevo Mensaje',
-            body: data.text || 'Te ha enviado un mensaje.',
-            clientName: data.senderName || data.studentName || 'Atleta',
-            clientId: d.ref.parent.parent?.id || null, 
-            createdAt: data.createdAt,
-            read: false
-          };
-        });
-
-        // 3. Combinamos y ordenamos por fecha (más reciente primero)
-        const combined = [...sysData, ...msgData].sort((a, b) => {
-          const dateA = a.createdAt?.toDate ? a.createdAt.toDate().getTime() : new Date(a.createdAt || 0).getTime();
-          const dateB = b.createdAt?.toDate ? b.createdAt.toDate().getTime() : new Date(b.createdAt || 0).getTime();
-          return dateB - dateA;
-        });
-
-        setNotifications(combined);
-        setLoading(false);
-      });
-      
-      return () => unsubMsg();
+      msgReady = true;emit();
+    },error=>{
+      console.error('Mensajes de alumnos:',error);
+      msgReady=true;emit();
     });
-
-    return () => unsubSys();
-  }, []);
+    return ()=>{alive=false;unsubSys();unsubMsg();};
+  }, [clients]);
 
   // --- LÓGICA DE NAVEGACIÓN Y LECTURA ---
   const handleNotificationClick = async (notif) => {
@@ -100,9 +92,11 @@ export default function NotificationsView({ navigateTo, clients = [] }) {
 
   const markAllAsRead = async () => {
     const unreadNotifs = notifications.filter(n => !n.read && n.ref);
-    unreadNotifs.forEach(async (notif) => {
-      try { await updateDoc(notif.ref, { read: true }); } catch (e) { console.error(e); }
-    });
+    const results = await Promise.allSettled(unreadNotifs.map(notif =>
+      updateDoc(notif.ref, {read:true})
+    ));
+    const errors=results.filter(x=>x.status==='rejected');
+    if(errors.length) console.error('Algunas notificaciones no pudieron marcarse como leídas:',errors.length);
   };
 
   const deleteNotification = async (e, notif) => {
