@@ -21,14 +21,16 @@ messaging.onBackgroundMessage((payload) => {
     body,
     icon:'/logo.png',
     badge:'/logo.png',
-    tag:'ragnar-'+String(data.type||'alert')+'-'+String(data.clientId||''),
-    data:{url:'/?view=notifications'}
+    tag:'ragnar-'+String(data.type||'alert')+'-'+String(data.alertId||data.clientId||''),
+    data:{url:data.target==='student-alerts'?'/?view=student-alerts':'/?view=notifications'}
   });
 });
 
 self.addEventListener('notificationclick', event => {
   event.notification.close();
-  const target = new URL('/?view=notifications', self.location.origin).href;
+  const destination = event.notification?.data?.url === '/?view=student-alerts'
+    ? '/?view=student-alerts' : '/?view=notifications';
+  const target = new URL(destination,self.location.origin).href;
   event.waitUntil((async()=>{
     const clients=await self.clients.matchAll({type:'window',includeUncontrolled:true});
     const same=clients.find(c=>new URL(c.url).origin===self.location.origin);
