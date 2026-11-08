@@ -1,11 +1,15 @@
 # Ragnar: despliegue del codigo compilado por Vite.
 # No publicar la raiz del repositorio ni la carpeta src.
 [build]
-  command = "npm ci && npm run build"
+  command = "npm ci && npm install --prefix netlify/functions --no-package-lock --no-audit --no-fund && npm run build"
   publish = "dist"
 
 [build.environment]
   NODE_VERSION = "22"
+
+[functions]
+  directory = "netlify/functions"
+  node_bundler = "esbuild"
 
 # Para la PWA y las rutas cliente de React.
 [[redirects]]
