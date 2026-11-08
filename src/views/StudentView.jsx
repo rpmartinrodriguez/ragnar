@@ -712,6 +712,8 @@ export default function StudentView({ clientId }) {
 
     finalizingRef.current = true;
     setIsFinishing(true);
+    setWeeklySummary(null);
+    setShowWeeklySummary(false);
     try {
       const durationFromClock=workoutStartedAt?
         Math.ceil((Date.now()-workoutStartedAt.getTime())/60000):null;
@@ -1314,6 +1316,30 @@ export default function StudentView({ clientId }) {
                 </div>
             </div>
 
+            {/* Registrar inicio real: no usar series x 3 como minutos transcurridos */}
+            {dailySession.length>0 && !isSessionFinalized && (
+              <div className="border border-yellow-400/20 bg-zinc-900 rounded-2xl p-4 mt-3">
+                {workoutStartedAt ? (
+                  <p className="flex gap-2 items-center text-yellow-300 text-sm font-bold">
+                    <Clock size={19}/> Tiempo de sesión: {elapsedMinutes===null?'Calculando...':elapsedMinutes+' min'}
+                  </p>
+                ) : currentDateId===todayYmd ? (
+                  <button type="button" disabled={clockBusy} onClick={()=>startWorkoutClock()}
+                    className="w-full py-3 rounded-xl bg-yellow-400 text-black font-black text-sm disabled:opacity-40 flex justify-center items-center gap-2">
+                    <Clock size={19}/>{clockBusy?'Registrando inicio...':'Iniciar cronómetro del entrenamiento'}
+                  </button>
+                ) : <p className="text-zinc-500 text-xs">Solo se registra duración real al iniciar el cronómetro el mismo día del entrenamiento.</p>}
+                <p className="text-xs text-zinc-500 mt-2">El tiempo registrado se muestra al finalizar y en la tarjeta para Instagram. Si no lo iniciás, no se inventan minutos.</p>
+                {clockError&&<p role="alert" className="text-red-300 text-xs mt-2">{clockError}</p>}
+              </div>
+            )}
+            {isSessionFinalized && recordedDuration>0 && (
+              <p className="rounded-xl border border-zinc-800 bg-zinc-900 p-3 text-xs text-zinc-300 flex gap-2 items-center">
+                <Clock size={17} className="text-yellow-400"/> Duración registrada: {recordedDuration} min
+              </p>
+            )}
+
+
             {/* --- PANEL DE CONFIGURACIÓN DE SESIÓN --- */}
             {!isSessionFinalized && (
               <div className="space-y-3 mb-6">
@@ -1553,29 +1579,6 @@ export default function StudentView({ clientId }) {
                 )}
             </div>
             
-            {/* Registrar inicio real: no usar series x 3 como minutos transcurridos */}
-            {dailySession.length>0 && !isSessionFinalized && (
-              <div className="border border-yellow-400/20 bg-zinc-900 rounded-2xl p-4 mt-3">
-                {workoutStartedAt ? (
-                  <p className="flex gap-2 items-center text-yellow-300 text-sm font-bold">
-                    <Clock size={19}/> Tiempo de sesión: {elapsedMinutes===null?'Calculando...':elapsedMinutes+' min'}
-                  </p>
-                ) : currentDateId===todayYmd ? (
-                  <button type="button" disabled={clockBusy} onClick={()=>startWorkoutClock()}
-                    className="w-full py-3 rounded-xl bg-yellow-400 text-black font-black text-sm disabled:opacity-40 flex justify-center items-center gap-2">
-                    <Clock size={19}/>{clockBusy?'Registrando inicio...':'Iniciar cronómetro del entrenamiento'}
-                  </button>
-                ) : <p className="text-zinc-500 text-xs">Solo se registra duración real al iniciar el cronómetro el mismo día del entrenamiento.</p>}
-                <p className="text-xs text-zinc-500 mt-2">El tiempo registrado se muestra al finalizar y en la tarjeta para Instagram. Si no lo iniciás, no se inventan minutos.</p>
-                {clockError&&<p role="alert" className="text-red-300 text-xs mt-2">{clockError}</p>}
-              </div>
-            )}
-            {isSessionFinalized && recordedDuration>0 && (
-              <p className="rounded-xl border border-zinc-800 bg-zinc-900 p-3 text-xs text-zinc-300 flex gap-2 items-center">
-                <Clock size={17} className="text-yellow-400"/> Duración registrada: {recordedDuration} min
-              </p>
-            )}
-
             {dailySession.length > 0 && (
               <StudentWorkoutNote clientId={clientId} dateId={currentDateId}/>
             )}
