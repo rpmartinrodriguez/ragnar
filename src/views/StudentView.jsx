@@ -960,93 +960,31 @@ export default function StudentView({ clientId }) {
         </div>
       )}
 
-      {/* MODAL STRAVA COMPARTIR */}
-      {showShareModal && (
-        <div className="fixed inset-0 z-[200] bg-black/95 backdrop-blur-xl flex flex-col items-center justify-center p-4 animate-in zoom-in-95 duration-300">
-          
-          <div className="text-center mb-6">
-            <h2 className="text-white font-black text-2xl uppercase tracking-widest italic flex items-center justify-center gap-2">
-              <Trophy className="text-yellow-400" size={28}/>
-              ¡Misión Cumplida!
-            </h2>
-            <p className="text-zinc-400 text-sm mt-2">
-              Toma una captura (Screenshot) o compártelo.
-            </p>
-          </div>
-
-          <div id="ragnar-story-card" className="w-full max-w-[340px] aspect-[9/16] bg-zinc-950 border border-zinc-800 rounded-[2.5rem] shadow-2xl relative overflow-hidden flex flex-col justify-between p-8">
-             
-             <div className="absolute -top-20 -right-20 w-64 h-64 bg-yellow-400/10 blur-3xl rounded-full pointer-events-none"></div>
-             <div className="absolute -bottom-20 -left-20 w-64 h-64 bg-yellow-400/5 blur-3xl rounded-full pointer-events-none"></div>
-
-             <div className="flex flex-col items-center z-10">
-               <div className="w-16 h-16 bg-yellow-400 rounded-2xl flex items-center justify-center text-black font-black text-3xl italic shadow-lg mb-4">
-                 R
-               </div>
-               <span className="font-black tracking-[0.3em] uppercase text-xs text-zinc-400">
-                 Ragnar Training
-               </span>
-             </div>
-
-             <div className="z-10 w-full">
-               <h3 className="text-3xl font-black uppercase italic tracking-tighter text-white leading-none mb-1 text-center">
-                 {date.toLocaleDateString('es-ES', { weekday: 'long' })}
-               </h3>
-               <p className="text-yellow-400 font-bold text-[10px] uppercase tracking-[0.2em] text-center mb-8">
-                 {date.toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })}
-               </p>
-
-               <div className="space-y-4">
-                 <div className="flex justify-center items-center bg-gradient-to-r from-orange-500/20 to-red-500/20 border border-orange-500/30 p-3 rounded-2xl mb-2 gap-2">
-                   <Flame className="text-orange-500" size={20}/>
-                   <span className="text-sm font-black text-orange-400 uppercase tracking-widest">
-                     Racha: {client?.currentStreak || 1} Días
-                   </span>
-                 </div>
-
-                 <div className="flex justify-between items-center bg-black/40 border border-zinc-800/50 p-4 rounded-2xl">
-                   <div className="flex items-center gap-3">
-                     <Clock size={20} className="text-yellow-400"/>
-                     <span className="text-xs font-black uppercase text-zinc-400 tracking-widest">Tiempo Aprox.</span>
-                   </div>
-                   <span className="text-lg font-black text-white">{getEstimatedTime()} Min</span>
-                 </div>
-                 
-                 <div className="flex justify-between items-center bg-black/40 border border-zinc-800/50 p-4 rounded-2xl">
-                   <div className="flex items-center gap-3">
-                     <Dumbbell size={20} className="text-yellow-400"/>
-                     <span className="text-xs font-black uppercase text-zinc-400 tracking-widest">Ejercicios</span>
-                   </div>
-                   <span className="text-lg font-black text-white">{dailySession.length}</span>
-                 </div>
-               </div>
-             </div>
-
-             <div className="z-10 text-center border-t border-zinc-800/50 pt-6">
-               <p className="text-[10px] text-zinc-500 font-black uppercase tracking-widest mb-1">
-                 Atleta Oficial
-               </p>
-               <p className="text-xl font-black uppercase text-white tracking-tight">
-                 {client?.name}
-               </p>
-             </div>
-          </div>
-
-          <div className="mt-8 flex flex-col gap-4 w-full max-w-[340px]">
-            <button 
-              onClick={handleShareStory} 
-              className="w-full bg-gradient-to-r from-yellow-400 to-yellow-500 text-black font-black py-4 rounded-2xl uppercase tracking-widest flex items-center justify-center gap-2 shadow-[0_0_20px_rgba(250,204,21,0.3)] active:scale-95 transition-transform"
-            >
-              <Share2 size={20}/> Compartir 
-            </button>
-            <button 
-              onClick={() => { setShowShareModal(false); setCurrentView('community'); }} 
-              className="w-full text-zinc-500 font-bold uppercase text-xs tracking-widest py-3 hover:text-white transition-colors"
-            >
-              Ir al Salón Ragnar
-            </button>
+      {/* RESUMEN DE SEMANA: SOLO AL FINALIZAR LA ÚLTIMA RUTINA DEL VIERNES */}
+      {showWeeklySummary && weeklySummary && (
+        <div className="fixed inset-0 z-[340] bg-black/95 backdrop-blur-xl overflow-y-auto overscroll-contain p-3 sm:p-6"
+          style={{paddingTop:'max(12px,env(safe-area-inset-top))',paddingBottom:'max(12px,env(safe-area-inset-bottom))'}}>
+          <div className="max-w-xl mx-auto my-2 sm:my-8">
+            <WeeklyRecap summary={weeklySummary}
+              onClose={()=>{setShowWeeklySummary(false);setShowShareModal(true);}}
+              onViewProgress={()=>{setShowWeeklySummary(false);setCurrentView('stats');}}
+              onShare={()=>{setShowWeeklySummary(false);setShowShareModal(true);}}/>
           </div>
         </div>
+      )}
+
+      {/* TARJETA COMPACTA PNG PARA INSTAGRAM: NO ESTIMAR MINUTOS */}
+      {showShareModal && (
+        <WorkoutShareCard onClose={()=>setShowShareModal(false)}
+          studentName={client?.name||'Atleta Ragnar'}
+          dateYmd={currentDateId}
+          streak={client?.currentStreak||1}
+          session={{
+            exercises:dailySession,
+            perceivedEffort:recordedEffort??perceivedEffort,
+            workoutDurationMinutes:recordedDuration
+          }}
+          onOpenSalon={()=>{setShowShareModal(false);setCurrentView('community');}}/>
       )}
 
       {/* MODAL DE DEUDA DE PAGO CON DÍAS DE GRACIA */}
@@ -1615,6 +1553,29 @@ export default function StudentView({ clientId }) {
                 )}
             </div>
             
+            {/* Registrar inicio real: no usar series x 3 como minutos transcurridos */}
+            {dailySession.length>0 && !isSessionFinalized && (
+              <div className="border border-yellow-400/20 bg-zinc-900 rounded-2xl p-4 mt-3">
+                {workoutStartedAt ? (
+                  <p className="flex gap-2 items-center text-yellow-300 text-sm font-bold">
+                    <Clock size={19}/> Tiempo de sesión: {elapsedMinutes===null?'Calculando...':elapsedMinutes+' min'}
+                  </p>
+                ) : currentDateId===todayYmd ? (
+                  <button type="button" disabled={clockBusy} onClick={()=>startWorkoutClock()}
+                    className="w-full py-3 rounded-xl bg-yellow-400 text-black font-black text-sm disabled:opacity-40 flex justify-center items-center gap-2">
+                    <Clock size={19}/>{clockBusy?'Registrando inicio...':'Iniciar cronómetro del entrenamiento'}
+                  </button>
+                ) : <p className="text-zinc-500 text-xs">Solo se registra duración real al iniciar el cronómetro el mismo día del entrenamiento.</p>}
+                <p className="text-xs text-zinc-500 mt-2">El tiempo registrado se muestra al finalizar y en la tarjeta para Instagram. Si no lo iniciás, no se inventan minutos.</p>
+                {clockError&&<p role="alert" className="text-red-300 text-xs mt-2">{clockError}</p>}
+              </div>
+            )}
+            {isSessionFinalized && recordedDuration>0 && (
+              <p className="rounded-xl border border-zinc-800 bg-zinc-900 p-3 text-xs text-zinc-300 flex gap-2 items-center">
+                <Clock size={17} className="text-yellow-400"/> Duración registrada: {recordedDuration} min
+              </p>
+            )}
+
             {dailySession.length > 0 && (
               <StudentWorkoutNote clientId={clientId} dateId={currentDateId}/>
             )}
