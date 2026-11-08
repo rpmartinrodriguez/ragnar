@@ -183,11 +183,9 @@ export default function StudentView({ clientId }) {
     if(!clientId||!upcomingRenewal||upcomingRenewal.daysUntil>3){
       setRenewalPaid(null);return;
     }
-    let live=true;
-    getDoc(doc(db,'clients',clientId,'payments',upcomingRenewal.periodId))
-      .then(snap=>{if(live)setRenewalPaid(snap.exists()&&snap.data().status==='paid');})
-      .catch(()=>{if(live)setRenewalPaid(null);});
-    return ()=>{live=false;};
+    return onSnapshot(doc(db,'clients',clientId,'payments',upcomingRenewal.periodId),
+      snap=>setRenewalPaid(snap.exists()&&snap.data().status==='paid'),
+      ()=>setRenewalPaid(null));
   },[clientId,upcomingRenewal?.periodId,upcomingRenewal?.daysUntil]);
 
   useEffect(()=>{
