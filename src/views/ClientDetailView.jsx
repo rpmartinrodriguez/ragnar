@@ -38,21 +38,7 @@ import {
 import { db } from '../firebase';
 import ProgressChart from '../components/ProgressChart';
 import CoachSetLogger from '../components/CoachSetLogger';
-
-// Evitamos sobrescribir días en los que el alumno ya entrenó, dejó notas o
-// informó una ausencia. Reutilizable para pegado individual, rango y plantillas.
-function sessionHasProtectedHistory(data = {}) {
-  if (data.isFinalized || data.completedAt ||
-      String(data.studentNote || '').trim() ||
-      String(data.missedReason || '').trim()) return true;
-  return Array.isArray(data.exercises) && data.exercises.some(ex =>
-    Array.isArray(ex.actualSets) && ex.actualSets.some(set =>
-      set && (set.completed === true ||
-        String(set.reps ?? '').trim() !== '' ||
-        String(set.weight ?? '').trim() !== '')
-    )
-  );
-}
+import { sessionHasProtectedHistory } from '../utils/sessionSafety';
 
 async function ensureSessionIsSafeToPlan(sessionRef) {
   const snapshot = await getDocFromServer(sessionRef);
