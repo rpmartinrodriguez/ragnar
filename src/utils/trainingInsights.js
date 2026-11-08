@@ -1,10 +1,10 @@
 // Métricas de entrenamiento reproducibles a partir de sesiones Firestore.
 // No se deben comparar pesos de ejercicios distintos como si fueran mejoras.
 // Esfuerzo (RPE) describe percepción, no una mejora automática de fuerza.
-const upper=/\b(press|bench|pecho|pectoral|biceps?|triceps?|hombros?|deltoid|elevacion(?:es)?|remo|pull.?up|dominad|jal[oó]n|polea|dorsal|espalda|lat pulldown|curl de brazo|fondos|face pull|push.?up|flexion(?:es)? de brazo)\b/i;
-const lower=/\b(sentadill|squat|peso muerto|deadlift|leg press|prensa|cuadriceps|isquio|femoral|glute|gl[uú]te|pantorrill|gemelo|zancad|lunges?|hip thrust|extensi[oó]n de pierna|curl de pierna|abductor|aductor|step.up|good morning)\b/i;
-const core=/\b(abdominal|plancha|plank|crunch|core|oblicuo)\b/i;
-const cardio=/\b(cinta|bicicleta|trote|running|carrera|correr|el[ií]ptica|cardio|remador)\b/i;
+const upper=/\b(?:press|bench|pecho|pectoral\w*|biceps\w*|triceps\w*|hombro\w*|deltoid\w*|elevacion\w*|remo\w*|pull.?up|dominad\w*|jalon\w*|polea|dorsal\w*|espalda|lat pulldown|curl de brazo|fondos|face pull|push.?up|flexion\w* de brazo)/i;
+const lower=/\b(?:sentadill\w*|squat\w*|peso muerto|deadlift|leg press|prensa|cuadriceps|isquio\w*|femoral\w*|glute\w*|pantorrill\w*|gemelo\w*|zancad\w*|lunges?|hip thrust|extension de pierna|curl de pierna|abductor\w*|aductor\w*|step.up|good morning)/i;
+const core=/\b(?:abdominal\w*|plancha\w*|plank|crunch\w*|core|oblicuo\w*)/i;
+const cardio=/\b(?:cinta|bicicleta|trote|running|carrera|correr|eliptica|cardio|remador)/i;
 
 export function regionOfExercise(exercise={}) {
   const explicit=exercise.trainingRegion || exercise.bodyRegion || exercise.region;
