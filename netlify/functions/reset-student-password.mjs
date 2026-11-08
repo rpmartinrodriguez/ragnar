@@ -152,7 +152,9 @@ export default async function handler(request) {
   try {
     await clientRef.update({
       authPasswordResetAt: FieldValue.serverTimestamp(),
-      authPasswordResetBy: coach.uid
+      authPasswordResetBy: coach.uid,
+      passwordChangeRequired: true,
+      passwordTemporaryIssuedAt: FieldValue.serverTimestamp()
     });
   } catch {
     // El cambio de contraseña ya tuvo éxito; devolvemos la nueva clave aunque
