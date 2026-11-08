@@ -800,7 +800,7 @@ export default function StudentView({ clientId }) {
   }
 
   return (
-    <div className="min-h-screen bg-zinc-950 text-white font-sans flex flex-col relative overflow-x-hidden">
+    <div className="ragnar-student-shell min-h-[100dvh] w-full max-w-full min-w-0 bg-zinc-950 text-white font-sans flex flex-col relative overflow-x-hidden">
         <ConnectionBanner/>
         {temporaryPasswordRequired && (
           <StudentFirstAccessModal clientId={clientId}
@@ -1092,15 +1092,15 @@ export default function StudentView({ clientId }) {
       )}
 
       {/* HEADER DE BIENVENIDA CON RACHA */}
-      <div className="bg-yellow-400 text-black p-4 pb-10 rounded-b-[3rem] shadow-xl relative z-10 shrink-0">
-          <div className="flex justify-between items-center max-w-2xl mx-auto">
+      <div className="bg-yellow-400 text-black px-3 sm:px-4 pt-4 pb-10 rounded-b-[2rem] sm:rounded-b-[3rem] shadow-xl relative z-10 shrink-0 w-full min-w-0">
+          <div className="flex justify-between items-center gap-2 min-w-0 w-full max-w-2xl mx-auto">
             
-            <div className="flex items-center gap-4">
-               <div className="w-12 h-12 bg-black rounded-2xl flex items-center justify-center text-yellow-400 shadow-lg">
+            <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
+               <div className="w-10 h-10 sm:w-12 sm:h-12 shrink-0 bg-black rounded-2xl flex items-center justify-center text-yellow-400 shadow-lg">
                  <User size={24}/>
                </div>
-               <div>
-                 <h1 className="text-xl font-black uppercase leading-none tracking-tighter">
+               <div className="min-w-0 flex-1">
+                 <h1 className="text-base sm:text-xl font-black uppercase leading-tight tracking-tighter break-words">
                    {client?.name || 'Atleta'}
                  </h1>
                  <div className="flex items-center gap-1.5 mt-1">
@@ -1112,7 +1112,7 @@ export default function StudentView({ clientId }) {
                </div>
             </div>
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                <button onClick={() => setCurrentView('alerts')} aria-label="Mis notificaciones"
                  className="relative p-2 bg-black/5 rounded-lg">
                  <Bell size={24}/>
@@ -1127,7 +1127,7 @@ export default function StudentView({ clientId }) {
       </div>
 
       {/* CONTENIDO PRINCIPAL DINÁMICO */}
-      <main className="flex-1 max-w-2xl mx-auto w-full px-4 -mt-6 pb-40 relative z-20 flex flex-col">
+      <main className="ragnar-student-content flex-1 min-w-0 max-w-2xl mx-auto w-full px-3 sm:px-4 -mt-6 pb-32 relative z-20 flex flex-col">
 
         {currentView==='home' && (
           <section className="space-y-4 animate-in fade-in">
@@ -1442,7 +1442,7 @@ export default function StudentView({ clientId }) {
                           </div>
                         )}
 
-                        <div className="grid grid-cols-4 gap-2 mb-2 px-2 text-[9px] uppercase font-black text-zinc-500 text-center">
+                        <div className="grid grid-cols-[minmax(28px,0.65fr)_minmax(38px,0.85fr)_minmax(0,1fr)_minmax(0,1fr)] gap-1.5 sm:gap-2 mb-2 px-1 sm:px-2 text-[9px] uppercase font-black text-zinc-500 text-center">
                           <span>Set</span>
                           <span>Meta</span>
                           <span>Reps</span>
@@ -1453,8 +1453,8 @@ export default function StudentView({ clientId }) {
                           {safeSets.map((set, sIdx) => {
                             const isDone = dailySession[exIdx].actualSets?.[sIdx]?.completed;
                             return (
-                              <div key={sIdx} className={`grid grid-cols-4 gap-2 items-center p-2 rounded-2xl transition-colors ${isDone ? 'bg-green-500/10 border border-green-500/20' : 'bg-black/30 border border-zinc-800/50'}`}>
-                                <span className="font-bold text-sm ml-2 text-white"># {sIdx + 1}</span>
+                              <div key={sIdx} className={`grid grid-cols-[minmax(28px,0.65fr)_minmax(38px,0.85fr)_minmax(0,1fr)_minmax(0,1fr)] gap-1.5 sm:gap-2 items-center p-1.5 sm:p-2 rounded-2xl transition-colors ${isDone ? 'bg-green-500/10 border border-green-500/20' : 'bg-black/30 border border-zinc-800/50'}`}>
+                                <span className="font-bold text-xs sm:text-sm ml-0.5 sm:ml-2 text-white whitespace-nowrap">#{sIdx + 1}</span>
                                 
                                 <div className="flex flex-col items-center justify-center">
                                   <span className="text-center text-xs font-black text-zinc-400">
@@ -1471,7 +1471,7 @@ export default function StudentView({ clientId }) {
                                   type="number" 
                                   placeholder="0" 
                                   disabled={isSessionFinalized} 
-                                  className="bg-zinc-800 border-none rounded-lg py-1 text-center text-sm font-bold text-white focus:ring-1 focus:ring-yellow-400 disabled:opacity-50" 
+                                  className="w-full min-w-0 max-w-full bg-zinc-800 border-none rounded-lg py-2 px-1 text-center text-base font-bold text-white focus:ring-1 focus:ring-yellow-400 disabled:opacity-50" 
                                   value={dailySession[exIdx].actualSets?.[sIdx]?.reps || ''} 
                                   onChange={(e) => handleUpdateSet(exIdx, sIdx, 'reps', e.target.value)} 
                                 />
@@ -1480,7 +1480,7 @@ export default function StudentView({ clientId }) {
                                   type="number" 
                                   placeholder="kg" 
                                   disabled={isSessionFinalized} 
-                                  className="bg-zinc-800 border-none rounded-lg py-1 text-center text-sm font-bold text-white focus:ring-1 focus:ring-yellow-400 disabled:opacity-50" 
+                                  className="w-full min-w-0 max-w-full bg-zinc-800 border-none rounded-lg py-2 px-1 text-center text-base font-bold text-white focus:ring-1 focus:ring-yellow-400 disabled:opacity-50" 
                                   value={dailySession[exIdx].actualSets?.[sIdx]?.weight || ''} 
                                   onChange={(e) => handleUpdateSet(exIdx, sIdx, 'weight', e.target.value)} 
                                 />
@@ -1709,7 +1709,7 @@ export default function StudentView({ clientId }) {
       )}
 
       {/* --- NAV BAR INFERIOR --- */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-zinc-950/95 backdrop-blur-md border-t border-zinc-800 p-2 flex justify-between items-center z-[40]"
+      <nav className="ragnar-student-bottom-nav fixed bottom-0 left-0 right-0 w-full max-w-full bg-zinc-950/95 backdrop-blur-md border-t border-zinc-800 px-1 sm:px-2 py-2 flex justify-between items-center z-[40]"
         style={{paddingBottom:'max(12px, env(safe-area-inset-bottom))'}} aria-label="Navegación del alumno">
         <button type="button" onClick={()=>setCurrentView('home')}
           className={`flex flex-col items-center justify-center gap-1 w-1/6 min-h-12 transition-colors ${currentView==='home'?'text-yellow-400':'text-zinc-500'}`}>
