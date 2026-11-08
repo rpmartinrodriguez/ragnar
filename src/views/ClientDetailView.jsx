@@ -38,6 +38,7 @@ import { getAuth } from 'firebase/auth';
 import { db } from '../firebase';
 import ProgressChart from '../components/ProgressChart';
 import CoachSetLogger from '../components/CoachSetLogger';
+import CoachClientOverview from '../components/CoachClientOverview';
 import { sessionHasProtectedHistory } from '../utils/sessionSafety';
 import { notifyStudentAboutCoachEvent } from '../utils/notifyStudent';
 
@@ -75,7 +76,7 @@ async function safelyWritePlannedSession(sessionRef, patch, expectedExercises = 
 
 export default function ClientDetailView({ client, goBack, exercisesLibrary = [], routines = [] }) {
   // --- ESTADOS DE PESTAÑAS Y NAVEGACIÓN ---
-  const [activeTab, setActiveTab] = useState('planificacion'); 
+  const [activeTab, setActiveTab] = useState('resumen'); 
   const [date, setDate] = useState(new Date());
   
   // --- ESTADOS DE LA SESIÓN DEL DÍA ---
@@ -594,7 +595,11 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
 
       {/* PESTAÑAS DE NAVEGACIÓN */}
       <div className="flex gap-6 mb-8 border-b border-zinc-800/80 overflow-x-auto no-scrollbar">
-        <button 
+        <button type="button" onClick={()=>setActiveTab('resumen')}
+          className={`pb-3 uppercase font-black text-xs tracking-widest transition-colors whitespace-nowrap ${activeTab==='resumen'?'text-yellow-400 border-b-2 border-yellow-400':'text-zinc-500 hover:text-zinc-300'}`}>
+          Resumen 360°
+        </button>
+        <button
           onClick={() => setActiveTab('planificacion')} 
           className={`pb-3 uppercase font-black text-xs tracking-widest transition-colors whitespace-nowrap ${activeTab === 'planificacion' ? 'text-yellow-400 border-b-2 border-yellow-400' : 'text-zinc-500 hover:text-zinc-300'}`}
         >
@@ -613,6 +618,8 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
           Mensajes
         </button>
       </div>
+
+      {activeTab==='resumen' && <CoachClientOverview client={client} onOpenTab={setActiveTab}/>}
 
       {/* VISTA: PLANIFICACIÓN */}
       {activeTab === 'planificacion' && (
