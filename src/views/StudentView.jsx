@@ -47,6 +47,7 @@ import { db } from '../firebase';
 import CommunityView from './CommunityView';
 import ProgressChart from '../components/ProgressChart';
 import StudentChangePassword from '../components/StudentChangePassword';
+import { notifyCoachAboutStudentEvent } from '../utils/ragnarPush';
 
 // --- BASE DE DATOS DE MEDALLAS ---
 const MEDALS_DB = {
@@ -450,6 +451,8 @@ export default function StudentView({ clientId }) {
         read: false
       });
       
+      // El alumno ya guardó su ausencia: push es un efecto secundario, no altera datos.
+      void notifyCoachAboutStudentEvent('missed_workout', client.id, missedWorkout.id);
       setMissedWorkout(null);
       setMissedReason('');
     } catch (error) { 
@@ -606,6 +609,8 @@ export default function StudentView({ clientId }) {
         reactions: { fire: [], power: [] }
       });
 
+      // Solo tras guardar sesión + notificación Firestore enviamos aviso externo.
+      void notifyCoachAboutStudentEvent('workout_completed', clientId, currentDateId);
       setIsSessionFinalized(true);
       setTimerEndTime(null);
 
@@ -648,12 +653,13 @@ export default function StudentView({ clientId }) {
     e.preventDefault();
     if (!newMessage.trim()) return;
     try {
-      await addDoc(collection(db, 'clients', client.id, 'messages'), { 
-        text: newMessage, 
-        sender: 'student', 
-        createdAt: new Date(), 
-        read: false 
+      const savedMessage = await addDoc(collection(db, 'clients', client.id, 'messages'), {
+        text: newMessage,
+        sender: 'student',
+        createdAt: new Date(),
+        read: false
       });
+      void notifyCoachAboutStudentEvent('student_message', client.id, savedMessage.id);
       setNewMessage('');
     } catch (error) {
       console.error(error);
