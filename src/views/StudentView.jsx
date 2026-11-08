@@ -46,6 +46,7 @@ import { getAuth, signOut } from 'firebase/auth';
 import { db } from '../firebase';
 import CommunityView from './CommunityView';
 import ProgressChart from '../components/ProgressChart';
+import StudentChangePassword from '../components/StudentChangePassword';
 
 // --- BASE DE DATOS DE MEDALLAS ---
 const MEDALS_DB = {
@@ -1409,6 +1410,8 @@ export default function StudentView({ clientId }) {
                </div>
              </div>
              
+             <StudentChangePassword />
+
              <button 
                onClick={handleLogout} 
                className="w-full py-4 text-zinc-600 hover:text-red-500 font-bold uppercase text-[10px] tracking-[0.3em] transition-colors"
