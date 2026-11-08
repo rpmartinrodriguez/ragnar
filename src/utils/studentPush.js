@@ -98,7 +98,9 @@ export async function studentForegroundListener(callback){
     const data=message.data||{};
     if(data.target==='student-alerts')callback({
       title:data.title||'Nuevo aviso en Ragnar',
-      body:data.body||'Tenés una notificación nueva.'
+      body:data.body||'Tenés una notificación nueva.',
+      type:data.type||'',
+      alertId:data.alertId||''
     });
   });
 }
