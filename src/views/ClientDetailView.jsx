@@ -631,8 +631,6 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
           
           {/* COLUMNA IZQUIERDA: CALENDARIO */}
           <div className="lg:col-span-4 space-y-6">
-            <CoachPlanningBlocks key={client.id} clientId={client.id} routines={routines}
-              onApplied={ids=>setAllSessionsIds(prev=>Array.from(new Set([...prev,...ids])))}/>
             <div className="bg-zinc-900 rounded-[2rem] border border-zinc-800 p-6 shadow-xl">
               <div className="flex items-center gap-2 mb-6">
                 <CalendarIcon size={20} className="text-yellow-400"/>
@@ -671,6 +669,8 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
                 </p>
               )}
             </div>
+            <CoachPlanningBlocks key={client.id} clientId={client.id} routines={routines}
+              onApplied={ids=>setAllSessionsIds(prev=>Array.from(new Set([...prev,...ids])))}/>
           </div>
 
           {/* COLUMNA DERECHA: RUTINA DEL DÍA */}
