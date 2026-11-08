@@ -85,6 +85,7 @@ export default function ClientsView({
   // --- MANEJO DEL MODAL DE DÍAS DE GRACIA ---
   const openGraceModal = (client, e) => {
     e.stopPropagation();
+    setFormError('');
     setGraceClient(client);
     // Si ya tenía días de gracia asignados, los cargamos. Si no, 0.
     setGraceDays(client.graceDays || 0);
@@ -360,7 +361,7 @@ export default function ClientsView({
               </p>
 
               <form onSubmit={handleGraceSubmit}>
-                {formError && <p role="alert" className="mb-4 text-red-300 text-xs">{formError}</p>
+                {formError && <p role="alert" className="mb-4 text-red-300 text-xs">{formError}</p>}
                 <div className="mb-6 text-left">
                   <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2 text-center">
                     Días adicionales de acceso
