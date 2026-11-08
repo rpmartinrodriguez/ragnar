@@ -48,6 +48,8 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
   const [cardioTargetMinutes, setCardioTargetMinutes] = useState('');
   const [cardioTargetIntensity, setCardioTargetIntensity] = useState('Baja');
   const [isSessionFinalized, setIsSessionFinalized] = useState(false);
+  const [studentNote, setStudentNote] = useState('');
+  const [studentNoteUpdatedAt, setStudentNoteUpdatedAt] = useState(null);
   
   const [allSessionsIds, setAllSessionsIds] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -117,12 +119,16 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
         const data = docSnap.data();
         setDailySession(data.exercises || []);
         setIsSessionFinalized(data.isFinalized || false);
+        setStudentNote(String(data.studentNote || ''));
+        setStudentNoteUpdatedAt(data.studentNoteUpdatedAt || null);
         setHydrationTarget(data.targetHydration || '');
         setCardioTargetMinutes(data.targetCardioMinutes || '');
         setCardioTargetIntensity(data.targetCardioIntensity || 'Baja');
       } else {
         setDailySession([]);
         setIsSessionFinalized(false);
+        setStudentNote('');
+        setStudentNoteUpdatedAt(null);
         setHydrationTarget('');
         setCardioTargetMinutes('');
         setCardioTargetIntensity('Baja');
@@ -685,6 +691,18 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
                     </div>
                   )}
                 </div>
+              )}
+
+              {studentNote.trim() && (
+                <section className="mb-5 rounded-2xl border border-yellow-400/30 bg-yellow-400/5 p-4 sm:p-5" aria-label="Observación del alumno">
+                  <h4 className="text-sm text-yellow-300 font-black uppercase tracking-wider flex items-center gap-2">
+                    <MessageSquare size={18}/> Observación del alumno
+                  </h4>
+                  <p className="text-zinc-100 text-sm leading-relaxed mt-3 whitespace-pre-wrap break-words">{studentNote}</p>
+                  {studentNoteUpdatedAt?.toDate && (
+                    <p className="text-xs text-zinc-500 mt-3">Guardada el {studentNoteUpdatedAt.toDate().toLocaleString('es-AR')}</p>
+                  )}
+                </section>
               )}
 
               <div className="space-y-4 flex-1">
