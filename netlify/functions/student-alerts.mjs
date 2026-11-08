@@ -32,7 +32,7 @@ export default async function handler(request){
     if(raw.length>4000)return reject('Solicitud demasiado grande',413);
     data=JSON.parse(raw);
   }catch{return reject('Solicitud inválida');}
-  const actions=['register','unregister','status','test','list','mark','check-renewal','coach-event'];
+  const actions=['register','unregister','status','test','list','mark','mark-section','check-renewal','coach-event'];
   if(!actions.includes(data?.action))return reject('Acción no admitida');
   if(!validId(data.clientId))return reject('ID del alumno inválido');
   let app;
@@ -93,8 +93,12 @@ export default async function handler(request){
   }
   const devices=clientRef.collection('pushDevices');
   if(data.action==='status'){
+    // Estado por dispositivo: tener otros teléfonos registrados NO implica
+    // que las push estén activas en el iPhone/navegador actual.
     const list=await devices.limit(12).get();
-    return respond({success:true,subscribed:list.size});
+    const tokenValid=typeof data.token==='string'&&validToken(data.token);
+    const registered=tokenValid?list.docs.some(d=>d.id===digest(data.token)):false;
+    return respond({success:true,subscribed:list.size,registered});
   }
   if(data.action==='register'){
     if(!validToken(data.token))return reject('Token de notificaciones inválido');
@@ -130,8 +134,46 @@ export default async function handler(request){
     const notification=clientRef.collection('studentNotifications').doc(data.notificationId);
     const exists=await notification.get();
     if(!exists.exists)return reject('Aviso no encontrado',404);
-    await notification.update({read:true,readAt:FieldValue.serverTimestamp()});
+    if(!exists.get('read'))await notification.update({
+      read:true,readAt:FieldValue.serverTimestamp()
+    });
     return respond({success:true});
+  }
+  if(data.action==='mark-section'){
+    // Solo el alumno autenticado puede confirmar que abrió la sección.
+    // No eliminar avisos: conservar historial, excluirlos del contador.
+    const types={
+      chat:['coach_message'],
+      calendar:['routine_updated'],
+      profile:['renewal'],
+      test:['test']
+    }[data.section];
+    if(!types)return reject('Sección inválida');
+    const notifications=clientRef.collection('studentNotifications');
+    let cursor=null,updated=0;
+    // Paginar sin índices compuestos, procesando únicamente avisos de la sección.
+    for(let page=0;page<12;page++){
+      let q=notifications.orderBy('createdAt','desc').limit(100);
+      if(cursor)q=q.startAfter(cursor);
+      const snapshot=await q.get();
+      if(snapshot.empty)break;
+      const toMark=snapshot.docs.filter(d=>
+        types.includes(d.get('type'))&&d.get('read')!==true
+      );
+      if(toMark.length){
+        const batch=db.batch();
+        for(const notification of toMark){
+          batch.update(notification.ref,{
+            read:true,readAt:FieldValue.serverTimestamp()
+          });
+        }
+        await batch.commit();
+        updated+=toMark.length;
+      }
+      if(snapshot.size<100)break;
+      cursor=snapshot.docs[snapshot.docs.length-1];
+    }
+    return respond({success:true,updated});
   }
   if(data.action==='check-renewal'){
     const result=await sendRenewalReminderIfDue(app,db,client);
