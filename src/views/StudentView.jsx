@@ -241,8 +241,9 @@ export default function StudentView({ clientId }) {
           let cycleYear = today.getFullYear();
           let cycleMonth = today.getMonth() + 1;
 
-          // Si hoy es antes de su día de pago, evaluamos el ciclo del mes anterior
-          if (today.getDate() < startDay) {
+          // Para meses cortos, el día 31 vence el último día válido del mes.
+          const currentDueDay=Math.min(startDay,new Date(today.getFullYear(),today.getMonth()+1,0).getDate());
+          if (today.getDate() < currentDueDay) {
             cycleMonth -= 1;
             if (cycleMonth === 0) {
               cycleMonth = 12;
@@ -258,7 +259,8 @@ export default function StudentView({ clientId }) {
 
           if (!isPaid) {
             // Fecha límite: Día de cobro de ESTE ciclo + días de gracia
-            const deadline = new Date(cycleYear, cycleMonth - 1, startDay);
+            const validDay=Math.min(startDay,new Date(cycleYear,cycleMonth,0).getDate());
+            const deadline = new Date(cycleYear, cycleMonth - 1, validDay);
             const grace = parseInt(clientData.graceDays || 0);
             deadline.setDate(deadline.getDate() + grace); 
             deadline.setHours(23, 59, 59, 999);
@@ -291,6 +293,34 @@ export default function StudentView({ clientId }) {
       fetchData();
     }
   }, [clientId]);
+
+  // Sincronizar en tiempo real los pagos: cuando el coach registra una cuota,
+  // el alumno recupera acceso sin tener que reinstalar ni borrar la PWA.
+  useEffect(()=>{
+    if(!client?.id||!client.startDate)return;
+    const parts=String(client.startDate).split('-');
+    const startDay=Number(parts[2]);
+    if(!startDay||startDay>31)return;
+    const now=new Date();
+    let year=now.getFullYear(),month=now.getMonth();
+    const monthDay=Math.min(startDay,new Date(year,month+1,0).getDate());
+    if(now.getDate()<monthDay){
+      month--;
+      if(month<0){month=11;year--;}
+    }
+    const periodId=[year,String(month+1).padStart(2,'0')].join('-');
+    const dueDay=Math.min(startDay,new Date(year,month+1,0).getDate());
+    const deadline=new Date(year,month,dueDay);
+    deadline.setDate(deadline.getDate()+Math.max(0,Number(client.graceDays)||0));
+    deadline.setHours(23,59,59,999);
+    const ref=doc(db,'clients',client.id,'payments',periodId);
+    return onSnapshot(ref,snapshot=>{
+      const paid=snapshot.exists()&&snapshot.data().status==='paid';
+      const allowed=paid||new Date()<=deadline;
+      setHasPaidMonth(allowed);
+      if(allowed)setShowPaymentModal(false);
+    },error=>console.warn('No se pudo actualizar el estado de cuota:',error?.code||error));
+  },[client?.id,client?.startDate,client?.graceDays]);
 
   // --- EFECTO 2: CONTROL DE SESIONES PENDIENTES ---
   useEffect(() => {
