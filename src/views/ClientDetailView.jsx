@@ -39,6 +39,7 @@ import { db } from '../firebase';
 import ProgressChart from '../components/ProgressChart';
 import CoachSetLogger from '../components/CoachSetLogger';
 import CoachClientOverview from '../components/CoachClientOverview';
+import CoachPlanningBlocks from '../components/CoachPlanningBlocks';
 import { sessionHasProtectedHistory } from '../utils/sessionSafety';
 import { notifyStudentAboutCoachEvent } from '../utils/notifyStudent';
 
@@ -630,6 +631,8 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
           
           {/* COLUMNA IZQUIERDA: CALENDARIO */}
           <div className="lg:col-span-4 space-y-6">
+            <CoachPlanningBlocks key={client.id} clientId={client.id} routines={routines}
+              onApplied={ids=>setAllSessionsIds(prev=>Array.from(new Set([...prev,...ids])))}/>
             <div className="bg-zinc-900 rounded-[2rem] border border-zinc-800 p-6 shadow-xl">
               <div className="flex items-center gap-2 mb-6">
                 <CalendarIcon size={20} className="text-yellow-400"/>
