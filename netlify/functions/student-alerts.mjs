@@ -77,7 +77,9 @@ export default async function handler(request){
          Math.abs(Date.now()-changed)>15*60000){
         return reject('No se confirmó un cambio de rutina reciente hecho por este entrenador',409);
       }
-      key='routine-'+digest(data.sourceId+':'+changed).slice(0,40);
+      // Agrupar cambios consecutivos del mismo día en ventanas de 10 minutos.
+      // Evita un push por cada ejercicio al planificar un bloque.
+      key='routine-'+digest(data.sourceId+':'+Math.floor(changed/600000)).slice(0,40);
       const first=session.get('coachPlanningKind')==='assigned';
       alertTitle=first?'Tu entrenador agregó una rutina':'Tu entrenador modificó una rutina';
       alertBody='Revisá tu planificación de Ragnar para el día '+
