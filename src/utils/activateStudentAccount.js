@@ -5,7 +5,8 @@
 import { initializeApp, deleteApp } from 'firebase/app';
 import {
   getAuth, setPersistence, inMemoryPersistence,
-  createUserWithEmailAndPassword, signOut, deleteUser
+  createUserWithEmailAndPassword, signOut, deleteUser,
+  reauthenticateWithCredential, EmailAuthProvider
 } from 'firebase/auth';
 import {
   collection, doc, getDocFromServer, getDocsFromServer, limit,
@@ -70,6 +71,13 @@ export async function activateStudentAccount(client) {
     await setPersistence(secondaryAuth, inMemoryPersistence);
     const account = await createUserWithEmailAndPassword(secondaryAuth, email, password);
     newlyCreatedUser = account.user;
+
+    // Comprobamos con Firebase Authentication que el email y la clave generada
+    // realmente son aceptados ANTES de vincular la ficha al UID nuevo.
+    await reauthenticateWithCredential(
+      newlyCreatedUser,
+      EmailAuthProvider.credential(email, password)
+    );
 
     // Si otra persona activó la ficha simultáneamente, no sobrescribimos.
     await runTransaction(db, async tx => {
