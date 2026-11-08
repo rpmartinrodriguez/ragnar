@@ -19,6 +19,7 @@ jobs:
       - run: npm run build
       - run: node --check scripts/migration/import-backup.mjs
       - run: node --check scripts/migration/create-student-auth.mjs
+      - run: node --check netlify/functions/reset-student-password.mjs
       - name: Validar archivos para Netlify
         run: |
           test -f dist/index.html
