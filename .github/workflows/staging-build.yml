@@ -22,10 +22,13 @@ jobs:
       - run: node --check scripts/migration/import-backup.mjs
       - run: node --check scripts/migration/create-student-auth.mjs
       - run: node --check netlify/functions/reset-student-password.mjs
+      - run: node --check netlify/functions/ragnar-push.mjs
+      - run: node --input-type=module -e "await import('./netlify/functions/ragnar-push.mjs')"
       - name: Validar archivos para Netlify
         run: |
           test -f dist/index.html
           test -f dist/importar.html
+          test -f dist/firebase-messaging-sw.js
           test -f dist/manifest.json
           test -d dist/assets
           grep -q '/assets/' dist/index.html
