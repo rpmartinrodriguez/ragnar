@@ -1204,8 +1204,13 @@ export default function StudentView({ clientId }) {
               </p>
               {hasPaidMonth ? (
                 <button type="button" onClick={()=>{
-                  if(todayWorkout){setDate(new Date());setCurrentView('workout');}
-                  else {setCurrentView('calendar');}
+                  if(todayWorkout){
+                    setDate(new Date());
+                    setCurrentView('workout');
+                    // Al elegir Comenzar desde Inicio, se registra el inicio real.
+                    // Si ya estaba corriendo, la transacción conserva el primero.
+                    if(!todayWorkout.finalized)void startWorkoutClock(todayYmd);
+                  }else {setCurrentView('calendar');}
                 }} className="mt-5 w-full py-4 bg-yellow-400 text-black font-black uppercase text-xs rounded-xl flex items-center justify-center gap-2">
                   <Dumbbell size={18}/>
                   {todayWorkout ? todayWorkout.finalized?'Ver mi entrenamiento':'Comenzar / continuar entrenamiento':'Ver mi agenda'}
