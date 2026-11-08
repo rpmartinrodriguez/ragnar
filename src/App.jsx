@@ -157,25 +157,46 @@ export default function App() {
   };
 
   const handleAddClient = async (data) => {
-    try { await addDoc(collection(db, 'clients'), { ...data, createdAt: new Date(), active: true, trainerId: user.uid }); } catch (error) { console.error(error); }
+    // Rechazar el formulario solamente si Firestore guardó correctamente.
+    await addDoc(collection(db, 'clients'), {
+      ...data, createdAt: new Date(), active: true, trainerId: user.uid
+    });
   };
 
   const handleUpdateClientData = async (updatedData) => {
-    try {
-      const { id, ...rest } = updatedData;
-      await updateDoc(doc(db, 'clients', id), rest);
-    } catch (error) { console.error(error); }
+    const { id, ...rest } = updatedData;
+    if (!id) throw new Error('La ficha no tiene un ID válido.');
+    // Protegemos la relación entre el correo de la ficha y Firebase Auth:
+    // modificar solo Firestore dejaría al atleta sin recuperación de contraseña.
+    const current = clients.find(c => c.id === id);
+    if (current?.accountAccessStatus === 'activated' &&
+        String(current.email || '').trim().toLowerCase() !==
+        String(rest.email || '').trim().toLowerCase()) {
+      throw new Error('El correo de un alumno activado debe cambiarse también en Authentication. Operación cancelada.');
+    }
+    await updateDoc(doc(db, 'clients', id), rest);
   };
 
   const handleDeleteClient = async (clientId) => {
-    if(window.confirm('¿Estás seguro de eliminar este cliente?')) {
-      try {
-        await deleteDoc(doc(db, 'clients', clientId));
-        if (selectedClient?.id === clientId) {
-          setActiveView('clients');
-          setSelectedClient(null);
-        }
-      } catch (error) { console.error(error); }
+    const current = clients.find(c => c.id === clientId);
+    if (!current) return;
+    const willArchive = current.active !== false;
+    const question = willArchive
+      ? '¿Archivar a ' + (current.name || 'este atleta') +
+        '?\n\nSe conservarán la ficha, rutinas, sesiones, mensajes y pagos. Archivar no revoca su acceso de Authentication.'
+      : '¿Restaurar a ' + (current.name || 'este atleta') + '?';
+    if (!window.confirm(question)) return;
+    try {
+      // Nunca borrar el documento raíz sin tratar sus subcolecciones.
+      // En Firebase, eliminar clients/{id} NO borra sessions/messages/payments.
+      await updateDoc(doc(db, 'clients', clientId), { active: !willArchive });
+      if (selectedClient?.id === clientId && willArchive) {
+        setActiveView('clients');
+        setSelectedClient(null);
+      }
+    } catch (error) {
+      window.alert('No se pudo ' + (willArchive ? 'archivar' : 'restaurar') +
+        ' el atleta: ' + (error?.message || 'Error de conexión'));
     }
   };
 
