@@ -181,3 +181,95 @@ button, a, input, select, textarea { touch-action: manipulation; }
 .react-calendar__tile--active.has-workout::after {
   background: #09090b;
 }
+
+/* Ragnar PWA · corrección integral de pantallas iPhone y Android */
+html, body, #root {
+  width: 100%;
+  max-width: 100%;
+  min-height: 100%;
+  overflow-x: clip;
+}
+#root { min-height: 100dvh; }
+body {
+  overscroll-behavior-x: none;
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+.ragnar-coach-shell, .ragnar-student-shell,
+.ragnar-coach-content, .ragnar-student-content {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+}
+.ragnar-coach-shell {
+  height: 100vh;
+  height: 100dvh;
+}
+.ragnar-coach-content, .ragnar-student-content {
+  -webkit-overflow-scrolling: touch;
+}
+.ragnar-student-shell img, .ragnar-coach-shell img,
+.ragnar-student-shell video, .ragnar-coach-shell video,
+.ragnar-student-shell canvas, .ragnar-coach-shell canvas {
+  max-width: 100%;
+}
+.ragnar-student-shell :is(input, textarea, select),
+.ragnar-coach-shell :is(input, textarea, select) {
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
+}
+.ragnar-student-shell [role="dialog"],
+.ragnar-coach-shell [role="dialog"] {
+  max-width: min(100%, 540px);
+  max-height: calc(100dvh - env(safe-area-inset-top) - env(safe-area-inset-bottom) - 24px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+@media (max-width: 639px) {
+  /* Evita el zoom automático de Safari al enfocar un campo de 12–14 px. */
+  .ragnar-student-shell :is(input, textarea, select),
+  .ragnar-coach-shell :is(input, textarea, select),
+  .ragnar-first-access-modal :is(input, textarea, select),
+  .ragnar-login-shell :is(input, textarea, select) {
+    font-size: 16px !important;
+  }
+  .ragnar-coach-shell main,
+  .ragnar-student-shell main {
+    min-width: 0;
+    max-width: 100%;
+  }
+  .ragnar-coach-shell .grid > *,
+  .ragnar-student-shell .grid > * {
+    min-width: 0;
+  }
+  .ragnar-student-shell .fixed.inset-0,
+  .ragnar-coach-shell .fixed.inset-0 {
+    padding-top: max(12px, env(safe-area-inset-top));
+    padding-bottom: max(12px, env(safe-area-inset-bottom));
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .ragnar-student-bottom-nav {
+    min-height: 64px;
+    padding-left: max(4px, env(safe-area-inset-left));
+    padding-right: max(4px, env(safe-area-inset-right));
+  }
+  .ragnar-student-bottom-nav > button {
+    min-width: 0;
+    flex: 1 1 0;
+    padding-inline: 1px;
+  }
+  .ragnar-student-bottom-nav > button span {
+    overflow-wrap: anywhere;
+  }
+  .ragnar-coach-content > div,
+  .ragnar-student-content > div,
+  .ragnar-student-content > section {
+    min-width: 0;
+    max-width: 100%;
+  }
+}
