@@ -433,7 +433,8 @@ export default function StudentView({ clientId }) {
       setClient(prev => ({ ...prev, currentStreak: 0 }));
 
       await updateDoc(doc(db, 'clients', client.id, 'sessions', missedWorkout.id), { 
-        missedReason: missedReason 
+        missedReason: missedReason,
+        missedReasonAt: new Date()
       });
       
       await addDoc(collection(db, 'trainerNotifications'), {
