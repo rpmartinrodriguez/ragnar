@@ -21,7 +21,7 @@ function safeExercises(routine){
       : Array.from({length:Math.min(30,Math.max(1,parseInt(ex.sets)||3))},()=>({
         reps:String(ex.reps||'10'),rir:String(ex.rir||'2')
       }));
-    return {name:String(ex.name||'Ejercicio'),videoUrl:String(ex.videoUrl||''),
+    return {name:String(ex.name||'Ejercicio'),videoUrl:String(ex.videoUrl||''),trainingRegion:ex.trainingRegion||'unknown',
       sets:String(sets.length),reps:String(sets[0]?.reps||'10'),
       rir:String(sets[0]?.rir||'2'),plannedSets:sets,actualSets:[]};
   });
