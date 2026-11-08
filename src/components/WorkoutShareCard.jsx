@@ -86,7 +86,7 @@ async function createImage({studentName,dateYmd,session,streak}) {
   },'image/png'));
 }
 
-export default function WorkoutShareCard({onClose,studentName,session,dateYmd,streak=1}){
+export default function WorkoutShareCard({onClose,onOpenSalon,studentName,session,dateYmd,streak=1}){
   const [busy,setBusy]=useState('');
   const [info,setInfo]=useState('');
   const duration=Number(session?.workoutDurationMinutes);
@@ -151,6 +151,10 @@ export default function WorkoutShareCard({onClose,studentName,session,dateYmd,st
           className="w-full py-3 rounded-xl border border-zinc-700 text-zinc-200 text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-40">
           <Download size={18}/> Guardar PNG
         </button>
+        {onOpenSalon&&<button type="button" onClick={onOpenSalon}
+          className="w-full py-3 rounded-xl text-zinc-400 hover:text-yellow-300 text-xs font-black uppercase">
+          Ir al Salón Ragnar
+        </button>}
       </div>
     </div>
   );
