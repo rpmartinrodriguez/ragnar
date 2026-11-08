@@ -13,7 +13,8 @@ export default function ExercisesView({
 
   const [formData, setFormData] = useState({
     name: '',
-    videoUrl: ''
+    videoUrl: '',
+    trainingRegion: 'unknown'
   });
 
   // Aseguramos que sea un array válido y lo ordenamos alfabéticamente de la A a la Z
@@ -30,7 +31,7 @@ export default function ExercisesView({
   // --- MANEJO DEL MODAL ---
   const openAddModal = () => {
     setEditingExercise(null);
-    setFormData({ name: '', videoUrl: '' });
+    setFormData({ name: '', videoUrl: '', trainingRegion: 'unknown' });
     setIsModalOpen(true);
   };
 
@@ -38,7 +39,8 @@ export default function ExercisesView({
     setEditingExercise(exercise);
     setFormData({
       name: String(exercise.name || ''),
-      videoUrl: String(exercise.videoUrl || '')
+      videoUrl: String(exercise.videoUrl || ''),
+      trainingRegion: exercise.trainingRegion || 'unknown'
     });
     setIsModalOpen(true);
   };
@@ -49,7 +51,8 @@ export default function ExercisesView({
 
     const dataToSave = {
       name: String(formData.name),
-      videoUrl: String(formData.videoUrl)
+      videoUrl: String(formData.videoUrl),
+      trainingRegion: formData.trainingRegion || 'unknown'
     };
 
     if (editingExercise) {
@@ -114,9 +117,12 @@ export default function ExercisesView({
                 <div className="w-10 h-10 bg-zinc-950 text-zinc-500 border border-zinc-800 rounded-lg flex items-center justify-center shrink-0 group-hover:text-yellow-400 group-hover:border-yellow-400/30 transition-colors">
                   <Dumbbell size={18} />
                 </div>
-                <h3 className="text-white font-bold text-sm md:text-base uppercase tracking-tight">
-                  {ex.name}
-                </h3>
+                <div className="min-w-0">
+                  <h3 className="text-white font-bold text-sm md:text-base uppercase tracking-tight break-words">{ex.name}</h3>
+                  <p className="text-xs text-zinc-500 mt-1">
+                    {{upper:'Tren superior',lower:'Tren inferior',core:'Zona media',cardio:'Cardio',unknown:'Sin clasificar'}[ex.trainingRegion]||'Sin clasificar'}
+                  </p>
+                </div>
               </div>
 
               {/* DERECHA: BOTONES DE ACCIÓN (EN COLUMNAS) */}
@@ -189,6 +195,20 @@ export default function ExercisesView({
             </div>
             
             <form onSubmit={handleSubmit} className="p-6 space-y-5">
+              <div>
+                <label htmlFor="ragnar-exercise-region" className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Zona de entrenamiento</label>
+                <select id="ragnar-exercise-region" value={formData.trainingRegion||'unknown'}
+                  onChange={e=>setFormData({...formData,trainingRegion:e.target.value})}
+                  className="w-full bg-zinc-900 border border-zinc-800 rounded-xl p-3 text-white outline-none focus:border-yellow-400">
+                  <option value="unknown">Sin clasificar</option>
+                  <option value="upper">Tren superior</option>
+                  <option value="lower">Tren inferior</option>
+                  <option value="core">Zona media / Core</option>
+                  <option value="cardio">Cardio</option>
+                </select>
+                <p className="text-xs text-zinc-500 mt-2">El alumno verá el progreso por zona muscular. Para ejercicios antiguos Ragnar podrá sugerir una clasificación por nombre.</p>
+              </div>
+
               <div>
                 <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">
                   Nombre del Ejercicio
