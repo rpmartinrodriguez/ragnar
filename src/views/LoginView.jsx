@@ -16,6 +16,10 @@ export default function LoginView({ onLoginSuccess }) {
       setResetStatus('Ingresá primero el correo de tu cuenta.');
       return;
     }
+    if (targetEmail.toLowerCase().endsWith('@ragnar.com')) {
+      setResetStatus('El correo interno @ragnar.com no recibe mensajes. Consultá al entrenador si perdiste tu clave; la recuperación administrativa está pendiente de habilitar.');
+      return;
+    }
     setResetting(true);
     setResetStatus('');
     try {
