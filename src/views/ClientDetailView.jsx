@@ -905,7 +905,7 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
                               </div>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
+                          <div className="flex items-center gap-1 sm:gap-2 shrink-0">
                             <button onClick={() => openExerciseModal(idx)} disabled={isSessionFinalized || isSavingExercise} className="p-2 text-zinc-400 hover:text-blue-400 bg-zinc-900 hover:bg-zinc-800 rounded-lg border border-zinc-800 transition-colors disabled:opacity-40" title={isSessionFinalized?'Sesión finalizada':'Editar'}>
                               <Edit size={16}/>
                             </button>
