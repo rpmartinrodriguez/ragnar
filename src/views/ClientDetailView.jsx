@@ -2,7 +2,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import Calendar from 'react-calendar';
 import 'react-calendar/dist/Calendar.css';
 import { 
-  ChevronLeft, 
+  ChevronLeft,
+  ChevronRight,
+  ChevronDown,
   Calendar as CalendarIcon, 
   Dumbbell, 
   Plus, 
@@ -744,21 +746,21 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
           </aside>
 
           {/* COLUMNA DERECHA: RUTINA DEL DÍA */}
-          <div className="lg:col-span-8">
-            <div className="bg-zinc-900/50 rounded-[2rem] border border-zinc-800 p-6 md:p-8 min-h-[600px] flex flex-col shadow-xl relative">
+          <div className="lg:col-span-8 xl:col-span-9 min-w-0">
+            <div className="bg-zinc-900/65 rounded-2xl border border-zinc-800 p-3 sm:p-4 flex flex-col shadow-lg relative min-w-0">
               
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8 border-b border-zinc-800 pb-6">
+              <div className="flex flex-col gap-3 mb-3 border-b border-zinc-800 pb-3">
                 <div>
-                  <h3 className="text-2xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
+                  <h3 className="text-lg sm:text-xl font-black text-white uppercase tracking-tight flex items-center gap-2">
                     <Target className="text-yellow-400" size={24}/> Programación
                   </h3>
-                  <p className="text-yellow-400 font-bold text-sm uppercase tracking-widest mt-1">
+                  <p className="text-yellow-400 font-bold text-xs capitalize mt-1">
                     {date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
                   </p>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
-                  {/* AQUÍ ESTÁN LOS BOTONES DE COPIAR JUNTOS */}
+                <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                  {/* Acciones rápidas visibles, sin panel flotante */}
                   <button 
                     onClick={() => setIsRangeModalOpen(true)}
                     className="bg-zinc-800 text-zinc-300 hover:text-white hover:bg-zinc-700 px-3 py-2.5 rounded-xl text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5 transition-all border border-zinc-700 shadow-md"
@@ -803,7 +805,7 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
               </div>
 
               {isSessionFinalized && (
-                <div className="mb-6 bg-green-500/10 border border-green-500/20 p-4 rounded-2xl flex items-center gap-3">
+                <div className="mb-3 bg-green-500/10 border border-green-500/20 p-2.5 rounded-xl flex items-center gap-2">
                   <div className="p-2 bg-green-500 rounded-full text-black"><CheckCircle size={20}/></div>
                   <div>
                     <h4 className="text-green-500 font-black uppercase text-sm tracking-widest">Sesión Finalizada</h4>
@@ -814,45 +816,39 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
               )}
 
               {(hydrationTarget || cardioTargetMinutes) && (
-                <div className="flex flex-col sm:flex-row gap-3 mb-6">
+                <div className="flex flex-wrap gap-2 mb-3">
                   {hydrationTarget && (
-                    <div className="flex-1 bg-black/40 border border-blue-500/20 rounded-2xl p-4 flex items-center gap-4">
-                      <div className="p-3 bg-blue-500/10 rounded-xl text-blue-400"><Droplets size={24}/></div>
+                    <div className="bg-black/40 border border-blue-500/20 rounded-xl px-3 py-2 flex items-center gap-2">
+                      <div className="p-1.5 bg-blue-500/10 rounded-lg text-blue-400"><Droplets size={16}/></div>
                       <div>
                         <p className="text-[10px] text-blue-400/60 font-black uppercase tracking-widest">Objetivo Hidratación</p>
-                        <p className="text-xl font-black text-white">{hydrationTarget} Litros</p>
+                        <p className="text-sm font-black text-white">{hydrationTarget} Litros</p>
                       </div>
                     </div>
                   )}
                   {cardioTargetMinutes && (
-                    <div className="flex-1 bg-black/40 border border-red-500/20 rounded-2xl p-4 flex items-center gap-4">
-                      <div className="p-3 bg-red-500/10 rounded-xl text-red-400"><Activity size={24}/></div>
+                    <div className="bg-black/40 border border-red-500/20 rounded-xl px-3 py-2 flex items-center gap-2">
+                      <div className="p-1.5 bg-red-500/10 rounded-lg text-red-400"><Activity size={16}/></div>
                       <div>
                         <p className="text-[10px] text-red-400/60 font-black uppercase tracking-widest">Cardio Extra</p>
-                        <p className="text-xl font-black text-white">{cardioTargetMinutes} Min <span className="text-sm text-red-400">({cardioTargetIntensity})</span></p>
+                        <p className="text-sm font-black text-white">{cardioTargetMinutes} Min <span className="text-sm text-red-400">({cardioTargetIntensity})</span></p>
                       </div>
                     </div>
                   )}
                 </div>
               )}
 
-              {client.trainingMode==='presencial' && (
-                <div className="mb-6">
-                  <CoachSetLogger clientId={client.id} dateId={currentDateId}
-                    exercises={dailySession} finalized={isSessionFinalized}/>
-                </div>
-              )}
-
               {studentNote.trim() && (
-                <section className="mb-5 rounded-2xl border border-yellow-400/30 bg-yellow-400/5 p-4 sm:p-5" aria-label="Observación del alumno">
-                  <h4 className="text-sm text-yellow-300 font-black uppercase tracking-wider flex items-center gap-2">
-                    <MessageSquare size={18}/> Observación del alumno
-                  </h4>
-                  <p className="text-zinc-100 text-sm leading-relaxed mt-3 whitespace-pre-wrap break-words">{studentNote}</p>
-                  {studentNoteUpdatedAt?.toDate && (
-                    <p className="text-xs text-zinc-500 mt-3">Guardada el {studentNoteUpdatedAt.toDate().toLocaleString('es-AR')}</p>
-                  )}
-                </section>
+                <details className="mb-3 rounded-xl border border-yellow-400/25 bg-yellow-400/5 text-sm">
+                  <summary className="cursor-pointer flex items-center gap-2 px-3 py-2.5 text-yellow-300 font-bold">
+                    <MessageSquare size={16}/> Observación del alumno
+                    <span className="text-zinc-400 font-normal text-xs">Ver comentario</span>
+                  </summary>
+                  <div className="px-3 pb-3 border-t border-yellow-400/10">
+                    <p className="text-zinc-100 mt-2 text-sm whitespace-pre-wrap break-words">{studentNote}</p>
+                    {studentNoteUpdatedAt?.toDate && <p className="text-zinc-500 text-xs mt-2">Guardada el {studentNoteUpdatedAt.toDate().toLocaleString('es-AR')}</p>}
+                  </div>
+                </details>
               )}
 
               {sessionLoadError && (
@@ -861,43 +857,51 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
                 </p>
               )}
 
-              <div className="space-y-4 flex-1">
+              <div className="grid grid-cols-1 2xl:grid-cols-2 gap-3 items-start min-w-0">
                 {loading ? (
-                  <div className="flex justify-center py-10"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-yellow-400"></div></div>
+                  <div className="col-span-full flex justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-yellow-400"></div></div>
                 ) : dailySession.length > 0 ? (
                   dailySession.map((ex, idx) => {
                     const safeSets = ex.plannedSets || Array.from({ length: Math.max(1, parseInt(ex.sets) || 1) }).map(() => ({
                       reps: String(ex.reps || ''), rir: String(ex.rir || '')
                     }));
 
+                    const exerciseKey=currentDateId+':'+idx;
+                    const expanded=expandedPlanningExercises[exerciseKey]===true;
+                    const previewSets=expanded?safeSets:safeSets.slice(0,2);
                     return (
-                      <div key={idx} className="bg-black/60 border border-zinc-800 rounded-2xl p-5 hover:border-zinc-700 transition-colors group">
+                      <div key={idx} className="bg-black/60 border border-zinc-800 rounded-xl p-3 sm:p-4 hover:border-zinc-700 transition-colors group min-w-0">
                         <div className="flex justify-between items-start">
-                          <div className="flex gap-4 w-full">
-                            <div className="w-10 h-10 bg-yellow-400/10 text-yellow-400 rounded-xl flex items-center justify-center font-black text-lg border border-yellow-400/20 shrink-0">
+                          <div className="flex gap-2.5 w-full min-w-0">
+                            <div className="w-8 h-8 bg-yellow-400/10 text-yellow-400 rounded-lg flex items-center justify-center font-black text-sm border border-yellow-400/20 shrink-0">
                               {idx + 1}
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-3">
-                                <h4 className="text-white font-black text-lg uppercase tracking-tighter leading-none">{ex.name}</h4>
+                                <h4 className="text-white font-black text-sm sm:text-base uppercase tracking-tight leading-tight break-words">{ex.name}</h4>
                                 {ex.videoUrl && <Video size={16} className="text-blue-500"/>}
                               </div>
-                              <div className="mb-3 flex items-center gap-2 flex-wrap">
+                              <div className="my-2 flex items-center gap-1.5 flex-wrap">
                                 <button type="button" disabled={isSessionFinalized || isSavingExercise}
                                   onClick={() => setEditingCoachNote({ index: idx, name: String(ex.name), value: ex.coachNote || '' })}
                                   className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-bold border border-red-400/30 text-red-300 bg-red-500/10 hover:bg-red-500/20 disabled:opacity-40">
                                   <Eye size={15}/> {String(ex.coachNote || '').trim() ? 'Editar nota' : 'Agregar nota'}
                                 </button>
-                                {!!String(ex.coachNote || '').trim() && <span className="text-xs text-zinc-400 max-w-[240px] truncate" title={ex.coachNote}>{ex.coachNote}</span>}
+                                {!!String(ex.coachNote || '').trim() && <span className="text-xs text-zinc-400 max-w-[140px] sm:max-w-[210px] truncate" title={ex.coachNote}>{ex.coachNote}</span>}
                               </div>
-                              <div className="space-y-1.5">
-                                {safeSets.map((set, sIdx) => (
-                                  <div key={sIdx} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
-                                    <span className="text-zinc-500 w-12 shrink-0">Set {sIdx + 1}</span>
-                                    <span className="text-white bg-zinc-800 px-2 py-1 rounded border border-zinc-700">{set.reps || '-'} Reps</span>
-                                    {set.rir && <span className="text-yellow-400 bg-yellow-400/10 px-2 py-1 rounded border border-yellow-400/20">RIR {set.rir}</span>}
+                              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                                {previewSets.map((set, sIdx) => (
+                                  <div key={sIdx} className="inline-flex items-center gap-2 bg-zinc-900 border border-zinc-800 px-2.5 py-1.5 rounded-lg text-[11px] font-bold">
+                                    <span className="text-zinc-500">S{sIdx + 1}</span>
+                                    <span className="text-white">{set.reps || '-'} reps</span>
+                                    {set.rir !== undefined && set.rir !== '' && <span className="text-yellow-400">RIR {set.rir}</span>}
                                   </div>
                                 ))}
+                                {safeSets.length>2 && <button type="button" aria-expanded={expanded}
+                                  onClick={() => setExpandedPlanningExercises(prev => ({...prev,[exerciseKey]:!prev[exerciseKey]}))}
+                                  className="text-[11px] text-yellow-300 border border-zinc-700 rounded-lg px-2.5 py-1.5 hover:bg-zinc-800">
+                                  {expanded?'Ver menos':'+ '+(safeSets.length-2)+' series'}
+                                </button>}
                               </div>
                             </div>
                           </div>
@@ -914,13 +918,30 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
                     );
                   })
                 ) : (
-                  <div className="flex flex-col items-center justify-center py-20 border border-dashed border-zinc-800 rounded-3xl bg-black/30">
+                  <div className="col-span-full flex flex-col items-center justify-center py-8 border border-dashed border-zinc-800 rounded-2xl bg-black/30">
                     <Dumbbell size={48} className="text-zinc-800 mb-4"/>
                     <p className="text-zinc-500 font-bold uppercase tracking-widest text-sm">Día Vacío</p>
                     <p className="text-zinc-600 text-xs mt-2 max-w-xs text-center font-medium">Usa los botones superiores para armar la rutina.</p>
                   </div>
                 )}
               </div>
+
+              {client.trainingMode==='presencial' && (
+                <section className="mt-3 rounded-xl bg-zinc-900 border border-blue-400/25 overflow-hidden">
+                  <button type="button" aria-expanded={coachRecorderOpen}
+                    onClick={() => setCoachRecorderOpen(open => !open)}
+                    className="w-full flex items-center justify-between gap-3 text-left px-3 py-3 hover:bg-zinc-800/50">
+                    <span className="text-blue-300 font-bold text-sm flex items-center gap-2">
+                      <Dumbbell size={18}/> Registro presencial · Series y pesos
+                    </span>
+                    <ChevronDown size={18} className={(coachRecorderOpen?'rotate-180 ':'')+'text-blue-300 transition-transform'}/>
+                  </button>
+                  <div className={coachRecorderOpen?'block px-2 pb-2':'hidden px-2 pb-2'}>
+                    <CoachSetLogger clientId={client.id} dateId={currentDateId}
+                      exercises={dailySession} finalized={isSessionFinalized}/>
+                  </div>
+                </section>
+              )}
 
             </div>
           </div>
