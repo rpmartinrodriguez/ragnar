@@ -75,9 +75,9 @@ async function safelyWritePlannedSession(sessionRef, patch, expectedExercises = 
   if(clientId)void notifyStudentAboutCoachEvent('routine_updated',clientId,sessionRef.id);
 }
 
-export default function ClientDetailView({ client, goBack, exercisesLibrary = [], routines = [] }) {
+export default function ClientDetailView({ client, goBack, exercisesLibrary = [], routines = [], initialTab = 'resumen' }) {
   // --- ESTADOS DE PESTAÑAS Y NAVEGACIÓN ---
-  const [activeTab, setActiveTab] = useState('resumen'); 
+  const [activeTab, setActiveTab] = useState(initialTab); 
   const [date, setDate] = useState(new Date());
   
   // --- ESTADOS DE LA SESIÓN DEL DÍA ---
