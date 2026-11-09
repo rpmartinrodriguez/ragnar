@@ -137,14 +137,14 @@ export default function CoachFollowupView({ clients = [], navigateTo }) {
           { id: 'onTrack', count: counts.onTrack },
           { id: 'review', count: counts.review },
           { id: 'contact', count: counts.contact },
-          { id: 'noData', count: counts.noData + counts.error }
+          { id: 'noData', count: counts.noData }
         ].map(({ id, count }) => {
           const style = stateInfo[id], Icon = style.icon;
           return <button key={id} type="button" onClick={() => setFilter(id)}
             className={`rounded-2xl border text-left p-4 hover:border-yellow-400 transition-colors ${style.bg} ${style.border}`}>
             <Icon size={22} className={style.text} />
             <p className="text-white font-black text-3xl mt-2 tabular-nums">{count}</p>
-            <p className={`text-xs font-bold mt-1 ${style.text}`}>{id === 'noData' ? 'Sin datos / sin acceso' : style.label}</p>
+            <p className={`text-xs font-bold mt-1 ${style.text}`}>{style.label}</p>
           </button>;
         })}
       </div>
@@ -214,10 +214,10 @@ export default function CoachFollowupView({ clients = [], navigateTo }) {
                 <p className="text-[11px] text-zinc-500">Programadas</p>
               </div>
             </div>}
-            <div className="text-xs text-zinc-500 flex flex-col gap-1">
+            {row.status !== 'error' && <div className="text-xs text-zinc-500 flex flex-col gap-1">
               <span>Última finalización en los últimos 28 días: <strong className="text-zinc-300">{shortDate(row.lastFinished)}</strong></span>
               {row.upcoming && <span>Próxima sesión programada: <strong className="text-zinc-300">{shortDate(row.upcoming)}</strong></span>}
-            </div>
+            </div>}
             <div className="flex flex-wrap gap-2 border-t border-zinc-800 pt-3">
               <button type="button" onClick={() => navigateTo('client-detail', client)}
                 className="flex-1 inline-flex items-center justify-center gap-2 bg-yellow-400 hover:bg-yellow-300 text-black text-xs font-black rounded-xl px-4 py-3">
