@@ -20,7 +20,8 @@ import {
   MessageSquare, 
   TrendingUp, 
   Send,
-  CalendarDays
+  CalendarDays,
+  Eye
 } from 'lucide-react';
 import { 
   collection, 
@@ -40,6 +41,8 @@ import ProgressChart from '../components/ProgressChart';
 import CoachSetLogger from '../components/CoachSetLogger';
 import CoachClientOverview from '../components/CoachClientOverview';
 import CoachPlanningBlocks from '../components/CoachPlanningBlocks';
+import CoachExerciseNoteEditor from '../components/CoachExerciseNoteEditor';
+import { validateCoachNote } from '../utils/coachExerciseNote';
 import { sessionHasProtectedHistory } from '../utils/sessionSafety';
 import { notifyStudentAboutCoachEvent } from '../utils/notifyStudent';
 
@@ -104,6 +107,7 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
   const [isExerciseModalOpen, setIsExerciseModalOpen] = useState(false);
   const [isSavingExercise, setIsSavingExercise] = useState(false);
   const [exerciseSaveError, setExerciseSaveError] = useState('');
+  const [editingCoachNote, setEditingCoachNote] = useState(null);
   const [isExtrasModalOpen, setIsExtrasModalOpen] = useState(false);
   const [isRangeModalOpen, setIsRangeModalOpen] = useState(false);
   const [editingExerciseIndex, setEditingExerciseIndex] = useState(null);
@@ -121,6 +125,7 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
     name: '',
     videoUrl: '',
     trainingRegion: 'unknown',
+    coachNote: '',
     plannedSets: [{ reps: '', rir: '2' }] 
   });
 
@@ -427,6 +432,7 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
           name: String(ex.name || 'Ejercicio'),
           videoUrl: String(ex.videoUrl || ''),
           trainingRegion:ex.trainingRegion || exercisesLibrary.find(item=>item.name===ex.name)?.trainingRegion || 'unknown',
+          coachNote:validateCoachNote(ex.coachNote || ''),
           sets: String(safePlannedSets.length),
           reps: String(safePlannedSets[0]?.reps || '10'),
           rir: String(safePlannedSets[0]?.rir || '2'),
@@ -485,13 +491,14 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
           rir: String(ex.rir || '2')
         }));
       }
-      setExForm({ name: ex.name || '', videoUrl: ex.videoUrl || '', trainingRegion: ex.trainingRegion || 'unknown', plannedSets: loadedSets.map(set=>({...set})) });
+      setExForm({ name: ex.name || '', videoUrl: ex.videoUrl || '', trainingRegion: ex.trainingRegion || 'unknown', coachNote: ex.coachNote || '', plannedSets: loadedSets.map(set=>({...set})) });
       setEditingExerciseIndex(index);
     } else {
       setExForm({
         name: exercisesLibrary?.length > 0 ? exercisesLibrary[0].name : '',
         videoUrl: exercisesLibrary?.length > 0 ? exercisesLibrary[0].videoUrl : '',
         trainingRegion: exercisesLibrary?.[0]?.trainingRegion || 'unknown',
+        coachNote: '',
         plannedSets: [{ reps: '', rir: '2' }]
       });
       setEditingExerciseIndex(null);
@@ -517,6 +524,7 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
       name: String(exForm.name),
       videoUrl: String(exForm.videoUrl || ''),
       trainingRegion:exercisesLibrary.find(item=>item.name===exForm.name)?.trainingRegion || exForm.trainingRegion || 'unknown',
+      coachNote: validateCoachNote(exForm.coachNote),
       sets: String(exForm.plannedSets.length),
       reps: String(exForm.plannedSets[0]?.reps || ''), 
       rir: String(exForm.plannedSets[0]?.rir || '2'),
@@ -542,6 +550,26 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
     }catch(error){
       setExerciseSaveError('No se pudo guardar el ejercicio: '+(error?.message||'revisá tu conexión'));
     }finally{setIsSavingExercise(false);}
+  };
+
+  // Actualiza sólo la nota del ejercicio en una transacción, sin alterar series/valores
+  // cargados por el alumno. Los entrenamientos finalizados siguen inmutables.
+  const saveExerciseCoachNote = async (note) => {
+    if (!editingCoachNote || !client?.id) throw new Error('Seleccioná un ejercicio.');
+    const { index, name } = editingCoachNote;
+    const targetRef = doc(db, 'clients', client.id, 'sessions', currentDateId);
+    await runTransaction(db, async tx => {
+      const snapshot = await tx.get(targetRef);
+      if (!snapshot.exists()) throw new Error('El día ya no existe.');
+      const current = snapshot.data();
+      if (current.isFinalized === true) throw new Error('La sesión está finalizada y no se puede modificar.');
+      const exercises = current.exercises || [];
+      if (!exercises[index] || String(exercises[index].name) !== name) {
+        throw new Error('El ejercicio cambió de posición. Abrí nuevamente la planificación.');
+      }
+      tx.update(targetRef, { exercises: exercises.map((ex, i) =>
+        i === index ? { ...ex, coachNote: validateCoachNote(note) } : ex) });
+    });
   };
 
   // --- ELIMINAR EJERCICIO ---
@@ -816,6 +844,14 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
                                 <h4 className="text-white font-black text-lg uppercase tracking-tighter leading-none">{ex.name}</h4>
                                 {ex.videoUrl && <Video size={16} className="text-blue-500"/>}
                               </div>
+                              <div className="mb-3 flex items-center gap-2 flex-wrap">
+                                <button type="button" disabled={isSessionFinalized || isSavingExercise}
+                                  onClick={() => setEditingCoachNote({ index: idx, name: String(ex.name), value: ex.coachNote || '' })}
+                                  className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-bold border border-red-400/30 text-red-300 bg-red-500/10 hover:bg-red-500/20 disabled:opacity-40">
+                                  <Eye size={15}/> {String(ex.coachNote || '').trim() ? 'Editar nota' : 'Agregar nota'}
+                                </button>
+                                {!!String(ex.coachNote || '').trim() && <span className="text-xs text-zinc-400 max-w-[240px] truncate" title={ex.coachNote}>{ex.coachNote}</span>}
+                              </div>
                               <div className="space-y-1.5">
                                 {safeSets.map((set, sIdx) => (
                                   <div key={sIdx} className="flex items-center gap-2 text-[10px] font-black uppercase tracking-widest">
@@ -957,6 +993,14 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
         </div>
       )}
 
+      {editingCoachNote && (
+        <CoachExerciseNoteEditor key={client.id + ':' + currentDateId + ':' + editingCoachNote.index}
+          exerciseName={editingCoachNote.name}
+          initialValue={editingCoachNote.value}
+          onSave={saveExerciseCoachNote}
+          onClose={() => setEditingCoachNote(null)}/>
+      )}
+
       {/* MODAL 2: CONFIGURAR EJERCICIO */}
       {isExerciseModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/90 backdrop-blur-sm p-4 animate-in fade-in">
@@ -987,6 +1031,16 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
                     <option key={ex.id || ex.name} value={ex.name}>{ex.name}</option>
                   ))}
                 </select>
+              </div>
+
+              <div>
+                <label htmlFor="daily-coach-note" className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Nota del coach para este ejercicio (opcional)</label>
+                <textarea id="daily-coach-note" rows={3} maxLength={500}
+                  placeholder="Ej.: Hacé una pausa de un segundo al bajar."
+                  value={exForm.coachNote || ''}
+                  onChange={e => setExForm(prev => ({ ...prev, coachNote: e.target.value }))}
+                  className="w-full bg-zinc-900 border border-zinc-700 rounded-xl p-3 text-white text-base outline-none focus:border-yellow-400"/>
+                <p className="text-xs text-zinc-500 mt-1">El alumno podrá abrirla tocando el ojo rojo junto al ejercicio.</p>
               </div>
 
               <div>
