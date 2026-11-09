@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { 
-  Menu, Dumbbell, Settings, BarChart3, Users, Calendar, KeyRound, 
+  Menu, Dumbbell, Settings, BarChart3, Users, Calendar, KeyRound, Activity, 
   X, LogOut, List, Layout, Bell, MessageSquare, CreditCard 
 } from 'lucide-react';
 
@@ -15,6 +15,7 @@ import { db } from './firebase';
 // --- Componentes ---
 import { Sidebar } from './components/Sidebar';
 import DashboardView from './views/DashboardView';
+import CoachFollowupView from './views/CoachFollowupView';
 import ClientsView from './views/ClientsView';
 import ClientDetailView from './views/ClientDetailView';
 import ExercisesView from './views/ExercisesView';
@@ -48,6 +49,8 @@ export default function App() {
     return incoming === 'notifications' ? 'notifications' : 'dashboard';
   });
   const [selectedClient, setSelectedClient] = useState(null);
+  const [detailInitialTab, setDetailInitialTab] = useState('resumen');
+  const [detailReturnView, setDetailReturnView] = useState('clients');
   const [clients, setClients] = useState([]);
   const [exercises, setExercises] = useState([]);
   const [routines, setRoutines] = useState([]); 
@@ -151,7 +154,11 @@ export default function App() {
     } catch (error) { console.error("Error logout:", error); }
   };
 
-  const navigateTo = (view, client = null) => {
+  const navigateTo = (view, client = null, options = {}) => {
+    if (view === 'client-detail') {
+      setDetailReturnView(activeView === 'followup' ? 'followup' : 'clients');
+      setDetailInitialTab(options.tab === 'mensajes' ? 'mensajes' : 'resumen');
+    }
     setActiveView(view);
     if (client) setSelectedClient(client);
     setIsMobileMenuOpen(false);
@@ -288,6 +295,7 @@ export default function App() {
                  {unreadCount > 0 && <span className="bg-red-500 text-white text-xs px-2 py-0.5 rounded-full">{unreadCount}</span>}
               </button>
               <button onClick={() => navigateTo('clients')} className={`p-4 text-left rounded-xl flex items-center gap-3 transition-colors ${activeView === 'clients' ? 'bg-yellow-400 text-black font-black' : 'text-zinc-400 hover:text-white hover:bg-zinc-900'}`}><Users size={20}/> Mis Atletas</button>
+              <button onClick={() => navigateTo('followup')} className={`p-4 text-left rounded-xl flex items-center gap-3 transition-colors ${activeView === 'followup' ? 'bg-yellow-400 text-black font-black' : 'text-zinc-400 hover:text-white hover:bg-zinc-900'}`}><Activity size={20}/> Seguimiento</button>
               <button onClick={() => navigateTo('access')} className={`p-4 text-left rounded-xl flex items-center gap-3 transition-colors ${activeView === 'access' ? 'bg-yellow-400 text-black font-black' : 'text-zinc-400 hover:text-white hover:bg-zinc-900'}`}><KeyRound size={20}/> Accesos alumnos</button>
               <button onClick={() => navigateTo('exercises')} className={`p-4 text-left rounded-xl flex items-center gap-3 transition-colors ${activeView === 'exercises' ? 'bg-yellow-400 text-black font-black' : 'text-zinc-400 hover:text-white hover:bg-zinc-900'}`}><List size={20}/> Ejercicios</button>
               <button onClick={() => navigateTo('routines')} className={`p-4 text-left rounded-xl flex items-center gap-3 transition-colors ${activeView === 'routines' ? 'bg-yellow-400 text-black font-black' : 'text-zinc-400 hover:text-white hover:bg-zinc-900'}`}><Layout size={20}/> Rutinas</button>
@@ -319,11 +327,12 @@ export default function App() {
             style={{WebkitOverflowScrolling:'touch',paddingBottom:'max(20px, env(safe-area-inset-bottom))'}}> 
             {activeView === 'dashboard' && <DashboardView clients={clients} settings={settings} navigateTo={navigateTo} onAddClient={handleAddClient} />}
             {activeView === 'notifications' && <NotificationsView navigateTo={navigateTo} clients={clients} />}
+            {activeView === 'followup' && <CoachFollowupView clients={clients} navigateTo={navigateTo} />}
             {activeView === 'clients' && <ClientsView clients={clients} settings={settings} routines={routines} navigateTo={navigateTo} onAddClient={handleAddClient} onUpdateClient={handleUpdateClientData} onDeleteClient={handleDeleteClient} />}
             {activeView === 'access' && <StudentAccessPanel clients={clients} onOpenClients={() => navigateTo('clients')} />}
             {activeView === 'exercises' && <ExercisesView exercises={exercises} exercisesLibrary={exercises} onAddExercise={handleAddExercise} onUpdateExercise={handleUpdateExercise} onDeleteExercise={handleDeleteExercise} />}
             {activeView === 'routines' && <RoutinesView routines={routines} exercisesLibrary={exercises} onAddRoutine={handleAddRoutine} onUpdateRoutine={handleUpdateRoutine} onDeleteRoutine={handleDeleteRoutine} />}
-            {activeView === 'client-detail' && selectedClient && <ClientDetailView client={clients.find(c=>c.id===selectedClient.id)||selectedClient} goBack={() => navigateTo('clients')} exercisesLibrary={exercises} routines={routines} onUpdateClient={handleUpdateClientData} />}
+            {activeView === 'client-detail' && selectedClient && <ClientDetailView key={selectedClient.id + ':' + detailInitialTab} client={clients.find(c=>c.id===selectedClient.id)||selectedClient} initialTab={detailInitialTab} goBack={() => navigateTo(detailReturnView)} exercisesLibrary={exercises} routines={routines} onUpdateClient={handleUpdateClientData} />}
             {activeView === 'calendar' && <CalendarView clients={clients} />}
             {activeView === 'settings' && (
               <div className="space-y-6">
