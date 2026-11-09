@@ -4,6 +4,7 @@ import {
   CreditCard, 
   Layout, 
   TrendingUp, 
+  Activity,
   ChevronRight, 
   DollarSign, 
   X, 
@@ -120,6 +121,15 @@ export default function DashboardView({ clients, settings, navigateTo }) {
           <Bell size={24} className="group-hover:animate-pulse"/>
         </button>
       </div>
+
+      <button type="button" onClick={() => navigateTo('followup')}
+        className="w-full flex items-center justify-between gap-3 rounded-2xl border border-yellow-400/40 bg-yellow-400/10 hover:bg-yellow-400/15 px-5 py-4 mb-5 text-left transition-colors">
+        <span className="flex items-center gap-3 min-w-0"><Activity className="text-yellow-400 shrink-0" size={25}/>
+          <span><strong className="block text-white text-sm sm:text-base">Seguimiento de alumnos</strong>
+            <span className="block text-zinc-400 text-xs mt-1">Detectá rutinas pendientes y acompañá a tus atletas.</span>
+          </span></span>
+        <ChevronRight className="text-yellow-400 shrink-0" size={21}/>
+      </button>
 
       <CoachDailyPulse clients={clients} navigateTo={navigateTo}/>
 
