@@ -47,7 +47,7 @@ export default function LoginView({ onLoginSuccess }) {
       onLoginSuccess(); 
     } catch (err) {
       const errors = {
-        'auth/invalid-credential': 'El usuario o la contraseña no coinciden. Verificá que uses las credenciales del Firebase NUEVO y el enlace de pruebas.',
+        'auth/invalid-credential': 'El usuario o la contraseña no coinciden. Revisá tu correo y contraseña.',
         'auth/wrong-password': 'El usuario o la contraseña no coinciden. Revisá el acceso entregado por el entrenador.',
         'auth/user-not-found': 'El usuario o la contraseña no coinciden. Revisá el acceso entregado por el entrenador.',
         'auth/too-many-requests': 'Se realizaron demasiados intentos. Probá nuevamente más tarde.',
@@ -87,7 +87,6 @@ export default function LoginView({ onLoginSuccess }) {
             <span className="text-white">-TRAINING</span>
           </h1>
           <p className="text-zinc-500 mt-2">Acceso de entrenadores y alumnos</p>
-          <p className="text-yellow-300 text-xs mt-2 font-bold">Entorno de prueba · Firebase ragnar-5f8d7</p>
         </div>
 
         <div className="bg-zinc-900/80 backdrop-blur-md border border-zinc-800 rounded-2xl p-5 sm:p-8 shadow-2xl w-full min-w-0">
