@@ -297,3 +297,39 @@ body {
     min-width: 0;
   }
 }
+
+
+/* RAGNAR · Calendario compacto exclusivo para planificación del coach.
+   No altera los calendarios de la agenda ni los del alumno. */
+.ragnar-planning-calendar .react-calendar {
+  padding: 6px !important;
+  border-radius: 12px !important;
+}
+.ragnar-planning-calendar .react-calendar__navigation {
+  height: 36px !important;
+  margin-bottom: 3px !important;
+}
+.ragnar-planning-calendar .react-calendar__navigation button {
+  min-height: 34px !important;
+  min-width: 32px !important;
+  margin-top: 0 !important;
+  font-size: 12px !important;
+}
+.ragnar-planning-calendar .react-calendar__tile {
+  min-height: 32px !important;
+  padding: 5px 2px !important;
+  font-size: 12px !important;
+  border-radius: 8px !important;
+}
+.ragnar-planning-calendar .react-calendar__month-view__weekdays {
+  font-size: 10px !important;
+}
+.ragnar-planning-calendar .react-calendar__tile.has-workout::after {
+  width: 5px;
+  height: 5px;
+  bottom: 1px;
+  background: #facc15;
+}
+.ragnar-planning-calendar .react-calendar__tile--active.has-workout::after {
+  background: #09090b;
+}
