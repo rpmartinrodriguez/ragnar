@@ -125,6 +125,7 @@ export default function StudentView({ clientId }) {
   const [sharingError,setSharingError] = useState('');
   const [showWeeklySummary,setShowWeeklySummary] = useState(false);
   const finalizingRef = useRef(false);
+  const setWriteQueueRef = useRef(Promise.resolve());
   const [allSessionsIds, setAllSessionsIds] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -674,29 +675,54 @@ export default function StudentView({ clientId }) {
     }
   };
 
+  // Guardado secuencial por dispositivo y transaccional con el estado más reciente
+  // de la sesión: no borra notas del coach ni otras series guardadas entre cambios.
   const handleUpdateSet = async (exerciseIndex, setIndex, field, value) => {
     if (isSessionFinalized || !hasPaidMonth) return;
-    
-    const updatedSession = [...dailySession];
-    const exercise = updatedSession[exerciseIndex];
-    
-    if (!exercise.actualSets) {
-      exercise.actualSets = [];
-    }
-    
-    if (!exercise.actualSets[setIndex]) {
-      exercise.actualSets[setIndex] = { reps: '', weight: '', completed: false };
-    }
-    
-    exercise.actualSets[setIndex][field] = value;
-    
-    try {
-      await setDoc(doc(db, 'clients', clientId, 'sessions', currentDateId), { 
-        date: currentDateId, 
-        exercises: updatedSession 
-      }, { merge: true });
-    } catch (error) {
-      console.error(error);
+    const exerciseName = dailySession[exerciseIndex]?.name;
+    if (!exerciseName || !['reps', 'weight', 'completed'].includes(field)) return;
+    const dateAtEdit = currentDateId;
+    const ref = doc(db, 'clients', clientId, 'sessions', dateAtEdit);
+
+    // Respuesta inmediata al teclear, sin esperar a la conexión.
+    setDailySession(prev => prev.map((ex, idx) => {
+      if (idx !== exerciseIndex) return ex;
+      const sets = Array.isArray(ex.actualSets) ? ex.actualSets.map(set => ({ ...set })) : [];
+      sets[setIndex] = {
+        reps: '', weight: '', completed: false, ...(sets[setIndex] || {}),
+        [field]: value
+      };
+      return { ...ex, actualSets: sets };
+    }));
+
+    const save = async () => {
+      await runTransaction(db, async tx => {
+        const snap = await tx.get(ref);
+        if (!snap.exists() || snap.data().isFinalized) {
+          throw new Error('La sesión ya no está disponible para editar.');
+        }
+        const exercises = snap.data().exercises;
+        if (!Array.isArray(exercises) || exercises[exerciseIndex]?.name !== exerciseName) {
+          throw new Error('El ejercicio cambió. Volvé a abrir la rutina.');
+        }
+        const updated = exercises.map((ex, idx) => {
+          if (idx !== exerciseIndex) return ex;
+          const sets = Array.isArray(ex.actualSets) ? ex.actualSets.map(set => ({ ...set })) : [];
+          sets[setIndex] = {
+            reps: '', weight: '', completed: false, ...(sets[setIndex] || {}),
+            [field]: value
+          };
+          return { ...ex, actualSets: sets };
+        });
+        tx.update(ref, { exercises: updated });
+      });
+    };
+    const pending = setWriteQueueRef.current.catch(() => {}).then(save);
+    setWriteQueueRef.current = pending;
+    try { await pending; }
+    catch (error) {
+      console.error('No se pudo guardar la serie:', error);
+      // Firestore volverá a mostrar el valor persistido al recibir su snapshot.
     }
   };
 
