@@ -100,7 +100,7 @@ export default function CoachPlanningBlocks({clientId,routines=[],baseDate=new D
   };
 
   return (
-    <section className="rounded-3xl border border-yellow-400/20 bg-zinc-900 p-5 space-y-3">
+    <section className="rounded-xl border border-yellow-400/20 bg-black/30 p-3 space-y-3">
       <h4 className="text-white font-black uppercase text-sm flex items-center gap-2">
         <CalendarRange size={19} className="text-yellow-400"/> Planificar por bloques
       </h4>
