@@ -1,9 +1,11 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { 
-  Layout, Plus, Trash2, Dumbbell, Save, ChevronRight, X, Video, Search, Copy, AlertCircle 
+  Layout, Plus, Trash2, Dumbbell, Save, ChevronRight, X, Video, Search, Copy, AlertCircle, Eye 
 } from 'lucide-react';
-import { collection, onSnapshot, doc, setDoc, deleteDoc, addDoc } from 'firebase/firestore';
+import { collection, onSnapshot, doc, setDoc, deleteDoc, addDoc, runTransaction } from 'firebase/firestore';
 import { db } from '../firebase';
+import CoachExerciseNoteEditor from '../components/CoachExerciseNoteEditor';
+import { validateCoachNote } from '../utils/coachExerciseNote';
 
 export default function RoutinesView({ exercisesLibrary }) {
   const [routines, setRoutines] = useState([]);
@@ -19,10 +21,12 @@ export default function RoutinesView({ exercisesLibrary }) {
   
   // --- ESTADOS DEL MODAL DE EJERCICIO (NUEVA ESTRUCTURA DINÁMICA) ---
   const [isAddingEx, setIsAddingEx] = useState(false);
+  const [editingCoachNote, setEditingCoachNote] = useState(null);
   const [newExData, setNewExData] = useState({ 
     name: '', 
     videoUrl: '',
     trainingRegion: 'unknown',
+    coachNote: '',
     plannedSets: [{ reps: '', rir: '2' }] 
   });
 
@@ -109,6 +113,7 @@ export default function RoutinesView({ exercisesLibrary }) {
       name: exercisesLibrary?.length > 0 ? exercisesLibrary[0].name : '',
       videoUrl: exercisesLibrary?.length > 0 ? exercisesLibrary[0].videoUrl : '',
       trainingRegion: exercisesLibrary?.[0]?.trainingRegion || 'unknown',
+      coachNote: '',
       plannedSets: [{ reps: '', rir: '2' }]
     });
     setIsAddingEx(true);
@@ -164,7 +169,8 @@ export default function RoutinesView({ exercisesLibrary }) {
       sets: String(newExData.plannedSets.length),
       reps: String(newExData.plannedSets[0]?.reps || ''),
       rir: String(newExData.plannedSets[0]?.rir || '2'),
-      plannedSets: newExData.plannedSets
+      plannedSets: newExData.plannedSets,
+      coachNote: validateCoachNote(newExData.coachNote)
     };
 
     const updatedExercises = [...(selectedRoutine.exercises || []), exerciseToSave];
@@ -174,10 +180,31 @@ export default function RoutinesView({ exercisesLibrary }) {
       await setDoc(doc(db, 'routines', selectedRoutine.id), { exercises: updatedExercises }, { merge: true });
       setSelectedRoutine({ ...selectedRoutine, exercises: updatedExercises });
       setIsAddingEx(false);
-      setNewExData({ name: '', videoUrl: '', trainingRegion: 'unknown', plannedSets: [{ reps: '', rir: '2' }] });
+      setNewExData({ name: '', videoUrl: '', trainingRegion: 'unknown', coachNote: '', plannedSets: [{ reps: '', rir: '2' }] });
     }catch(error){
       setError('No se pudo guardar el ejercicio: '+(error?.message||'revisá la conexión'));
     }finally{setIsSaving(false);}
+  };
+
+  // Nota específica de cada ejercicio: editar sin modificar series ni plantillas ya asignadas.
+  const saveExerciseCoachNote = async (note) => {
+    if (!editingCoachNote || !selectedRoutine?.id) throw new Error('Seleccioná una plantilla.');
+    const { index, name, id } = editingCoachNote;
+    const routineRef = doc(db, 'routines', selectedRoutine.id);
+    setIsSaving(true);
+    try {
+      await runTransaction(db, async tx => {
+        const snapshot = await tx.get(routineRef);
+        if (!snapshot.exists()) throw new Error('La plantilla ya no existe.');
+        const exercises = snapshot.data().exercises || [];
+        const target = exercises[index];
+        if (!target || String(target.name) !== name || String(target.id ?? '') !== String(id ?? '')) {
+          throw new Error('El ejercicio cambió. Abrí nuevamente la plantilla.');
+        }
+        tx.update(routineRef, { exercises: exercises.map((ex, i) =>
+          i === index ? { ...ex, coachNote: validateCoachNote(note) } : ex) });
+      });
+    } finally { setIsSaving(false); }
   };
 
   // --- REMOVER EJERCICIO DE LA PLANTILLA ---
@@ -310,6 +337,15 @@ export default function RoutinesView({ exercisesLibrary }) {
                               {ex.videoUrl && <Video size={16} className="text-blue-500"/>}
                             </div>
                             
+                            <div className="flex items-center gap-2 mt-2 flex-wrap">
+                              <button type="button" disabled={isSaving}
+                                onClick={() => setEditingCoachNote({ index: idx, name: String(ex.name), id: ex.id, value: ex.coachNote || '' })}
+                                className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-bold border border-red-400/30 text-red-300 bg-red-500/10 hover:bg-red-500/20 disabled:opacity-50">
+                                <Eye size={15}/> {String(ex.coachNote || '').trim() ? 'Editar nota del coach' : 'Agregar nota del coach'}
+                              </button>
+                              {!!String(ex.coachNote || '').trim() && <span className="text-xs text-zinc-400 max-w-[250px] truncate" title={ex.coachNote}>{ex.coachNote}</span>}
+                            </div>
+
                             {/* RENDERIZADO DE SERIES DINÁMICAS O VIEJAS */}
                             <div className="mt-3 space-y-1.5">
                               {ex.plannedSets ? (
@@ -359,6 +395,14 @@ export default function RoutinesView({ exercisesLibrary }) {
           )}
         </div>
       </div>
+
+      {editingCoachNote && (
+        <CoachExerciseNoteEditor key={selectedRoutine?.id + ':' + editingCoachNote.index}
+          exerciseName={editingCoachNote.name}
+          initialValue={editingCoachNote.value}
+          onSave={saveExerciseCoachNote}
+          onClose={() => setEditingCoachNote(null)}/>
+      )}
 
       {/* --- MODAL CREAR NUEVA RUTINA --- */}
       {isCreating && (
@@ -423,6 +467,16 @@ export default function RoutinesView({ exercisesLibrary }) {
                   </select>
                 </div>
                 
+                <div>
+                  <label htmlFor="template-coach-note" className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-2">Nota privada del coach para este ejercicio (opcional)</label>
+                  <textarea id="template-coach-note" maxLength={500} rows={3}
+                    placeholder="Ej.: Controlá la bajada, mantené el abdomen firme."
+                    className="w-full bg-zinc-900 border border-zinc-700 rounded-xl p-3 text-white text-base outline-none focus:border-yellow-400"
+                    value={newExData.coachNote || ''}
+                    onChange={e => setNewExData(prev => ({ ...prev, coachNote: e.target.value }))}/>
+                  <p className="text-xs text-zinc-500 mt-1">El alumno verá un ojo rojo para abrir esta indicación, sin ventanas emergentes.</p>
+                </div>
+
                 {/* CREADOR DE SERIES */}
                 <div>
                   <label className="block text-[10px] font-black text-zinc-500 uppercase tracking-widest mb-3">Configurar Series</label>
