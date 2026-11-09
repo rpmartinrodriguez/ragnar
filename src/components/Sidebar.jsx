@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { 
   LayoutDashboard, Users, Dumbbell, FolderSync, 
   Settings, Bell, LogOut, Calendar, CreditCard, 
-  MessageSquare, Menu, X, KeyRound 
+  MessageSquare, Menu, X, KeyRound, Activity 
 } from 'lucide-react';
 import { getAuth, signOut } from 'firebase/auth';
 
@@ -26,6 +26,7 @@ export function Sidebar({ activeView, navigateTo, notificationCount = 0 }) {
     { id: 'notifications', label: 'Notificaciones', icon: <Bell size={20} />, badge: notificationCount },
     { id: 'community', label: 'Salón Ragnar', icon: <MessageSquare size={20} /> },
     { id: 'clients', label: 'Mis Atletas', icon: <Users size={20} /> },
+    { id: 'followup', label: 'Seguimiento', icon: <Activity size={20} /> },
     { id: 'access', label: 'Accesos alumnos', icon: <KeyRound size={20} /> },
     { id: 'exercises', label: 'Ejercicios', icon: <Dumbbell size={20} /> },
     { id: 'routines', label: 'Rutinas', icon: <FolderSync size={20} /> },
