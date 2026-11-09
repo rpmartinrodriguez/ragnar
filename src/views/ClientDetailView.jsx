@@ -857,7 +857,7 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
                 </p>
               )}
 
-              <div className="grid grid-cols-1 2xl:grid-cols-2 gap-3 items-start min-w-0">
+              <div className="grid grid-cols-1 xl:grid-cols-2 gap-3 items-start min-w-0">
                 {loading ? (
                   <div className="col-span-full flex justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-t-2 border-yellow-400"></div></div>
                 ) : dailySession.length > 0 ? (
@@ -872,12 +872,12 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
                     return (
                       <div key={idx} className="bg-black/60 border border-zinc-800 rounded-xl p-3 sm:p-4 hover:border-zinc-700 transition-colors group min-w-0">
                         <div className="flex justify-between items-start">
-                          <div className="flex gap-2.5 w-full min-w-0">
+                          <div className="flex gap-2.5 flex-1 min-w-0">
                             <div className="w-8 h-8 bg-yellow-400/10 text-yellow-400 rounded-lg flex items-center justify-center font-black text-sm border border-yellow-400/20 shrink-0">
                               {idx + 1}
                             </div>
-                            <div className="flex-1">
-                              <div className="flex items-center gap-2 mb-3">
+                            <div className="flex-1 min-w-0">
+                              <div className="flex flex-wrap items-center gap-2 mb-1">
                                 <h4 className="text-white font-black text-sm sm:text-base uppercase tracking-tight leading-tight break-words">{ex.name}</h4>
                                 {ex.videoUrl && <Video size={16} className="text-blue-500"/>}
                               </div>
