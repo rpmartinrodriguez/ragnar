@@ -82,6 +82,11 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
   // --- ESTADOS DE PESTAÑAS Y NAVEGACIÓN ---
   const [activeTab, setActiveTab] = useState(initialTab); 
   const [date, setDate] = useState(new Date());
+  const [planningCalendarOpen, setPlanningCalendarOpen] = useState(false);
+  const [planningBlocksOpen, setPlanningBlocksOpen] = useState(false);
+  const [planningTemplateId, setPlanningTemplateId] = useState('');
+  const [coachRecorderOpen, setCoachRecorderOpen] = useState(false);
+  const [expandedPlanningExercises, setExpandedPlanningExercises] = useState({});
   
   // --- ESTADOS DE LA SESIÓN DEL DÍA ---
   const [dailySession, setDailySession] = useState([]); 
@@ -608,10 +613,10 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
   }
 
   return (
-    <div className="max-w-6xl mx-auto animate-in fade-in pb-12">
+    <div className={(activeTab === 'planificacion' ? 'max-w-[1500px]' : 'max-w-6xl') + ' mx-auto animate-in fade-in pb-12'}>
       
       {/* HEADER PRINCIPAL */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+      <div className={(activeTab === 'planificacion' ? 'mb-4' : 'mb-6') + ' flex flex-col md:flex-row md:items-center justify-between gap-4'}>
         <div className="flex items-center gap-4">
           <button 
             onClick={goBack} 
@@ -630,7 +635,7 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
       </div>
 
       {/* PESTAÑAS DE NAVEGACIÓN */}
-      <div className="flex gap-6 mb-8 border-b border-zinc-800/80 overflow-x-auto no-scrollbar">
+      <div className={(activeTab === 'planificacion' ? 'mb-4' : 'mb-8') + ' flex gap-6 border-b border-zinc-800/80 overflow-x-auto no-scrollbar'}>
         <button type="button" onClick={()=>setActiveTab('resumen')}
           className={`pb-3 uppercase font-black text-xs tracking-widest transition-colors whitespace-nowrap ${activeTab==='resumen'?'text-yellow-400 border-b-2 border-yellow-400':'text-zinc-500 hover:text-zinc-300'}`}>
           Resumen 360°
@@ -659,51 +664,84 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
 
       {/* VISTA: PLANIFICACIÓN */}
       {activeTab === 'planificacion' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 animate-in fade-in">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 items-start animate-in fade-in">
           
-          {/* COLUMNA IZQUIERDA: CALENDARIO */}
-          <div className="lg:col-span-4 space-y-6">
-            <div className="bg-zinc-900 rounded-[2rem] border border-zinc-800 p-6 shadow-xl">
-              <div className="flex items-center gap-2 mb-6">
-                <CalendarIcon size={20} className="text-yellow-400"/>
-                <h3 className="text-lg font-black uppercase tracking-widest text-white italic">
-                  Fechas
+          {/* PANEL IZQUIERDO: ELEGIR FECHA Y HERRAMIENTAS SIN SCROLL EXCESIVO */}
+          <aside className="lg:col-span-4 xl:col-span-3 min-w-0 space-y-3">
+            <section className="bg-zinc-900 rounded-2xl border border-zinc-800 p-3 sm:p-4">
+              <div className="flex justify-between items-center gap-2 mb-3">
+                <h3 className="text-white font-black uppercase text-sm flex items-center gap-2">
+                  <CalendarIcon size={18} className="text-yellow-400"/> Elegir día
                 </h3>
+                <button type="button" aria-expanded={planningCalendarOpen}
+                  onClick={() => setPlanningCalendarOpen(open => !open)}
+                  className="lg:hidden rounded-lg bg-zinc-800 text-yellow-400 font-bold text-xs px-2.5 py-2">
+                  {planningCalendarOpen ? 'Ocultar mes' : 'Ver mes'}
+                </button>
               </div>
-              <Calendar 
-                onChange={handleDateChange} 
-                value={date} 
-                className="react-calendar-custom" 
-                tileClassName={({ date: tDate }) => allSessionsIds.includes(formatDateId(tDate)) ? 'has-workout' : null} 
-              />
-            </div>
+              <div className="grid grid-cols-[36px_minmax(0,1fr)_36px] gap-1.5 items-center mb-3">
+                <button type="button" aria-label="Día anterior" title="Día anterior"
+                  onClick={() => handleDateChange(new Date(date.getFullYear(),date.getMonth(),date.getDate()-1))}
+                  className="h-9 flex items-center justify-center rounded-lg bg-black border border-zinc-700 text-yellow-400 hover:border-yellow-400">
+                  <ChevronLeft size={19}/>
+                </button>
+                <input type="date" aria-label="Fecha de la rutina" value={currentDateId}
+                  onChange={event => {
+                    if (!event.target.value) return;
+                    const d = new Date(event.target.value + 'T12:00:00');
+                    if (!Number.isNaN(d.getTime())) handleDateChange(d);
+                  }}
+                  className="w-full min-w-0 h-9 px-2 rounded-lg bg-black border border-zinc-700 text-white text-sm outline-none focus:border-yellow-400"/>
+                <button type="button" aria-label="Día siguiente" title="Día siguiente"
+                  onClick={() => handleDateChange(new Date(date.getFullYear(),date.getMonth(),date.getDate()+1))}
+                  className="h-9 flex items-center justify-center rounded-lg bg-black border border-zinc-700 text-yellow-400 hover:border-yellow-400">
+                  <ChevronRight size={19}/>
+                </button>
+              </div>
+              <div className={planningCalendarOpen ? 'ragnar-planning-calendar block' : 'ragnar-planning-calendar hidden lg:block'}>
+                <Calendar onChange={handleDateChange} value={date} className="react-calendar-custom"
+                  tileClassName={({date: tileDate}) => allSessionsIds.includes(formatDateId(tileDate)) ? 'has-workout' : null}/>
+              </div>
+              <p className="text-zinc-500 text-[11px] mt-2">Puntos amarillos: días con rutinas programadas.</p>
+            </section>
 
-            <div className="bg-zinc-900 rounded-[2rem] border border-zinc-800 p-6 shadow-xl">
-              <h3 className="text-white font-bold uppercase text-sm tracking-widest mb-4 flex items-center gap-2">
-                <Save size={16} className="text-yellow-400"/> Pegar Plantilla
+            <section className="bg-zinc-900 rounded-2xl border border-zinc-800 p-3 sm:p-4 space-y-2.5">
+              <h3 className="text-white font-black text-sm flex items-center gap-2">
+                <Save size={17} className="text-yellow-400"/> Asignar plantilla
               </h3>
-              {routines && routines.length > 0 ? (
-                <div className="space-y-2 max-h-48 overflow-y-auto custom-scrollbar pr-2">
-                  {routines.map(routine => (
-                    <button 
-                      key={routine.id}
-                      onClick={() => handleAssignRoutine(routine)}
-                      className="w-full text-left p-3 bg-black/40 hover:bg-yellow-400/10 border border-zinc-800 hover:border-yellow-400/30 rounded-xl text-sm font-bold text-zinc-300 hover:text-yellow-400 transition-colors uppercase tracking-tight flex justify-between items-center"
-                    >
-                      {routine.name}
-                      <Plus size={16}/>
-                    </button>
-                  ))}
-                </div>
-              ) : (
-                <p className="text-zinc-500 text-xs text-center py-4 font-medium border border-dashed border-zinc-800 rounded-xl">
-                  No tienes rutinas pre-armadas creadas.
-                </p>
-              )}
-            </div>
-            <CoachPlanningBlocks key={client.id} clientId={client.id} routines={routines}
-              onApplied={ids=>setAllSessionsIds(prev=>Array.from(new Set([...prev,...ids])))}/>
-          </div>
+              <select aria-label="Elegir plantilla para el día" value={planningTemplateId}
+                onChange={event => setPlanningTemplateId(event.target.value)}
+                className="w-full min-w-0 p-2.5 bg-black border border-zinc-700 rounded-xl text-white text-sm outline-none focus:border-yellow-400">
+                <option value="">Seleccionar plantilla...</option>
+                {(routines || []).map(routine => (
+                  <option key={routine.id} value={routine.id}>{routine.name} ({(routine.exercises||[]).length} ejercicios)</option>
+                ))}
+              </select>
+              <button type="button" disabled={!planningTemplateId || isSessionFinalized || loading}
+                onClick={() => {
+                  const chosen = (routines||[]).find(routine => routine.id === planningTemplateId);
+                  if (chosen) handleAssignRoutine(chosen);
+                }}
+                className="w-full min-h-10 rounded-xl bg-yellow-400 text-black text-xs font-black flex items-center justify-center gap-1.5 hover:bg-yellow-300 disabled:opacity-40">
+                <Plus size={16}/> Aplicar al día
+              </button>
+              <p className="text-zinc-500 text-[11px]">Se respetan las sesiones con registros previos.</p>
+            </section>
+
+            <section className="bg-zinc-900 rounded-2xl border border-zinc-800 overflow-hidden">
+              <button type="button" onClick={() => setPlanningBlocksOpen(open => !open)} aria-expanded={planningBlocksOpen}
+                className="w-full flex items-center justify-between gap-2 p-3 sm:p-4 text-left hover:bg-zinc-800/40">
+                <span className="text-white font-black text-sm flex items-center gap-2">
+                  <CalendarDays size={18} className="text-yellow-400"/> Planificar por semanas
+                </span>
+                <ChevronDown size={18} className={(planningBlocksOpen ? 'rotate-180 ' : '') + 'text-zinc-400 transition-transform'}/>
+              </button>
+              <div className={planningBlocksOpen ? 'block px-2 pb-2' : 'hidden px-2 pb-2'}>
+                <CoachPlanningBlocks key={client.id} clientId={client.id} routines={routines}
+                  onApplied={ids => setAllSessionsIds(prev => Array.from(new Set([...prev, ...ids])))}/>
+              </div>
+            </section>
+          </aside>
 
           {/* COLUMNA DERECHA: RUTINA DEL DÍA */}
           <div className="lg:col-span-8">
