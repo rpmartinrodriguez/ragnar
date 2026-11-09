@@ -22,6 +22,7 @@ function safeExercises(routine){
         reps:String(ex.reps||'10'),rir:String(ex.rir||'2')
       }));
     return {name:String(ex.name||'Ejercicio'),videoUrl:String(ex.videoUrl||''),trainingRegion:ex.trainingRegion||'unknown',
+      coachNote:String(ex.coachNote||'').slice(0,500),
       sets:String(sets.length),reps:String(sets[0]?.reps||'10'),
       rir:String(sets[0]?.rir||'2'),plannedSets:sets,actualSets:[]};
   });
