@@ -39,7 +39,7 @@ export default function CoachPlanningBlocks({clientId,routines=[],baseDate=new D
 
   const picked=useMemo(()=>routines.find(r=>r.id===routineId),[routines,routineId]);
   const dates=useMemo(()=>{
-    if(!/^d{4}-d{2}-d{2}$/.test(start))return [];
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(start))return [];
     const first=new Date(start+'T12:00:00');
     if(!Number.isFinite(first.valueOf()))return [];
     const result=[];
