@@ -29,7 +29,8 @@ import {
   Flame, 
   Award, 
   Medal,
-  ShieldCheck
+  ShieldCheck,
+  Eye
 } from 'lucide-react';
 import { 
   doc, 
@@ -132,6 +133,8 @@ export default function StudentView({ clientId }) {
   const [cardioMinutes, setCardioMinutes] = useState('');
   const [cardioIntensity, setCardioIntensity] = useState('Baja');
   const [exerciseHistory, setExerciseHistory] = useState({});
+  const [openCoachNotes, setOpenCoachNotes] = useState({});
+  const [seenCoachNotes, setSeenCoachNotes] = useState({});
 
   // --- ESTADOS DE PAGO ---
   const [hasPaidMonth, setHasPaidMonth] = useState(true); 
@@ -1463,6 +1466,12 @@ export default function StudentView({ clientId }) {
                       rir: String(ex.rir || '')
                     }));
 
+                    // Cada nota se abre sólo cuando el atleta toca el ojo (sin modal ni aviso automático).
+                    const coachNote = String(ex.coachNote || '').trim();
+                    const noteKey = currentDateId + ':' + exIdx + ':' + coachNote;
+                    const noteOpen = !!openCoachNotes[noteKey];
+                    const noteSeen = !!seenCoachNotes[noteKey];
+
                     // HISTORIAL DE SOBRECARGA PROGRESIVA
                     const historyData = exerciseHistory[ex.name];
                     const hasValidHistory = historyData && historyData.actualSets && historyData.actualSets.some(s => s.completed);
@@ -1479,16 +1488,41 @@ export default function StudentView({ clientId }) {
                               <div className="flex items-center gap-2 mb-1">
                                 <h3 className="font-bold text-lg uppercase tracking-tight leading-none text-white">{ex.name}</h3>
                                 {ex.videoUrl && (
-                                  <a 
-                                    href={ex.videoUrl} 
-                                    target="_blank" 
-                                    rel="noreferrer" 
+                                  <a
+                                    href={ex.videoUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
                                     className="p-1.5 bg-blue-500/10 text-blue-400 rounded-lg hover:bg-blue-500/20 transition-colors"
+                                    aria-label={'Ver video de ' + ex.name}
                                   >
                                     <Video size={16}/>
                                   </a>
                                 )}
+                                {coachNote && (
+                                  <button type="button"
+                                    title={noteOpen ? 'Ocultar nota del coach' : 'Ver nota del coach'}
+                                    aria-label={(noteOpen ? 'Ocultar' : 'Ver') + ' nota del coach de ' + ex.name}
+                                    aria-expanded={noteOpen}
+                                    aria-controls={'ragnar-coach-note-' + exIdx}
+                                    onClick={() => {
+                                      setSeenCoachNotes(prev => ({ ...prev, [noteKey]: true }));
+                                      setOpenCoachNotes(prev => ({ ...prev, [noteKey]: !prev[noteKey] }));
+                                    }}
+                                    className={'shrink-0 inline-flex items-center gap-1.5 rounded-lg border border-red-400/40 bg-red-500/10 text-red-300 px-2.5 py-2 text-xs font-black hover:bg-red-500/20 focus-visible:outline focus-visible:outline-2 focus-visible:outline-red-400 ' +
+                                      (!noteSeen && !noteOpen ? 'animate-pulse motion-reduce:animate-none' : '')}>
+                                    <Eye size={18} aria-hidden="true"/>
+                                    <span>Nota</span>
+                                  </button>
+                                )}
                               </div>
+
+                              {coachNote && noteOpen && (
+                                <div id={'ragnar-coach-note-' + exIdx} role="note"
+                                  className="mt-3 mb-3 rounded-xl border border-red-400/30 bg-red-500/10 p-3 text-left">
+                                  <p className="text-red-300 text-[11px] font-black uppercase tracking-wide mb-1">Indicación de tu coach</p>
+                                  <p className="text-sm text-zinc-100 whitespace-pre-wrap break-words">{coachNote}</p>
+                                </div>
+                              )}
 
                               {/* ALERTA DE SOBRECARGA MÁGICA */}
                               {hasValidHistory && (
