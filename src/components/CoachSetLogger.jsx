@@ -3,6 +3,7 @@ import { Check, Save, Dumbbell, AlertCircle, CheckCircle2 } from 'lucide-react';
 import { runTransaction, doc, serverTimestamp } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { db } from '../firebase';
+import { explainCoachSaveError } from '../utils/coachSafeEdits';
 
 // El coach puede anotar las series reales sin crear otra ficha ni otra sesión.
 // Los registros del alumno y del coach comparten la estructura actualSets.
@@ -17,10 +18,12 @@ function setsForExercise(exercise) {
   }));
 }
 function signature(exercises) {
+  // Sólo la identidad y la estructura: las series reales y notas pueden
+  // cambiar en otro dispositivo sin bloquear el registro del entrenador.
   return JSON.stringify(exercises.map(ex => ({
-    name:ex.name||'',
-    sets:ex.plannedSets||ex.sets,
-    actualSets:ex.actualSets||[]
+    name: String(ex.name || ''),
+    sets: Array.isArray(ex.plannedSets) && ex.plannedSets.length
+      ? ex.plannedSets.length : Math.max(1, parseInt(ex.sets, 10) || 1)
   })));
 }
 
@@ -30,10 +33,12 @@ export default function CoachSetLogger({ clientId, dateId, exercises = [], final
   const [notice,setNotice]=useState(null);
   const dirtyRef=useRef(false);
   const initialRef=useRef('');
+  const changedFieldsRef=useRef({});
   const activeRef=useRef(dateId);
 
   useEffect(() => {
     dirtyRef.current=false;
+    changedFieldsRef.current={};
     initialRef.current='';
     activeRef.current=dateId;
     setNotice(null);
@@ -48,6 +53,7 @@ export default function CoachSetLogger({ clientId, dateId, exercises = [], final
   const update=(exerciseIndex,setIndex,field,value)=>{
     if(finalized||saving)return;
     dirtyRef.current=true;
+    changedFieldsRef.current[exerciseIndex+':'+setIndex+':'+field] = { exerciseIndex, setIndex, field, value };
     setNotice(null);
     setDraft(prev=>prev.map((sets,i)=>i===exerciseIndex
       ? sets.map((set,j)=>j===setIndex?{...set,[field]:value}:set)
@@ -59,6 +65,8 @@ export default function CoachSetLogger({ clientId, dateId, exercises = [], final
     const user=getAuth().currentUser;
     if(!user?.uid)return setNotice({error:true,text:'Ingresá nuevamente como entrenador.'});
     const dateAtSave=dateId;
+    const edits=Object.values(changedFieldsRef.current);
+    if(edits.length===0)return;
     setSaving(true);setNotice(null);
     try {
       for(const sets of draft){
@@ -91,15 +99,21 @@ export default function CoachSetLogger({ clientId, dateId, exercises = [], final
            signature(current.exercises)!==initialRef.current){
           throw new Error('El alumno u otro entrenador modificó las series mientras editabas. Actualizá la vista para no sobrescribir cambios.');
         }
-        const updated=current.exercises.map((ex,i)=>({
+        const updated=current.exercises.map(ex => ({
           ...ex,
-          actualSets:draft[i].map((entry,j)=>({
-            ...(ex.actualSets?.[j]||{}),
-            reps:String(entry.reps||'').replace(',','.'),
-            weight:String(entry.weight||'').replace(',','.'),
-            completed:entry.completed===true
-          }))
+          actualSets:Array.isArray(ex.actualSets)
+            ? ex.actualSets.map(set => ({...set})) : []
         }));
+        for(const {exerciseIndex,setIndex,field,value} of edits) {
+          const ex=updated[exerciseIndex];
+          if(!ex || !Number.isInteger(setIndex) || setIndex<0 || setIndex>=draft[exerciseIndex].length) {
+            throw new Error('El orden de las series cambió. Abrí nuevamente la rutina.');
+          }
+          const actualSets=ex.actualSets;
+          actualSets[setIndex] = { reps:'', weight:'', completed:false, ...(actualSets[setIndex] || {}) };
+          actualSets[setIndex][field] = field==='completed'
+            ? value===true : String(value||'').replace(',','.');
+        }
         nextSignature=signature(updated);
         tx.update(sessionRef,{
           exercises:updated,
@@ -110,10 +124,11 @@ export default function CoachSetLogger({ clientId, dateId, exercises = [], final
       if(activeRef.current===dateAtSave){
         initialRef.current=nextSignature;
         dirtyRef.current=false;
+        changedFieldsRef.current={};
         setNotice({error:false,text:'Series y pesos registrados correctamente en la ficha del alumno.'});
       }
     }catch(error){
-      if(activeRef.current===dateAtSave)setNotice({error:true,text:error?.message||'No se pudieron registrar las series.'});
+      if(activeRef.current===dateAtSave)setNotice({error:true,text:explainCoachSaveError(error)});
     }finally{setSaving(false);}
   };
 
