@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Eye, Save, X } from 'lucide-react';
 import { COACH_NOTE_MAX, validateCoachNote } from '../utils/coachExerciseNote';
+import { explainCoachSaveError } from '../utils/coachSafeEdits';
 
 export default function CoachExerciseNoteEditor({ exerciseName, initialValue = '', onSave, onClose }) {
   const [text, setText] = useState(initialValue);
@@ -15,7 +16,7 @@ export default function CoachExerciseNoteEditor({ exerciseName, initialValue = '
       await onSave(validateCoachNote(text));
       onClose();
     } catch (err) {
-      setError(err?.message || 'No se pudo guardar la nota. Revisá tu conexión.');
+      setError(explainCoachSaveError(err));
     } finally {
       setSaving(false);
     }
