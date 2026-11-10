@@ -46,6 +46,10 @@ import CoachPlanningBlocks from '../components/CoachPlanningBlocks';
 import CoachExerciseNoteEditor from '../components/CoachExerciseNoteEditor';
 import { validateCoachNote } from '../utils/coachExerciseNote';
 import { sessionHasProtectedHistory } from '../utils/sessionSafety';
+import {
+  assertWorkoutNotFinalized, editCoachExerciseNote, explainCoachSaveError,
+  mergeCoachExercise, removeCoachExercise
+} from '../utils/coachSafeEdits';
 import { notifyStudentAboutCoachEvent } from '../utils/notifyStudent';
 
 function assertSessionUnmodified(snapshot, sessionRef, expectedExercises = null) {
@@ -78,6 +82,30 @@ async function safelyWritePlannedSession(sessionRef, patch, expectedExercises = 
   });
   const clientId=sessionRef.parent.parent?.id;
   if(clientId)void notifyStudentAboutCoachEvent('routine_updated',clientId,sessionRef.id);
+}
+
+// Las ediciones aisladas toman siempre el estado más reciente de Firestore.
+// La copia completa de días continúa usando las protecciones originales.
+async function safelyModifySingleExercise(sessionRef, updater, options = {}) {
+  const coachUid = getAuth().currentUser?.uid;
+  if (!coachUid) throw new Error('Ingresá nuevamente como entrenador.');
+  const { allowFinalized = false, notifyStudent = true } = options;
+  await runTransaction(db, async tx => {
+    const snapshot = await tx.get(sessionRef);
+    const current = snapshot.exists() ? snapshot.data() : {};
+    if (!allowFinalized) assertWorkoutNotFinalized(current);
+    const exercises = updater(Array.isArray(current.exercises) ? current.exercises : [], snapshot.exists());
+    if (!Array.isArray(exercises)) throw new Error('No se pudo preparar la modificación.');
+    const patch = {
+      exercises,
+      coachPlanningUpdatedAt: serverTimestamp(),
+      coachPlanningUpdatedBy: coachUid
+    };
+    if (snapshot.exists()) tx.update(sessionRef, patch);
+    else tx.set(sessionRef, { ...patch, date: sessionRef.id, isFinalized: false });
+  });
+  const clientId = sessionRef.parent.parent?.id;
+  if (notifyStudent && clientId) void notifyStudentAboutCoachEvent('routine_updated', clientId, sessionRef.id);
 }
 
 export default function ClientDetailView({ client, goBack, exercisesLibrary = [], routines = [], initialTab = 'resumen' }) {
@@ -525,72 +553,61 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
       return setExerciseSaveError('Completá las repeticiones de todas las series.');
     }
 
-    let updatedSession = [...dailySession];
-
     const exerciseToSave = {
       name: String(exForm.name),
       videoUrl: String(exForm.videoUrl || ''),
       trainingRegion:exercisesLibrary.find(item=>item.name===exForm.name)?.trainingRegion || exForm.trainingRegion || 'unknown',
       coachNote: validateCoachNote(exForm.coachNote),
       sets: String(exForm.plannedSets.length),
-      reps: String(exForm.plannedSets[0]?.reps || ''), 
+      reps: String(exForm.plannedSets[0]?.reps || ''),
       rir: String(exForm.plannedSets[0]?.rir || '2'),
-      plannedSets: exForm.plannedSets.map(set=>({...set})),
-      actualSets: editingExerciseIndex !== null ? (updatedSession[editingExerciseIndex].actualSets || []) : []
+      plannedSets: exForm.plannedSets.map(set=>({...set}))
     };
-
-    if (editingExerciseIndex !== null) {
-      updatedSession[editingExerciseIndex] = exerciseToSave;
-    } else {
-      updatedSession.push(exerciseToSave);
-    }
+    const targetIndex = editingExerciseIndex;
+    const openedExercise = targetIndex !== null ? dailySession[targetIndex] : null;
+    const originalName = openedExercise?.name || '';
+    const originalNote = openedExercise?.coachNote || '';
 
     setIsSavingExercise(true);setExerciseSaveError('');
     try {
-      const targetRef=doc(db,'clients',client.id,'sessions',currentDateId);
-      await safelyWritePlannedSession(targetRef,{
-        date:currentDateId,
-        exercises:updatedSession
-      },dailySession);
+      const targetRef = doc(db,'clients',client.id,'sessions',currentDateId);
+      await safelyModifySingleExercise(targetRef, current =>
+        mergeCoachExercise(current, exerciseToSave, targetIndex, originalName, originalNote)
+      );
       setIsExerciseModalOpen(false);
-      if(updatedSession.length===1) setAllSessionsIds(prev=>prev.includes(currentDateId)?prev:[...prev,currentDateId]);
+      setAllSessionsIds(prev => prev.includes(currentDateId) ? prev : [...prev, currentDateId]);
     }catch(error){
-      setExerciseSaveError('No se pudo guardar el ejercicio: '+(error?.message||'revisá tu conexión'));
+      setExerciseSaveError('No se pudo guardar el ejercicio: ' + explainCoachSaveError(error));
     }finally{setIsSavingExercise(false);}
   };
 
-  // Actualiza sólo la nota del ejercicio en una transacción, sin alterar series/valores
-  // cargados por el alumno. Los entrenamientos finalizados siguen inmutables.
+  // Las notas no cambian la ejecución: incluso en un día finalizado,
+  // se actualiza únicamente el texto del ejercicio, sin borrar series ni pesos.
   const saveExerciseCoachNote = async (note) => {
     if (!editingCoachNote || !client?.id) throw new Error('Seleccioná un ejercicio.');
     const { index, name } = editingCoachNote;
     const targetRef = doc(db, 'clients', client.id, 'sessions', currentDateId);
-    await runTransaction(db, async tx => {
-      const snapshot = await tx.get(targetRef);
-      if (!snapshot.exists()) throw new Error('El día ya no existe.');
-      const current = snapshot.data();
-      if (current.isFinalized === true) throw new Error('La sesión está finalizada y no se puede modificar.');
-      const exercises = current.exercises || [];
-      if (!exercises[index] || String(exercises[index].name) !== name) {
-        throw new Error('El ejercicio cambió de posición. Abrí nuevamente la planificación.');
-      }
-      tx.update(targetRef, { exercises: exercises.map((ex, i) =>
-        i === index ? { ...ex, coachNote: validateCoachNote(note) } : ex) });
-    });
+    await safelyModifySingleExercise(targetRef, (exercises, exists) => {
+      if (!exists) throw new Error('El día ya no existe.');
+      return editCoachExerciseNote(exercises, index, name, validateCoachNote(note));
+    }, { allowFinalized: true, notifyStudent: false });
   };
 
   // --- ELIMINAR EJERCICIO ---
   const handleDeleteExercise = async (index) => {
     if(isSessionFinalized || isSavingExercise) return;
     if(!window.confirm('¿Quitar este ejercicio de la planificación? Si ya existen registros del alumno, no se permitirá borrar.')) return;
-    const updatedSession=dailySession.filter((_,i)=>i!==index);
+    const originalName = dailySession[index]?.name;
     setIsSavingExercise(true);
     try{
       const targetRef=doc(db,'clients',client.id,'sessions',currentDateId);
-      await safelyWritePlannedSession(targetRef,{exercises:updatedSession},dailySession);
-      if(updatedSession.length===0)setAllSessionsIds(prev=>prev.filter(id=>id!==currentDateId));
+      await safelyModifySingleExercise(targetRef, current =>
+        removeCoachExercise(current, index, originalName)
+      );
+      // El calendario recibe el estado real del servidor en su próxima lectura.
+      if(dailySession.length===1)setAllSessionsIds(prev=>prev.filter(id=>id!==currentDateId));
     }catch(error){
-      window.alert('No se pudo quitar el ejercicio: '+(error?.message||'revisá tu conexión'));
+      window.alert('No se pudo quitar el ejercicio: '+explainCoachSaveError(error));
     }finally{setIsSavingExercise(false);}
   };
 
@@ -882,7 +899,7 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
                                 {ex.videoUrl && <Video size={16} className="text-blue-500"/>}
                               </div>
                               <div className="my-2 flex items-center gap-1.5 flex-wrap">
-                                <button type="button" disabled={isSessionFinalized || isSavingExercise}
+                                <button type="button" disabled={isSavingExercise}
                                   onClick={() => setEditingCoachNote({ index: idx, name: String(ex.name), value: ex.coachNote || '' })}
                                   className="inline-flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-bold border border-red-400/30 text-red-300 bg-red-500/10 hover:bg-red-500/20 disabled:opacity-40">
                                   <Eye size={15}/> {String(ex.coachNote || '').trim() ? 'Editar nota' : 'Agregar nota'}
