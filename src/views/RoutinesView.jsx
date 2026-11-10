@@ -6,6 +6,7 @@ import { collection, onSnapshot, doc, setDoc, deleteDoc, addDoc, runTransaction 
 import { db } from '../firebase';
 import CoachExerciseNoteEditor from '../components/CoachExerciseNoteEditor';
 import { validateCoachNote } from '../utils/coachExerciseNote';
+import { explainCoachSaveError } from '../utils/coachSafeEdits';
 
 export default function RoutinesView({ exercisesLibrary }) {
   const [routines, setRoutines] = useState([]);
@@ -173,16 +174,23 @@ export default function RoutinesView({ exercisesLibrary }) {
       coachNote: validateCoachNote(newExData.coachNote)
     };
 
-    const updatedExercises = [...(selectedRoutine.exercises || []), exerciseToSave];
-    
     setIsSaving(true);setError('');
     try {
-      await setDoc(doc(db, 'routines', selectedRoutine.id), { exercises: updatedExercises }, { merge: true });
-      setSelectedRoutine({ ...selectedRoutine, exercises: updatedExercises });
+      let updatedExercises = [];
+      const routineRef = doc(db, 'routines', selectedRoutine.id);
+      await runTransaction(db, async tx => {
+        const snap = await tx.get(routineRef);
+        if (!snap.exists()) throw new Error('La plantilla ya no existe.');
+        const existing = Array.isArray(snap.data().exercises) ? snap.data().exercises : [];
+        updatedExercises = [...existing, exerciseToSave];
+        tx.update(routineRef, { exercises: updatedExercises });
+      });
+      setSelectedRoutine(current => current?.id === selectedRoutine.id
+        ? { ...current, exercises: updatedExercises } : current);
       setIsAddingEx(false);
       setNewExData({ name: '', videoUrl: '', trainingRegion: 'unknown', coachNote: '', plannedSets: [{ reps: '', rir: '2' }] });
     }catch(error){
-      setError('No se pudo guardar el ejercicio: '+(error?.message||'revisá la conexión'));
+      setError('No se pudo guardar el ejercicio: ' + explainCoachSaveError(error));
     }finally{setIsSaving(false);}
   };
 
@@ -211,13 +219,26 @@ export default function RoutinesView({ exercisesLibrary }) {
   const handleRemoveExerciseFromRoutine = async (index) => {
     if(isSaving || !selectedRoutine)return;
     if (!window.confirm('¿Quitar este ejercicio de la plantilla? Las sesiones ya asignadas se conservan.')) return;
-    const updatedExercises=(selectedRoutine.exercises||[]).filter((_,i)=>i!==index);
+    const expected = selectedRoutine.exercises?.[index];
     setIsSaving(true);setError('');
     try{
-      await setDoc(doc(db,'routines',selectedRoutine.id),{exercises:updatedExercises},{merge:true});
-      setSelectedRoutine({...selectedRoutine,exercises:updatedExercises});
+      let updatedExercises = [];
+      const routineRef = doc(db,'routines',selectedRoutine.id);
+      await runTransaction(db, async tx => {
+        const snap = await tx.get(routineRef);
+        if (!snap.exists()) throw new Error('La plantilla ya no existe.');
+        const current = snap.data().exercises || [];
+        if (String(current[index]?.name || '') !== String(expected?.name || '') ||
+            String(current[index]?.id ?? '') !== String(expected?.id ?? '')) {
+          throw new Error('El ejercicio cambió. Volvé a abrir la plantilla antes de eliminarlo.');
+        }
+        updatedExercises = current.filter((_, i) => i !== index);
+        tx.update(routineRef,{exercises:updatedExercises});
+      });
+      setSelectedRoutine(current => current?.id === selectedRoutine.id
+        ? { ...current, exercises: updatedExercises } : current);
     }catch(error){
-      setError('No se pudo quitar el ejercicio: '+(error?.message||'revisá la conexión'));
+      setError('No se pudo quitar el ejercicio: '+explainCoachSaveError(error));
     }finally{setIsSaving(false);}
   };
 
