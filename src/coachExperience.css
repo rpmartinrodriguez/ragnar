@@ -381,3 +381,80 @@ html[data-ragnar-theme="light"] .ragnar-coach-page-title:not(.text-white) {color
     transform:none !important;transition:none !important;
   }
 }
+
+
+/* Coach Dashboard: el mismo lenguaje de tarjetas y acciones de Seguimiento. */
+.ragnar-coach-dashboard-header {padding:3px 0 1px;align-items:center;}
+.ragnar-coach-dashboard-header > div p {color:var(--rc-muted);}
+.ragnar-coach-dashboard-cta {
+  background:linear-gradient(130deg,#292a2f,#1d1e22) !important;
+  border-color:#5e5435 !important;
+  box-shadow:var(--rc-soft-shadow);
+  min-height:74px;
+  border-radius:21px;
+}
+.ragnar-coach-dashboard-cta strong {color:#f8f8f9 !important;}
+.ragnar-coach-dashboard-cta span span {color:#bfc1c8 !important;}
+.ragnar-coach-dashboard-metric {
+  background:var(--rc-panel) !important;
+  border-color:var(--rc-border) !important;
+  border-radius:21px;
+  box-shadow:var(--rc-soft-shadow);
+  min-height:170px;
+}
+.ragnar-coach-dashboard-metric :is(h3) {
+  font-variant-numeric:tabular-nums;
+  letter-spacing:-.065em;
+}
+.ragnar-coach-dashboard-quick {
+  background:var(--rc-panel) !important;
+  border-color:var(--rc-border) !important;
+  box-shadow:var(--rc-soft-shadow);
+  min-height:72px;
+  border-radius:18px;
+}
+.ragnar-coach-dashboard-quick:hover {border-color:rgba(250,204,21,.55) !important;}
+html[data-ragnar-theme="light"] .ragnar-coach-dashboard-metric h3,
+html[data-ragnar-theme="light"] .ragnar-coach-dashboard-quick h4 {
+  color:#26282d !important;
+}
+html[data-ragnar-theme="light"] .ragnar-coach-dashboard-metric p,
+html[data-ragnar-theme="light"] .ragnar-coach-dashboard-quick p {
+  color:#5c626d !important;
+}
+html[data-ragnar-theme="light"] .ragnar-coach-dashboard-cta {
+  background:linear-gradient(132deg,#26272c,#1b1c20) !important;
+  border-color:#4f4a36 !important;
+}
+.ragnar-coach-dashboard-metric[role="button"]:focus-visible {
+  outline:3px solid #facc15;
+  outline-offset:3px;
+}
+.ragnar-coach-region-summary {
+  background:var(--rc-panel);
+  color:var(--rc-text);
+  border:1px solid var(--rc-border);
+  border-radius:21px;
+  padding:17px 19px;
+  box-shadow:var(--rc-soft-shadow);
+}
+.ragnar-coach-region-summary h3 {
+  font-size:.95rem;
+  font-weight:950;
+  line-height:1.2;
+  text-transform:uppercase;
+  letter-spacing:-.02em;
+}
+.ragnar-coach-region-summary p {
+  color:var(--rc-muted);
+  font-size:.78rem;
+  margin-top:8px;
+}
+@media(max-width:600px) {
+  .ragnar-coach-dashboard-metric {min-height:150px;}
+  .ragnar-coach-dashboard-metric h3 {font-size:2rem;}
+}
+@media (prefers-reduced-motion:reduce) {
+  .ragnar-coach-dashboard-metric,
+  .ragnar-coach-dashboard-quick {transition:none !important;transform:none !important;}
+}
