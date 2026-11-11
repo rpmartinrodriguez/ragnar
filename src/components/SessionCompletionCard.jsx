@@ -85,7 +85,7 @@ export default function SessionCompletionCard({ feedback, loading = false, error
           <CheckCircle2 size={17}/> LISTO · VOLVER AL INICIO
         </button>
         <button type="button" onClick={onShare} className="ragnar-performance-finish-share">
-          <Share2 size={16}/> COMPARTIR
+          <Share2 size={16}/> COMPARTIR O GUARDAR
         </button>
       </div>
       <button type="button" onClick={onProgress}
