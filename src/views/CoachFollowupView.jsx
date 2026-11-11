@@ -28,6 +28,7 @@ export default function CoachFollowupView({ clients = [], navigateTo }) {
   const [loading, setLoading] = useState(true);
   const [refreshIndex, setRefreshIndex] = useState(0);
   const [search, setSearch] = useState('');
+  const [listDensity, setListDensity] = useState('compact');
   const [filter, setFilter] = useState('all');
   const [refreshedAt, setRefreshedAt] = useState(null);
   const today = ymdInArgentina();
@@ -123,12 +124,12 @@ export default function CoachFollowupView({ clients = [], navigateTo }) {
   ];
 
   return (
-    <div className="max-w-6xl mx-auto pb-12 space-y-6 animate-in fade-in">
+    <div className="ragnar-coach-followup max-w-[1440px] mx-auto pb-12 space-y-5 animate-in fade-in">
       <header className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-4">
         <div>
           <div className="flex items-center gap-3">
             <Activity size={29} className="text-yellow-400 shrink-0" />
-            <h2 className="text-2xl sm:text-3xl font-black text-white uppercase italic tracking-tight">RAGNAR Coach Intelligence</h2>
+            <h2 className="ragnar-coach-page-title text-2xl sm:text-3xl font-black text-white uppercase tracking-tight">RAGNAR Coach Intelligence</h2>
           </div>
           <p className="text-zinc-400 text-sm mt-2 max-w-2xl">
             Seguimiento de rutinas, adherencia y Check-ins voluntarios en un mismo lugar.
@@ -163,7 +164,7 @@ export default function CoachFollowupView({ clients = [], navigateTo }) {
         </button>
       </div>
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      <div className="ragnar-coach-kpi-grid grid grid-cols-2 lg:grid-cols-4 gap-2.5">
         {[
           { id: 'onTrack', count: counts.onTrack },
           { id: 'review', count: counts.review },
@@ -172,7 +173,7 @@ export default function CoachFollowupView({ clients = [], navigateTo }) {
         ].map(({ id, count }) => {
           const style = stateInfo[id], Icon = style.icon;
           return <button key={id} type="button" onClick={() => setFilter(id)}
-            className={`rounded-2xl border text-left p-4 hover:border-yellow-400 transition-colors ${style.bg} ${style.border}`}>
+            className={`ragnar-coach-kpi rounded-2xl border text-left p-3 sm:p-4 hover:border-yellow-400 transition-colors ${style.bg} ${style.border} ${filter===id ? 'ragnar-coach-kpi-active' : ''} `}>
             <Icon size={22} className={style.text} />
             <p className="text-white font-black text-3xl mt-2 tabular-nums">{count}</p>
             <p className={`text-xs font-bold mt-1 ${style.text}`}>{style.label}</p>
@@ -185,16 +186,24 @@ export default function CoachFollowupView({ clients = [], navigateTo }) {
         {counts.error} atleta(s) sin información por error de lectura. No se clasificaron como al día ni pendientes.
       </div>}
 
-      <div className="rounded-2xl bg-zinc-900 border border-zinc-800 p-4 space-y-4">
+      <div className="ragnar-coach-filters rounded-2xl bg-zinc-900 border border-zinc-800 p-3 sm:p-4 space-y-3">
         <div className="flex flex-col sm:flex-row gap-3 sm:items-center sm:justify-between">
           <label className="flex items-center gap-2 rounded-xl border border-zinc-700 bg-black/60 px-3 py-2.5 sm:min-w-[260px]">
             <Search size={18} className="text-zinc-500" />
             <input aria-label="Buscar alumno" className="min-w-0 flex-1 bg-transparent outline-none text-white text-sm"
               placeholder="Buscar alumno o plan..." value={search} onChange={event => setSearch(event.target.value)} />
           </label>
-          <p className="text-zinc-500 text-xs">
-            Últimos 14 días · {refreshedAt ? 'Actualizado ' + refreshedAt.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : 'Consultando datos'}
-          </p>
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-zinc-500 text-xs">
+              {refreshedAt ? 'Actualizado ' + refreshedAt.toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit' }) : 'Consultando datos'}
+            </span>
+            <div className="ragnar-coach-density" role="group" aria-label="Presentación de alumnos">
+              <button type="button" aria-pressed={listDensity==='compact'}
+                onClick={()=>setListDensity('compact')}>COMPACTA</button>
+              <button type="button" aria-pressed={listDensity==='details'}
+                onClick={()=>setListDensity('details')}>DETALLADA</button>
+            </div>
+          </div>
         </div>
         <div className="flex flex-wrap gap-2">
           {filters.map(item => <button type="button" key={item.id} onClick={() => setFilter(item.id)}
@@ -214,80 +223,86 @@ export default function CoachFollowupView({ clients = [], navigateTo }) {
       </div>}
       {visible.length === 0 && rows.length > 0 && <p className="text-zinc-500 text-center py-6">No hay atletas que coincidan con este filtro.</p>}
 
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4">
+      <div className={listDensity==='compact' ? 'ragnar-coach-athlete-list space-y-2' : 'ragnar-coach-athlete-grid grid grid-cols-1 xl:grid-cols-2 gap-3'}>
         {visible.map(row => {
           const style = stateInfo[row.status] || stateInfo.error;
           const Icon = style.icon, client = row.client || {};
-          return <article key={client.id} className="bg-zinc-900 border border-zinc-800 rounded-2xl p-4 sm:p-5 space-y-4">
-            <div className="flex items-start justify-between gap-3">
-              <div className="min-w-0">
-                <h3 className="font-black text-white text-lg truncate">{client.name || 'Atleta sin nombre'}</h3>
-                <p className="text-xs text-zinc-500 mt-1">
+          return <article key={client.id}
+            className={'ragnar-coach-athlete rounded-2xl border border-zinc-800 bg-zinc-900 '+
+              (listDensity==='compact'?'is-compact':'is-expanded')}>
+            <div className="ragnar-coach-athlete-main">
+              <div className="ragnar-coach-athlete-avatar" aria-hidden="true">
+                {String(client.name || 'A').trim().charAt(0).toLocaleUpperCase('es')}
+              </div>
+              <div className="ragnar-coach-athlete-identity">
+                <h3 className="font-black text-white text-sm sm:text-base truncate">{client.name || 'Atleta sin nombre'}</h3>
+                <p className="text-xs text-zinc-500 mt-0.5 truncate">
                   {client.trainingMode === 'presencial' ? 'Presencial' : 'Plan'} · {String(client.plan?.name || client.plan || 'Sin plan')}
                 </p>
               </div>
-              <div className={`flex items-center gap-1.5 shrink-0 rounded-full border px-3 py-1.5 ${style.bg} ${style.border} ${style.text}`}>
-                <Icon size={15}/><span className="font-bold text-xs">{style.label}</span>
+              <div className="ragnar-coach-athlete-status">
+                <span className={'ragnar-coach-status inline-flex items-center gap-1.5 border px-2.5 py-1.5 rounded-full '+
+                  style.bg+' '+style.border+' '+style.text}>
+                  <Icon size={14}/><span>{style.label}</span>
+                </span>
+                {row.needsWellnessReview && <span className="ragnar-coach-wellness-dot"
+                  title="Check-in para revisar" aria-label="Check-in para revisar">!</span>}
               </div>
+              {row.status!=='error' && <div className="ragnar-coach-athlete-numbers">
+                <strong>{row.completed14 ?? '—'}<small> / {row.planned14 ?? '—'}</small></strong>
+                <span>finalizadas / programadas</span>
+              </div>}
+              <button type="button" onClick={() => navigateTo('client-detail',client)}
+                className="ragnar-coach-athlete-open" aria-label={'Abrir ficha de '+(client.name||'atleta')}>
+                <span>VER FICHA</span><ArrowRight size={17}/>
+              </button>
             </div>
-            <p className="text-sm text-zinc-300">{row.reason}</p>
-            {row.checkIn && (
-              <div className="ragnar-intelligence-coach-checkin">
-                <div className="flex justify-between flex-wrap gap-2 items-center">
-                  <strong className="text-xs uppercase">Último Check-in · {shortDate(row.checkIn.date)}</strong>
-                  {row.needsWellnessReview && (
-                    <span className="ragnar-intelligence-coach-signal">
-                      {row.wellnessSignals.length} señal{row.wellnessSignals.length===1?'':'es'} para revisar
-                    </span>
-                  )}
+            <div className="ragnar-coach-athlete-bottom">
+              <p className="ragnar-coach-athlete-reason">{row.reason}</p>
+              {row.checkIn && <span className="ragnar-coach-checkin-label">
+                Check-in {shortDate(row.checkIn.date)} · energía {row.checkIn.energy}/5
+                {row.needsWellnessReview?' · revisar':''}
+              </span>}
+              {listDensity==='compact' && (
+                <details className="ragnar-coach-row-details">
+                  <summary>VER MÁS DETALLES</summary>
+                  <div className="ragnar-coach-athlete-extra">
+                    {row.checkIn && <p><strong>Bienestar:</strong> {row.checkInSummary}</p>}
+                    {row.needsWellnessReview && <p><strong>Para conversar:</strong> {row.wellnessSignals.join(' · ')}</p>}
+                    {row.status!=='error' && <p>
+                      {row.completed14} finalizadas · {row.unfinishedPast14} pasadas sin cerrar · {row.planned14} programadas
+                    </p>}
+                    {row.progressSnapshot?.scheduled>0 && <p>
+                      Últimos 28 días: {row.progressSnapshot.completed}/{row.progressSnapshot.scheduled} sesiones finalizadas.
+                    </p>}
+                    <p>Última finalización: {shortDate(row.lastFinished)}</p>
+                    {row.upcoming && <p>Próxima sesión: {shortDate(row.upcoming)}</p>}
+                    <button type="button" onClick={() => navigateTo('client-detail',client,{tab:'mensajes'})}
+                      className="ragnar-coach-chat-link"><MessageSquare size={15}/> Abrir chat</button>
+                  </div>
+                </details>
+              )}
+              {listDensity==='details' && (
+                <div className="ragnar-coach-athlete-extra">
+                  {row.checkIn && <div className="ragnar-coach-checkin-detail">
+                    <strong>Último Check-in · {shortDate(row.checkIn.date)}</strong>
+                    <p>{row.checkInSummary}</p>
+                    {row.needsWellnessReview && <p>{row.wellnessSignals.join(' · ')}. Conversar antes de interpretar.</p>}
+                  </div>}
+                  {row.status!=='error' && <div className="ragnar-coach-extra-stats">
+                    <span><strong>{row.completed14}</strong> Finalizadas</span>
+                    <span><strong>{row.unfinishedPast14}</strong> Pasadas sin cerrar</span>
+                    <span><strong>{row.planned14}</strong> Programadas</span>
+                  </div>}
+                  {row.progressSnapshot?.scheduled>0 && <p>
+                    Últimos 28 días: {row.progressSnapshot.completed}/{row.progressSnapshot.scheduled} sesiones registradas.
+                  </p>}
+                  <p>Última finalización: {shortDate(row.lastFinished)}
+                    {row.upcoming?' · Próxima sesión: '+shortDate(row.upcoming):''}</p>
+                  <button type="button" onClick={() => navigateTo('client-detail',client,{tab:'mensajes'})}
+                    className="ragnar-coach-chat-link"><MessageSquare size={15}/> Abrir chat</button>
                 </div>
-                <p className="text-xs mt-2">{row.checkInSummary}</p>
-                {row.needsWellnessReview && (
-                  <p className="text-xs mt-2 opacity-85">
-                    {row.wellnessSignals.join(' · ')}. Conversar antes de interpretar o ajustar.
-                  </p>
-                )}
-              </div>
-            )}
-            {row.progressSnapshot && row.progressSnapshot.scheduled>0 && (
-              <p className="text-xs text-zinc-400">
-                Últimos 28 días: <strong className="text-zinc-200">
-                  {row.progressSnapshot.completed}/{row.progressSnapshot.scheduled}
-                  {' '}sesiones registradas como finalizadas
-                </strong>
-                {row.progressSnapshot.completionRate!==null
-                  ? ' · '+row.progressSnapshot.completionRate+'% de registros completos' : ''}
-                {row.progressSnapshot.increased>0
-                  ? ' · '+row.progressSnapshot.increased+' ejercicio(s) con carga mayor' : ''}
-              </p>
-            )}
-            {row.status !== 'error' && <div className="grid grid-cols-3 gap-2 text-center">
-              <div className="bg-black/50 rounded-xl p-3">
-                <p className="text-xl font-black text-white tabular-nums">{row.completed14}</p>
-                <p className="text-[11px] text-zinc-500">Finalizadas</p>
-              </div>
-              <div className="bg-black/50 rounded-xl p-3">
-                <p className="text-xl font-black text-white tabular-nums">{row.unfinishedPast14}</p>
-                <p className="text-[11px] text-zinc-500">Pasadas sin cerrar</p>
-              </div>
-              <div className="bg-black/50 rounded-xl p-3">
-                <p className="text-xl font-black text-white tabular-nums">{row.planned14}</p>
-                <p className="text-[11px] text-zinc-500">Programadas</p>
-              </div>
-            </div>}
-            {row.status !== 'error' && <div className="text-xs text-zinc-500 flex flex-col gap-1">
-              <span>Última finalización en los últimos 28 días: <strong className="text-zinc-300">{shortDate(row.lastFinished)}</strong></span>
-              {row.upcoming && <span>Próxima sesión programada: <strong className="text-zinc-300">{shortDate(row.upcoming)}</strong></span>}
-            </div>}
-            <div className="flex flex-wrap gap-2 border-t border-zinc-800 pt-3">
-              <button type="button" onClick={() => navigateTo('client-detail', client)}
-                className="flex-1 inline-flex items-center justify-center gap-2 bg-yellow-400 hover:bg-yellow-300 text-black text-xs font-black rounded-xl px-4 py-3">
-                Ver ficha <ArrowRight size={15}/>
-              </button>
-              <button type="button" onClick={() => navigateTo('client-detail', client, { tab: 'mensajes' })}
-                className="flex-1 inline-flex items-center justify-center gap-2 bg-zinc-800 hover:bg-zinc-700 text-zinc-100 text-xs font-bold rounded-xl px-4 py-3">
-                <MessageSquare size={15}/> Abrir chat
-              </button>
+              )}
             </div>
           </article>;
         })}
