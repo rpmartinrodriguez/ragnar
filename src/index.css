@@ -333,3 +333,354 @@ body {
 .ragnar-planning-calendar .react-calendar__tile--active.has-workout::after {
   background: #09090b;
 }
+
+
+/* ================================================================
+   RAGNAR PERFORMANCE · concepto deportivo editorial (staging)
+   Alcance visual: alumno, entrenamiento, progreso y comunidad.
+   No modifica lógica de sesiones ni identidad del logo.
+   ================================================================ */
+.ragnar-performance {
+  --rp-ink: #101012;
+  --rp-surface: #202022;
+  --rp-paper: #f1f0e9;
+  --rp-yellow: #facc15;
+  background: #101012;
+  color: #fff;
+}
+.ragnar-performance-header {
+  background: #101012;
+  border-bottom: 1px solid #29292d;
+}
+.ragnar-performance-wordmark {
+  font-family: "Arial Black", Impact, system-ui, sans-serif;
+  font-size: 1.38rem;
+  line-height: 1;
+  font-weight: 950;
+  letter-spacing: -.06em;
+}
+.ragnar-performance-kicker,
+.ragnar-performance-eyebrow {
+  font-size: .66rem;
+  line-height: 1.2;
+  font-weight: 900;
+  letter-spacing: .15em;
+  color: #facc15;
+}
+.ragnar-performance-kicker {
+  text-transform: uppercase;
+  color: #d4d4d8;
+}
+.ragnar-performance-headline,
+.ragnar-performance-section-title,
+.ragnar-performance-hero-title,
+.ragnar-performance-exercise-title {
+  font-family: "Arial Black", Impact, "Arial Narrow", system-ui, sans-serif;
+  text-transform: uppercase;
+  font-weight: 950;
+  letter-spacing: -.065em;
+}
+.ragnar-performance-headline {
+  font-size: clamp(3.15rem, 11vw, 6.4rem);
+  line-height: .91;
+  margin: .1rem 0;
+  text-wrap: balance;
+}
+.ragnar-performance-headline span { color: #facc15; }
+.ragnar-performance-hero {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 25px;
+  padding: clamp(1.35rem, 5vw, 2.25rem);
+  background: linear-gradient(125deg, #26262a 0%, #151516 66%, #292319 100%);
+  border: 1px solid rgba(250,204,21,.26);
+}
+.ragnar-performance-hero::before {
+  content: "";
+  position: absolute;
+  width: 180px; height: 280px;
+  top: -45px; right: -55px;
+  transform: rotate(24deg);
+  border: 28px solid rgba(250,204,21,.09);
+  pointer-events: none;
+}
+.ragnar-performance-hero::after {
+  content: "";
+  position: absolute;
+  width: 150px; height: 150px;
+  bottom: -100px; right: 85px;
+  border-radius: 50%;
+  background: rgba(250,204,21,.075);
+  filter: blur(40px);
+  pointer-events: none;
+}
+.ragnar-performance-hero-title {
+  font-size: clamp(1.65rem, 5vw, 2.7rem);
+  line-height: .98;
+  max-width: 430px;
+  margin-top: 1.25rem;
+}
+.ragnar-performance-primary {
+  background: #facc15;
+  color: #111;
+  border: 1px solid #facc15;
+  border-radius: 13px;
+  min-height: 55px;
+  padding: 14px 20px;
+  font-size: .78rem;
+  letter-spacing: .035em;
+  line-height: 1.2;
+  font-weight: 950;
+  text-transform: uppercase;
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  box-shadow: 0 5px 25px rgba(250,204,21,.10);
+  transition: transform .16s ease, background .16s ease, box-shadow .16s ease;
+}
+.ragnar-performance-primary:hover:not(:disabled) {
+  background: #ffe16a;
+  box-shadow: 0 8px 28px rgba(250,204,21,.18);
+}
+.ragnar-performance-primary:active:not(:disabled) { transform: scale(.985); }
+.ragnar-performance-metrics {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  background: #f1f0e9;
+  color: #161616;
+  border-radius: 18px;
+  padding: 8px;
+  gap: 2px;
+}
+.ragnar-performance-metric {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 7px;
+  padding: clamp(10px,2.8vw,18px);
+  text-align: left;
+  min-width: 0;
+  border-radius: 12px;
+  transition: background .15s ease;
+}
+.ragnar-performance-metric:hover:not(:disabled) { background: #e4e2d7; }
+.ragnar-performance-metric svg { color: #111 !important; }
+.ragnar-performance-metric strong {
+  font-family: "Arial Black", Impact, system-ui, sans-serif;
+  font-weight: 950;
+  font-size: clamp(1.55rem, 4.5vw, 2.5rem);
+  line-height: 1;
+  letter-spacing: -.065em;
+  color: #141414;
+  white-space: nowrap;
+}
+.ragnar-performance-metric strong small {
+  font-size: .61rem;
+  letter-spacing: 0;
+}
+.ragnar-performance-metric > span {
+  font-size: .6rem;
+  font-weight: 850;
+  letter-spacing: .06em;
+  color: #555450;
+}
+.ragnar-performance-shortcuts {
+  display: grid;
+  gap: 8px;
+}
+.ragnar-performance-shortcut {
+  background: #242428;
+  color: #f6f6f6;
+  border: 1px solid #34343a;
+  border-radius: 14px;
+  min-height: 61px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 16px;
+  font-size: .76rem;
+  font-weight: 900;
+  letter-spacing: .04em;
+  text-align: left;
+}
+.ragnar-performance-shortcut:hover:not(:disabled) { border-color: #d2a921; background: #2e2e31; }
+.ragnar-performance-shortcut > span {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.ragnar-performance-shortcut svg { color: #facc15; }
+.ragnar-performance-section-title {
+  font-size: clamp(2rem, 7.4vw, 3.7rem);
+  line-height: .98;
+}
+.ragnar-performance-session-meter,
+.ragnar-performance-exercise-nav {
+  background: #202022;
+  border: 1px solid #37373a;
+  border-radius: 19px;
+  padding: 17px;
+}
+.ragnar-performance-track {
+  height: 8px;
+  border-radius: 999px;
+  background: #3a3a3e;
+  overflow: hidden;
+  margin-top: 15px;
+}
+.ragnar-performance-track-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: #facc15;
+  transition: width .3s ease;
+}
+.ragnar-performance-settings {
+  background: #202022;
+  border: 1px solid #353537;
+  border-radius: 15px;
+  overflow: hidden;
+}
+.ragnar-performance-settings-summary {
+  min-height: 51px;
+  cursor: pointer;
+  list-style: none;
+  padding: 13px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: .7rem;
+  font-weight: 900;
+  letter-spacing: .04em;
+  color: #e4e4e7;
+}
+.ragnar-performance-settings-summary::-webkit-details-marker { display: none; }
+.ragnar-performance-details-chevron { transition: transform .18s ease; color: #facc15; }
+.ragnar-performance-settings[open] .ragnar-performance-details-chevron { transform: rotate(90deg); }
+.ragnar-performance-exercise-nav {
+  border-color: rgba(250,204,21,.3);
+  background: linear-gradient(130deg,#28261c,#1f1f20 78%);
+}
+.ragnar-performance-overview-button {
+  font-size: .66rem;
+  min-height: 38px;
+  padding: 8px 13px;
+  font-weight: 900;
+  color: #facc15;
+  background: #191919;
+  border: 1px solid #5a4d23;
+  border-radius: 10px;
+}
+.ragnar-performance-overview-button:hover { border-color: #facc15; }
+.ragnar-performance-nav-button {
+  width: 39px;
+  height: 39px;
+  flex: 0 0 39px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  color: #facc15;
+  background: #111;
+  border: 1px solid #444;
+}
+.ragnar-performance-exercise-card {
+  background: #232326;
+  border-color: #3a3a3f;
+  box-shadow: 0 12px 30px rgba(0,0,0,.12);
+}
+.ragnar-performance-exercise-title {
+  font-size: clamp(1.25rem,4.5vw,1.85rem);
+  line-height: 1.06;
+  overflow-wrap: anywhere;
+}
+.ragnar-performance-card-progress {
+  padding: 13px 0 14px;
+  margin-bottom: 13px;
+  border-bottom: 1px solid #39393b;
+}
+.ragnar-performance-card-progress .ragnar-performance-track { height: 6px; margin-top: 8px; }
+.ragnar-performance-exercise-card input[data-ragnar-series-input] {
+  min-height: 50px;
+  border: 1px solid #4b4b50;
+  border-radius: 12px;
+  background: #101012;
+  font-family: "Arial Black", system-ui, sans-serif;
+  font-size: 1.18rem;
+  font-weight: 850;
+  font-variant-numeric: tabular-nums;
+}
+.ragnar-performance-exercise-card input[data-ragnar-series-input]:focus {
+  border-color: #facc15;
+  box-shadow: 0 0 0 2px rgba(250,204,21,.17);
+}
+.ragnar-performance-exercise-card [data-ragnar-series-input]:disabled { opacity: .6; }
+.ragnar-performance .ragnar-student-bottom-nav {
+  background: rgba(17,17,19,.97);
+  border-color: #373739;
+  box-shadow: 0 -12px 30px rgba(0,0,0,.25);
+}
+.ragnar-performance .ragnar-student-bottom-nav button {
+  position: relative;
+  min-height: 57px;
+}
+.ragnar-performance .ragnar-student-bottom-nav button.text-yellow-400::before {
+  content: "";
+  width: 5px;
+  height: 5px;
+  background: #facc15;
+  border-radius: 50%;
+  position: absolute;
+  top: 0;
+  left: calc(50% - 2.5px);
+}
+.ragnar-performance-progress-hero,
+.ragnar-performance-community-hero {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(125deg,#2b2b2c,#171719 78%);
+  border: 1px solid #4b4532;
+  border-radius: 22px;
+}
+.ragnar-performance-progress-hero h2,
+.ragnar-performance-community-hero h2 {
+  font-family: "Arial Black",Impact,system-ui,sans-serif;
+  font-weight: 950;
+  font-size: clamp(1.7rem,5.5vw,2.9rem);
+  line-height: 1;
+  letter-spacing: -.065em;
+  text-transform: uppercase;
+}
+.ragnar-performance-stat {
+  background: #f1f0e9 !important;
+  border-color: #f1f0e9 !important;
+}
+.ragnar-performance-stat p:nth-of-type(1) {
+  color: #171717 !important;
+  font-family: "Arial Black",system-ui,sans-serif;
+  letter-spacing: -.05em;
+}
+.ragnar-performance-stat p:nth-of-type(2) { color: #454545 !important; }
+.ragnar-performance-stat svg { color: #252525 !important; }
+.ragnar-performance-community-post {
+  border-left: 3px solid #facc15 !important;
+}
+@media (max-width: 480px) {
+  .ragnar-performance-headline { font-size: clamp(3rem, 13.5vw, 4.45rem); }
+  .ragnar-performance-metric { padding: 10px 7px; }
+  .ragnar-performance-metric > span { font-size: .54rem; line-height: 1.2; }
+  .ragnar-performance-metric strong { font-size: clamp(1.55rem, 7vw, 2.1rem); }
+  .ragnar-performance-wordmark { font-size: 1.23rem; }
+  .ragnar-performance-session-meter,
+  .ragnar-performance-exercise-nav { padding: 14px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ragnar-performance .ragnar-performance-track-fill,
+  .ragnar-performance .ragnar-performance-primary,
+  .ragnar-performance .ragnar-performance-shortcut {
+    transition: none !important;
+  }
+}
