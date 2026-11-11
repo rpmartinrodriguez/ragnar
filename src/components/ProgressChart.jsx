@@ -114,6 +114,18 @@ export default function ProgressChart({clientId,coachView=false}){
               region={region} coachView={coachView}/>
           )}
 
+          {region!=='all' && (
+            <section className="ragnar-coach-region-summary" aria-label={'Resumen de '+regionLabels[region]}>
+              <h3>{regionLabels[region]}</h3>
+              <p>
+                {progress.completed} sesiones finalizadas con ejercicios de esta zona ·
+                {' '}{progress.sets} series registradas
+                {progress.volume>0?' · '+formatWeight(progress.volume)+' kg de volumen registrado':''}.
+              </p>
+              <p>Seleccioná Evolución de fuerza para consultar las cargas por ejercicio.</p>
+            </section>
+          )
+
           <details className="ragnar-coach-progress-details">
             <summary className="ragnar-coach-progress-summary">
               <span className="flex items-center gap-3">
