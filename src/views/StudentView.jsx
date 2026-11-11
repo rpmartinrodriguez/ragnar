@@ -14,7 +14,8 @@ import {
   Trophy, 
   CreditCard, 
   ExternalLink, 
-  ChevronRight, 
+  ChevronRight,
+  ArrowRight,
   Video, 
   Bell, 
   Users, 
@@ -1383,7 +1384,7 @@ export default function StudentView({ clientId }) {
 
         {/* --- VISTA: ENTRENAMIENTO --- */}
         {currentView === 'workout' && hasPaidMonth && (
-          <div className="space-y-6 animate-in slide-in-from-right-4 duration-300 pb-10">
+          <div className="ragnar-performance-workout space-y-4 animate-in slide-in-from-right-4 duration-300 pb-10">
             
             <div className="flex items-center gap-4 px-2 mb-2">
                 <button 
@@ -1394,8 +1395,8 @@ export default function StudentView({ clientId }) {
                 </button>
                 <div className="flex-1 flex justify-between items-center">
                   <div>
-                    <h2 className="text-2xl font-black text-white uppercase italic tracking-tighter leading-none">
-                      {isSessionFinalized ? 'Resumen' : 'Entrenar'}
+                    <h2 className="ragnar-performance-section-title">
+                      {isSessionFinalized ? 'SESIÓN COMPLETA.' : 'A ENTRENAR.'}
                     </h2>
                     <p className="text-yellow-400 font-bold text-[10px] uppercase mt-1 tracking-widest">
                       {date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
@@ -1412,6 +1413,24 @@ export default function StudentView({ clientId }) {
                   )}
                 </div>
             </div>
+
+            {dailySession.length > 0 && (
+              <section className="ragnar-performance-session-meter" aria-label="Progreso del entrenamiento">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="ragnar-performance-eyebrow">TU PROGRESO EN ESTA SESIÓN</p>
+                    <p className="text-white text-2xl sm:text-3xl font-black mt-1 tabular-nums">
+                      {workoutCompletedSets} <span className="text-zinc-500 text-base">/ {workoutPlannedSets} series</span>
+                    </p>
+                  </div>
+                  <strong className="text-yellow-400 text-2xl font-black tabular-nums">{workoutProgress}%</strong>
+                </div>
+                <div className="ragnar-performance-track" role="progressbar" aria-label="Series completadas"
+                  aria-valuemin={0} aria-valuemax={100} aria-valuenow={workoutProgress}>
+                  <div className="ragnar-performance-track-fill" style={{width:workoutProgress+'%'}}/>
+                </div>
+              </section>
+            )}
 
             {/* Registrar inicio real: no usar series x 3 como minutos transcurridos */}
             {dailySession.length>0 && !isSessionFinalized && (
@@ -1439,7 +1458,12 @@ export default function StudentView({ clientId }) {
 
             {/* --- PANEL DE CONFIGURACIÓN DE SESIÓN --- */}
             {!isSessionFinalized && (
-              <div className="space-y-3 mb-6">
+              <details className="ragnar-performance-settings">
+                <summary className="ragnar-performance-settings-summary">
+                  <span className="flex items-center gap-2"><Timer size={19}/> DESCANSO, HIDRATACIÓN Y CARDIO</span>
+                  <ChevronRight size={18} className="ragnar-performance-details-chevron"/>
+                </summary>
+                <div className="space-y-3 p-3 sm:p-4">
                 
                 <div className="bg-zinc-900/50 border border-zinc-800 rounded-2xl p-4 flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -1514,7 +1538,8 @@ export default function StudentView({ clientId }) {
                      </div>
                    </div>
                 </div>
-              </div>
+                </div>
+              </details>
             )}
 
             {/* RESUMEN DE COMPLEMENTOS CUANDO SE FINALIZA */}
@@ -1537,10 +1562,52 @@ export default function StudentView({ clientId }) {
               </div>
             )}
 
+            {dailySession.length > 0 && !isSessionFinalized && (
+              <section className="ragnar-performance-exercise-nav" aria-label="Navegación de ejercicios">
+                <div className="flex items-center justify-between flex-wrap gap-3">
+                  <div className="flex-1 min-w-0">
+                    <p className="ragnar-performance-eyebrow">
+                      {showAllWorkoutExercises ? 'VISTA COMPLETA' : 'EJERCICIO ' + (effectiveFocusedExercise + 1) + ' DE ' + dailySession.length}
+                    </p>
+                    <p className="text-white text-base font-black uppercase tracking-tight mt-1 break-words">
+                      {showAllWorkoutExercises ? 'TODOS LOS EJERCICIOS' : dailySession[effectiveFocusedExercise]?.name}
+                    </p>
+                  </div>
+                  <button type="button" aria-pressed={showAllWorkoutExercises}
+                    onClick={() => setShowAllWorkoutExercises(prev => !prev)}
+                    className="ragnar-performance-overview-button">
+                    {showAllWorkoutExercises ? 'MODO ENFOCADO' : 'VER RUTINA COMPLETA'}
+                  </button>
+                </div>
+                {!showAllWorkoutExercises && (
+                  <div className="flex items-center gap-2 mt-3">
+                    <button type="button" disabled={effectiveFocusedExercise <= 0}
+                      onClick={() => setFocusedExerciseIndex(idx => Math.max(0, idx - 1))}
+                      className="ragnar-performance-nav-button disabled:opacity-30" aria-label="Ejercicio anterior">
+                      <ChevronLeft size={21}/>
+                    </button>
+                    <div className="flex-1 flex gap-1.5" aria-hidden="true">
+                      {dailySession.map((_, idx) => (
+                        <div key={idx} className={'h-1.5 flex-1 rounded-full ' +
+                          (idx <= effectiveFocusedExercise ? 'bg-yellow-400' : 'bg-zinc-700')}/>
+                      ))}
+                    </div>
+                    <button type="button" disabled={effectiveFocusedExercise >= dailySession.length - 1}
+                      onClick={() => setFocusedExerciseIndex(idx => Math.min(dailySession.length - 1, idx + 1))}
+                      className="ragnar-performance-nav-button disabled:opacity-30" aria-label="Próximo ejercicio">
+                      <ChevronRight size={21}/>
+                    </button>
+                  </div>
+                )}
+              </section>
+            )}
+
             {/* LISTA DE EJERCICIOS Y SOBRECARGA */}
-            <div className="space-y-4">
+            <div className="ragnar-performance-exercises space-y-4">
                 {dailySession.length > 0 ? (
                   dailySession.map((ex, exIdx) => {
+                    if (!showAllWorkoutExercises && !isSessionFinalized &&
+                        exIdx !== effectiveFocusedExercise) return null;
                     const safeSets = ex.plannedSets || Array.from({ length: Math.max(1, parseInt(ex.sets) || 1) }).map(() => ({
                       reps: String(ex.reps || ''), 
                       rir: String(ex.rir || '')
@@ -1557,7 +1624,7 @@ export default function StudentView({ clientId }) {
                     const hasValidHistory = historyData && historyData.actualSets && historyData.actualSets.some(s => s.completed);
 
                     return (
-                      <div key={exIdx} className="bg-zinc-900 border border-zinc-800 rounded-3xl p-5 shadow-sm">
+                      <div key={exIdx} className="ragnar-performance-exercise-card bg-zinc-900 border border-zinc-800 rounded-3xl p-4 sm:p-6 shadow-sm">
                         
                         <div className="flex justify-between items-start mb-3">
                           <div className="flex gap-3 w-full">
@@ -1566,7 +1633,7 @@ export default function StudentView({ clientId }) {
                             </div>
                             <div className="flex-1">
                               <div className="flex items-center gap-2 mb-1">
-                                <h3 className="font-bold text-lg uppercase tracking-tight leading-none text-white">{ex.name}</h3>
+                                <h3 className="ragnar-performance-exercise-title text-white">{ex.name}</h3>
                                 {ex.videoUrl && (
                                   <a
                                     href={ex.videoUrl}
@@ -1621,6 +1688,19 @@ export default function StudentView({ clientId }) {
                               )}
 
                             </div>
+                          </div>
+                        </div>
+
+                        <div className="ragnar-performance-card-progress">
+                          <div className="flex justify-between items-center gap-2 text-[11px] font-bold text-zinc-400">
+                            <span>SERIES COMPLETADAS</span>
+                            <span className="text-yellow-400 tabular-nums">{(ex.actualSets||[]).filter(set => set?.completed === true).length} / {safeSets.length}</span>
+                          </div>
+                          <div className="ragnar-performance-track mt-2">
+                            <div className="ragnar-performance-track-fill"
+                              style={{width:(safeSets.length
+                                ? Math.min(100,((ex.actualSets||[]).filter(set => set?.completed===true).length/safeSets.length)*100)
+                                : 0)+'%'}}/>
                           </div>
                         </div>
 
@@ -1736,7 +1816,7 @@ export default function StudentView({ clientId }) {
               <button 
                 onClick={handleFinishWorkout}
                 disabled={isFinishing}
-                className="w-full bg-green-500 text-black font-black py-5 mt-6 rounded-[2rem] uppercase tracking-widest shadow-lg shadow-green-500/10 transition-transform active:scale-95 flex justify-center items-center gap-2 disabled:opacity-50 disabled:cursor-wait"
+                className="ragnar-performance-primary w-full mt-6 flex justify-center items-center gap-3 disabled:opacity-50 disabled:cursor-wait"
               >
                 <Trophy size={20} /> {isFinishing ? 'Guardando entrenamiento...' : 'Finalizar Sesión'}
               </button>
