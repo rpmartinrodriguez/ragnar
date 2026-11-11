@@ -3,6 +3,7 @@ import { Activity, AlertCircle, ArrowRight, CheckCircle2, Clock3,
   MessageSquare, RefreshCw, Search, ShieldAlert, Users } from 'lucide-react';
 import { collection, documentId, endAt, getDocs, orderBy, query, startAt } from 'firebase/firestore';
 import { db } from '../firebase';
+import {enrichCoachIntelligence} from '../utils/coachIntelligence';
 import { ymdInArgentina } from '../utils/billingCycle';
 import {
   analyzeCoachFollowup, FOLLOWUP_NEXT_DAYS, FOLLOWUP_READ_DAYS,
@@ -51,8 +52,11 @@ export default function CoachFollowupView({ clients = [], navigateTo }) {
           const ref = collection(db, 'clients', client.id, 'sessions');
           const sessionsQuery = query(ref, orderBy(documentId()), startAt(from), endAt(until));
           const snap = await getDocs(sessionsQuery);
-          return analyzeCoachFollowup(client,
-            snap.docs.map(item => ({ id: item.id, ...item.data() })), today);
+          const sessions=snap.docs.map(item => ({...item.data(),id:item.id}));
+          return enrichCoachIntelligence(
+            analyzeCoachFollowup(client,sessions,today),
+            sessions,today
+          );
         }));
         if (cancelled) return;
         batch.forEach((result, offset) => {
@@ -95,8 +99,13 @@ export default function CoachFollowupView({ clients = [], navigateTo }) {
     return acc;
   }, { contact: 0, review: 0, onTrack: 0, noData: 0, error: 0 }), [rows]);
 
+  const checkInReviewCount=useMemo(()=>rows.filter(row=>row.needsWellnessReview).length,[rows]);
+  const recentCheckInCount=useMemo(()=>rows.filter(row=>row.checkIn).length,[rows]);
+
   const visible = useMemo(() => rows.filter(row => {
-    if (filter !== 'all' && row.status !== filter) return false;
+    if (filter === 'checkin') {
+      if (!row.needsWellnessReview) return false;
+    } else if (filter !== 'all' && row.status !== filter) return false;
     const term = search.toLocaleLowerCase('es').trim();
     const c = row.client || {};
     return !term || [c.name, c.email, c.plan?.name || c.plan]
@@ -105,6 +114,7 @@ export default function CoachFollowupView({ clients = [], navigateTo }) {
 
   const filters = [
     { id: 'all', label: 'Todos', count: rows.length },
+    { id: 'checkin', label: 'Revisar Check-in', count: checkInReviewCount },
     { id: 'contact', label: 'Contactar', count: counts.contact },
     { id: 'review', label: 'Revisar', count: counts.review },
     { id: 'onTrack', label: 'Al día', count: counts.onTrack },
@@ -118,11 +128,11 @@ export default function CoachFollowupView({ clients = [], navigateTo }) {
         <div>
           <div className="flex items-center gap-3">
             <Activity size={29} className="text-yellow-400 shrink-0" />
-            <h2 className="text-2xl sm:text-3xl font-black text-white uppercase italic tracking-tight">Seguimiento de alumnos</h2>
+            <h2 className="text-2xl sm:text-3xl font-black text-white uppercase italic tracking-tight">RAGNAR Coach Intelligence</h2>
           </div>
           <p className="text-zinc-400 text-sm mt-2 max-w-2xl">
-            Detectá rutinas programadas pendientes de finalizar y elegí a quién acompañar.
-            Los colores son indicadores de actividad, no diagnósticos ni ausencias confirmadas.
+            Seguimiento de rutinas, adherencia y Check-ins voluntarios en un mismo lugar.
+            Las señales sirven para conversar con el alumno, no son diagnósticos ni ausencias confirmadas.
           </p>
         </div>
         <button type="button" onClick={() => setRefreshIndex(n => n + 1)} disabled={loading}
@@ -131,6 +141,27 @@ export default function CoachFollowupView({ clients = [], navigateTo }) {
           {loading ? 'Actualizando...' : 'Actualizar datos'}
         </button>
       </header>
+
+      <div className="ragnar-intelligence-coach-summary">
+        <div className="flex-1 min-w-0">
+          <p className="ragnar-intelligence-eyebrow">PRIORIZÁ TU ACOMPAÑAMIENTO</p>
+          <p className="font-black text-white text-lg mt-1">
+            {checkInReviewCount > 0
+              ? checkInReviewCount + (checkInReviewCount===1
+                  ? ' Check-in para revisar' : ' Check-ins para revisar')
+              : 'Sin señales de bienestar pendientes de revisión'}
+          </p>
+          <p className="text-xs text-zinc-400 mt-1">
+            {recentCheckInCount} con Check-in en los últimos 7 días ·
+            {rows.filter(row=>row.status==='contact'||row.status==='review').length}
+            {' '}con rutinas para revisar.
+          </p>
+        </div>
+        <button type="button" onClick={()=>setFilter(filter==='checkin'?'all':'checkin')}
+          className="ragnar-intelligence-coach-action" aria-pressed={filter==='checkin'}>
+          {filter==='checkin'?'VER TODOS':'VER CHECK-INS'}
+        </button>
+      </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[
@@ -200,6 +231,36 @@ export default function CoachFollowupView({ clients = [], navigateTo }) {
               </div>
             </div>
             <p className="text-sm text-zinc-300">{row.reason}</p>
+            {row.checkIn && (
+              <div className="ragnar-intelligence-coach-checkin">
+                <div className="flex justify-between flex-wrap gap-2 items-center">
+                  <strong className="text-xs uppercase">Último Check-in · {shortDate(row.checkIn.date)}</strong>
+                  {row.needsWellnessReview && (
+                    <span className="ragnar-intelligence-coach-signal">
+                      {row.wellnessSignals.length} señal{row.wellnessSignals.length===1?'':'es'} para revisar
+                    </span>
+                  )}
+                </div>
+                <p className="text-xs mt-2">{row.checkInSummary}</p>
+                {row.needsWellnessReview && (
+                  <p className="text-xs mt-2 opacity-85">
+                    {row.wellnessSignals.join(' · ')}. Conversar antes de interpretar o ajustar.
+                  </p>
+                )}
+              </div>
+            )}
+            {row.progressSnapshot && row.progressSnapshot.scheduled>0 && (
+              <p className="text-xs text-zinc-400">
+                Últimos 28 días: <strong className="text-zinc-200">
+                  {row.progressSnapshot.completed}/{row.progressSnapshot.scheduled}
+                  {' '}sesiones registradas como finalizadas
+                </strong>
+                {row.progressSnapshot.completionRate!==null
+                  ? ' · '+row.progressSnapshot.completionRate+'% de registros completos' : ''}
+                {row.progressSnapshot.increased>0
+                  ? ' · '+row.progressSnapshot.increased+' ejercicio(s) con carga mayor' : ''}
+              </p>
+            )}
             {row.status !== 'error' && <div className="grid grid-cols-3 gap-2 text-center">
               <div className="bg-black/50 rounded-xl p-3">
                 <p className="text-xl font-black text-white tabular-nums">{row.completed14}</p>
@@ -232,8 +293,10 @@ export default function CoachFollowupView({ clients = [], navigateTo }) {
         })}
       </div>
       <p className="text-xs text-zinc-600">
-        El seguimiento consulta únicamente las sesiones con ejercicios registradas en una ventana de 28 días y la planificación de los próximos 7 días.
-        No modifica rutinas ni historial. Una sesión no finalizada puede deberse a falta de registro, no necesariamente a una ausencia.
+        Coach Intelligence reutiliza las consultas actuales (28 días de historial y 7 de planificación).
+        Los Check-ins son voluntarios y solo se muestran si fueron registrados en los últimos 7 días.
+        Una sesión no finalizada puede deberse a falta de registro, no necesariamente a una ausencia.
+        Los indicadores no modifican rutinas ni sustituyen el criterio del entrenador.
       </p>
     </div>
   );
