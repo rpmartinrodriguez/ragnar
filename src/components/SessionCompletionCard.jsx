@@ -5,7 +5,7 @@ function dateLabel(value) {
   return /^\d{4}-\d{2}-\d{2}$/.test(String(value || ''))
     ? value.split('-').reverse().join('/') : '';
 }
-export default function SessionCompletionCard({ feedback, loading = false, error = '', onProgress, onShare }) {
+export default function SessionCompletionCard({ feedback, loading = false, error = '', onProgress, onShare, onDone }) {
   return (
     <section className="ragnar-performance-finish-feedback" aria-label="Resultado y comparación del entrenamiento">
       <div className="flex items-start justify-between gap-3">
@@ -81,13 +81,17 @@ export default function SessionCompletionCard({ feedback, loading = false, error
         </p>
       )}
       <div className="ragnar-performance-finish-actions mt-4">
-        <button type="button" onClick={onProgress} className="ragnar-performance-finish-progress">
-          <ArrowUpRight size={17}/> VER MI PROGRESO <ChevronRight size={16}/>
+        <button type="button" onClick={onDone} className="ragnar-performance-finish-progress">
+          <CheckCircle2 size={17}/> LISTO · VOLVER AL INICIO
         </button>
         <button type="button" onClick={onShare} className="ragnar-performance-finish-share">
           <Share2 size={16}/> COMPARTIR
         </button>
       </div>
+      <button type="button" onClick={onProgress}
+        className="ragnar-performance-finish-progress-link">
+        VER MI PROGRESO <ArrowUpRight size={15}/>
+      </button>
     </section>
   );
 }
