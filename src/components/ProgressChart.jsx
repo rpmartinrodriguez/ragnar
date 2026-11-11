@@ -79,13 +79,13 @@ export default function ProgressChart({clientId}){
   const previous=chart.length>1?chart.at(-2):null;
 
   return (
-    <section className="space-y-5 animate-in fade-in">
-      <div className="rounded-3xl bg-zinc-900 border border-zinc-800 p-4 sm:p-6">
+    <section className="ragnar-performance-progress space-y-5 animate-in fade-in">
+      <div className="ragnar-performance-progress-hero p-5 sm:p-7">
         <div className="flex items-start gap-3">
           <div className="bg-yellow-400/10 text-yellow-400 p-3 rounded-2xl"><TrendingUp size={24}/></div>
           <div className="min-w-0">
-            <h2 className="font-black text-white text-xl uppercase">Mi evolución Ragnar</h2>
-            <p className="text-zinc-400 text-sm mt-1">Compará tu esfuerzo y tus marcas por zona de entrenamiento.</p>
+            <h2 className="font-black text-white uppercase">MI PROGRESO.</h2>
+            <p className="text-zinc-300 text-sm mt-2">Tu esfuerzo deja huella. Cada registro cuenta tu evolución real.</p>
           </div>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-5">
@@ -110,9 +110,9 @@ export default function ProgressChart({clientId}){
               {icon:Clock,label:'Minutos medidos',value:progress.minutesSessions?progress.minutes+' min':'Sin medición'}
             ].map(metric=>{
               const Icon=metric.icon;
-              return <div key={metric.label} className="bg-zinc-900 rounded-2xl border border-zinc-800 p-4 min-w-0">
+              return <div key={metric.label} className="ragnar-performance-stat rounded-2xl border p-4 min-w-0">
                 <Icon className="text-yellow-400" size={21}/>
-                <p className="text-white text-2xl font-black mt-3 break-words">{metric.value}</p>
+                <p className="text-white text-2xl sm:text-3xl font-black mt-3 break-words">{metric.value}</p>
                 <p className="text-zinc-400 text-xs mt-1">{metric.label}</p>
               </div>;
             })}
@@ -158,7 +158,7 @@ export default function ProgressChart({clientId}){
           )}
 
           <div className="rounded-3xl bg-zinc-900 border border-zinc-800 p-4 sm:p-6">
-            <p className="font-black uppercase text-white text-sm">Mi fuerza por ejercicio</p>
+            <p className="font-black uppercase text-white text-lg tracking-tight">EVOLUCIÓN DE FUERZA.</p>
             <p className="text-zinc-500 text-xs mt-1 mb-4">Carga máxima realizada en una serie completada (kg).</p>
             <select aria-label="Elegí un ejercicio" value={selectedExercise}
               onChange={e=>setSelectedExercise(e.target.value)}
