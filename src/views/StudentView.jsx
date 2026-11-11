@@ -488,7 +488,7 @@ export default function StudentView({ clientId }) {
         Array.isArray(d.data().exercises)&&d.data().exercises.length>0);
       setAllSessionsIds(planned.map(d=>d.id));
       setNextWorkout(nextPlannedWorkout(
-        planned.map(d=>({id:d.id,...d.data()})),todayYmd
+        planned.map(d=>({...d.data(),id:d.id})),todayYmd
       ));
     },error=>{
       console.warn('Calendario de alumno:',error?.code||error);
