@@ -83,7 +83,7 @@ export default function StudentSetInput({
     dirtyRef.current = normalized !== normalizeSetField(field, confirmedRef.current) ||
       (submittedRef.current !== null && submittedRef.current !== normalized);
     setError('');
-    setState('idle');
+    setState(dirtyRef.current ? 'editing' : 'idle');
     if (dirtyRef.current) scheduleSave();
     else clearTimer();
   };
@@ -133,10 +133,15 @@ export default function StudentSetInput({
           Reintentar
         </button>
       )}
-      <span className="sr-only" role="status" aria-live="polite">
-        {state === 'saving' ? 'Guardando ' + label :
-          state === 'error' ? error : ''}
-      </span>
+      {!disabled && state !== 'idle' && state !== 'error' && (
+        <span className="ragnar-set-save-status" data-state={state}
+          role="status" aria-live="polite">
+          <span className="ragnar-set-save-dot" aria-hidden="true"/>
+          {state === 'editing' ? 'Pendiente' :
+           state === 'saving' ? 'Guardando…' : 'Guardado'}
+        </span>
+      )}
+      {state === 'error' && <span className="sr-only" role="alert">{error}</span>}
     </div>
   );
 }
