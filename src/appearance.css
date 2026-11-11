@@ -865,13 +865,17 @@ html[data-ragnar-theme="light"] .ragnar-performance-progress-compare
   overflow-wrap: anywhere;
 }
 .ragnar-performance-next-action {
-  flex: 0 0 46px;
-  width: 46px; height: 46px;
-  border-radius: 50%;
+  flex: 0 0 auto;
+  min-height: 46px;
+  border-radius: 999px;
+  padding: 11px 13px 11px 16px;
   background: #facc15;
   color: #161719;
   border: 1px solid #facc15;
-  display: flex; align-items: center; justify-content: center;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  font-size: .65rem;
+  font-weight: 950;
+  letter-spacing: .03em;
   transition: transform .16s ease, box-shadow .16s ease;
 }
 .ragnar-performance-next-action:hover {
@@ -1051,5 +1055,51 @@ html[data-ragnar-theme="light"] .ragnar-performance-finish-progress-link { color
   .ragnar-performance-finished-details-toggle svg:last-child {
     transition: none !important;
     transform: none !important;
+  }
+}
+
+
+/* El historial por ejercicio queda a un toque, sin competir con Reps y Kg. */
+.ragnar-performance-history-details {
+  margin-top: 6px;
+  margin-bottom: 5px;
+  border: 1px solid #42444b;
+  background: #2a2b30;
+  border-radius: 14px;
+  padding: 9px 12px;
+  color: #d3d5d9;
+}
+.ragnar-performance-history-summary {
+  list-style: none;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: #facc15;
+  font-size: .66rem;
+  font-weight: 950;
+  letter-spacing: .04em;
+}
+.ragnar-performance-history-summary::-webkit-details-marker { display: none; }
+.ragnar-performance-history-details[open] .ragnar-performance-details-chevron {
+  transform: rotate(90deg);
+}
+html[data-ragnar-theme="light"] .ragnar-performance-history-details {
+  background: #f5f6f8;
+  border-color: #dce0e6;
+  color: #25272d;
+}
+html[data-ragnar-theme="light"] .ragnar-performance-history-summary {
+  color: #272a30;
+  border-bottom: 2px solid #facc15;
+  padding-bottom: 2px;
+}
+@media (max-width: 390px) {
+  .ragnar-performance-next-action span { display: none; }
+  .ragnar-performance-next-action {
+    width: 46px;
+    height: 46px;
+    padding: 0;
+    border-radius: 50%;
   }
 }
