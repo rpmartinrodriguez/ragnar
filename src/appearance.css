@@ -731,3 +731,40 @@ html[data-ragnar-theme="light"] .ragnar-performance-delta.is-lower {
   .ragnar-performance-finish-actions button,
   .ragnar-performance .ragnar-performance-primary { transition: none !important; transform: none !important; }
 }
+
+
+/* Comparación resumida en el histórico de Progreso. */
+.ragnar-performance-progress-latest {
+  background: linear-gradient(135deg,#27282e,#1d1e23);
+  border-radius: 24px;
+  border: 1px solid #45454d;
+  color: #fff;
+  padding: clamp(16px,3.3vw,24px);
+  box-shadow: 0 14px 34px rgba(0,0,0,.14);
+}
+.ragnar-performance-progress-compare {
+  min-width: 0;
+  border-radius: 16px;
+  padding: 12px 14px;
+  border: 1px solid #45454d;
+  background: #303137;
+  color: #fff;
+}
+.ragnar-performance-progress-compare strong {
+  font-size: .81rem;
+  display: inline-block;
+  margin-top: 5px;
+}
+html[data-ragnar-theme="light"] .ragnar-performance-progress-latest {
+  background: #fff;
+  color: #202228;
+  border-color: #dedfe3;
+  box-shadow: var(--rp-elevated-shadow);
+}
+html[data-ragnar-theme="light"] .ragnar-performance-progress-compare {
+  background: #292b30;
+  border-color: #292b30;
+  color: #fff;
+}
+html[data-ragnar-theme="light"] .ragnar-performance-progress-compare
+.ragnar-performance-finish-muted { color: #d5d6da; }
