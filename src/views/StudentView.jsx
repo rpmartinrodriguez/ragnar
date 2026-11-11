@@ -55,6 +55,7 @@ import {weeklyInsights,isFridayFinalSession} from '../utils/trainingInsights';
 import StudentChangePassword from '../components/StudentChangePassword';
 import StudentFirstAccessModal from '../components/StudentFirstAccessModal';
 import StudentWorkoutNote from '../components/StudentWorkoutNote';
+import StudentSetInput from '../components/StudentSetInput';
 import ConnectionBanner from '../components/ConnectionBanner';
 import StudentAlertsPanel from '../components/StudentAlertsPanel';
 import { studentAlertRequest, studentForegroundListener } from '../utils/studentPush';
@@ -126,6 +127,8 @@ export default function StudentView({ clientId }) {
   const [showWeeklySummary,setShowWeeklySummary] = useState(false);
   const finalizingRef = useRef(false);
   const setWriteQueueRef = useRef(Promise.resolve());
+  const failedSetWritesRef = useRef(new Set());
+  const [setWriteError, setSetWriteError] = useState('');
   const [allSessionsIds, setAllSessionsIds] = useState([]);
   const [loading, setLoading] = useState(true);
 
@@ -675,26 +678,35 @@ export default function StudentView({ clientId }) {
     }
   };
 
-  // Guardado secuencial por dispositivo y transaccional con el estado más reciente
-  // de la sesión: no borra notas del coach ni otras series guardadas entre cambios.
+  // Los inputs de Reps/Kg tienen un borrador local: sólo llegan acá al
+  // terminar de escribir, evitando una transacción por cada tecla.
+  // Las transacciones se serializan para conservar notas y series del coach.
   const handleUpdateSet = async (exerciseIndex, setIndex, field, value) => {
-    if (isSessionFinalized || !hasPaidMonth) return;
+    if (isSessionFinalized || !hasPaidMonth) {
+      throw new Error('Esta sesión no permite modificaciones.');
+    }
     const exerciseName = dailySession[exerciseIndex]?.name;
-    if (!exerciseName || !['reps', 'weight', 'completed'].includes(field)) return;
+    if (!exerciseName || !['reps', 'weight', 'completed'].includes(field)) {
+      throw new Error('No encontramos el ejercicio seleccionado.');
+    }
     const dateAtEdit = currentDateId;
+    const editKey = dateAtEdit + ':' + exerciseIndex + ':' + setIndex + ':' + field;
     const ref = doc(db, 'clients', clientId, 'sessions', dateAtEdit);
 
-    // Respuesta inmediata al teclear, sin esperar a la conexión.
-    setDailySession(prev => prev.map((ex, idx) => {
-      if (idx !== exerciseIndex) return ex;
-      const sets = Array.isArray(ex.actualSets) ? ex.actualSets.map(set => ({ ...set })) : [];
-      sets[setIndex] = {
-        reps: '', weight: '', completed: false, ...(sets[setIndex] || {}),
-        [field]: value
-      };
-      return { ...ex, actualSets: sets };
-    }));
-
+    // Sólo para el botón Completada mantenemos respuesta visual inmediata.
+    // Los campos numéricos ya se mantienen localmente en StudentSetInput.
+    if (field === 'completed') {
+      setDailySession(prev => prev.map((ex, idx) => {
+        if (idx !== exerciseIndex) return ex;
+        const sets = Array.isArray(ex.actualSets)
+          ? ex.actualSets.map(set => ({...set})) : [];
+        sets[setIndex] = {
+          reps: '', weight: '', completed: false, ...(sets[setIndex] || {}),
+          completed: value === true
+        };
+        return {...ex, actualSets: sets};
+      }));
+    }
     const save = async () => {
       await runTransaction(db, async tx => {
         const snap = await tx.get(ref);
@@ -707,7 +719,8 @@ export default function StudentView({ clientId }) {
         }
         const updated = exercises.map((ex, idx) => {
           if (idx !== exerciseIndex) return ex;
-          const sets = Array.isArray(ex.actualSets) ? ex.actualSets.map(set => ({ ...set })) : [];
+          const sets = Array.isArray(ex.actualSets)
+            ? ex.actualSets.map(set => ({ ...set })) : [];
           sets[setIndex] = {
             reps: '', weight: '', completed: false, ...(sets[setIndex] || {}),
             [field]: value
@@ -719,10 +732,15 @@ export default function StudentView({ clientId }) {
     };
     const pending = setWriteQueueRef.current.catch(() => {}).then(save);
     setWriteQueueRef.current = pending;
-    try { await pending; }
-    catch (error) {
+    try {
+      await pending;
+      failedSetWritesRef.current.delete(editKey);
+      if (failedSetWritesRef.current.size === 0) setSetWriteError('');
+    } catch (error) {
+      failedSetWritesRef.current.add(editKey);
+      setSetWriteError('No pudimos guardar una serie. Revisá el campo señalado e intentá de nuevo antes de finalizar.');
       console.error('No se pudo guardar la serie:', error);
-      // Firestore volverá a mostrar el valor persistido al recibir su snapshot.
+      throw error;
     }
   };
 
@@ -730,7 +748,7 @@ export default function StudentView({ clientId }) {
     if (isSessionFinalized || !hasPaidMonth) return;
     
     const currentStatus = dailySession[exerciseIndex].actualSets?.[setIndex]?.completed || false;
-    handleUpdateSet(exerciseIndex, setIndex, 'completed', !currentStatus);
+    void handleUpdateSet(exerciseIndex, setIndex, 'completed', !currentStatus).catch(() => {});
     
     if (!currentStatus && restTime > 0) {
       startTimer(restTime);
@@ -740,6 +758,10 @@ export default function StudentView({ clientId }) {
   // --- MAGIA GAMIFICACIÓN: FINALIZAR SESIÓN Y EVALUAR MEDALLAS ---
   const handleFinishWorkout = async () => {
     if (isSessionFinalized || finalizingRef.current) return;
+    // Al cerrar el teclado, el campo vuelca su borrador a la cola de escrituras.
+    if (document.activeElement?.matches?.('[data-ragnar-series-input]')) {
+      document.activeElement.blur();
+    }
     if (!window.confirm('¿Confirmás que terminaste el entrenamiento de hoy?')) return;
 
     finalizingRef.current = true;
@@ -747,6 +769,13 @@ export default function StudentView({ clientId }) {
     setWeeklySummary(null);
     setShowWeeklySummary(false);
     try {
+      // El blur agenda el último guardado en una microtarea. Esperamos la cola
+      // completa antes de finalizar, para no perder la última repetición escrita.
+      await Promise.resolve();
+      await setWriteQueueRef.current;
+      if ([...failedSetWritesRef.current].some(key => key.startsWith(currentDateId + ':'))) {
+        throw new Error('Quedaron repeticiones o pesos sin guardar. Revisá los campos marcados e intentá de nuevo.');
+      }
       const savedRpe=Math.max(1,Math.min(10,parseInt(perceivedEffort,10)||6));
       const targetSession=doc(db,'clients',clientId,'sessions',currentDateId);
       let validDuration=null;
@@ -896,7 +925,7 @@ export default function StudentView({ clientId }) {
 
     } catch (error) {
       console.error(error);
-      alert('No se pudo terminar la sesión. Revisá tu conexión e intentá nuevamente.');
+      alert(error?.message || 'No se pudo terminar la sesión. Revisá tu conexión e intentá nuevamente.');
     } finally {
       finalizingRef.current = false;
       setIsFinishing(false);
@@ -1613,24 +1642,23 @@ export default function StudentView({ clientId }) {
                                   )}
                                 </div>
                                 
-                                <input 
-                                  type="number" 
-                                  placeholder="0" 
-                                  disabled={isSessionFinalized} 
-                                  className="w-full min-w-0 max-w-full bg-zinc-800 border-none rounded-lg py-2 px-1 text-center text-base font-bold text-white focus:ring-1 focus:ring-yellow-400 disabled:opacity-50" 
-                                  value={dailySession[exIdx].actualSets?.[sIdx]?.reps || ''} 
-                                  onChange={(e) => handleUpdateSet(exIdx, sIdx, 'reps', e.target.value)} 
+                                <StudentSetInput
+                                  key={currentDateId + ':' + exIdx + ':' + sIdx + ':reps'}
+                                  field="reps" placeholder="0"
+                                  label={'Repeticiones de ' + ex.name + ', serie ' + (sIdx + 1)}
+                                  disabled={isSessionFinalized}
+                                  value={dailySession[exIdx].actualSets?.[sIdx]?.reps ?? ''}
+                                  onSave={value => handleUpdateSet(exIdx, sIdx, 'reps', value)}
                                 />
-                                
-                                <input 
-                                  type="number" 
-                                  placeholder="kg" 
-                                  disabled={isSessionFinalized} 
-                                  className="w-full min-w-0 max-w-full bg-zinc-800 border-none rounded-lg py-2 px-1 text-center text-base font-bold text-white focus:ring-1 focus:ring-yellow-400 disabled:opacity-50" 
-                                  value={dailySession[exIdx].actualSets?.[sIdx]?.weight || ''} 
-                                  onChange={(e) => handleUpdateSet(exIdx, sIdx, 'weight', e.target.value)} 
+                                <StudentSetInput
+                                  key={currentDateId + ':' + exIdx + ':' + sIdx + ':weight'}
+                                  field="weight" placeholder="kg"
+                                  label={'Peso de ' + ex.name + ', serie ' + (sIdx + 1)}
+                                  disabled={isSessionFinalized}
+                                  value={dailySession[exIdx].actualSets?.[sIdx]?.weight ?? ''}
+                                  onSave={value => handleUpdateSet(exIdx, sIdx, 'weight', value)}
                                 />
-                                
+
                                 <button 
                                   onClick={() => toggleSetComplete(exIdx, sIdx)} 
                                   className={`col-span-4 mt-1 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 ${isDone ? 'bg-green-500 text-black shadow-[0_0_10px_rgba(34,197,94,0.3)]' : 'bg-zinc-800 text-zinc-400 hover:text-white'}`}
@@ -1653,6 +1681,8 @@ export default function StudentView({ clientId }) {
                 )}
             </div>
             
+            {setWriteError && <p role="alert" className="mt-3 p-3 text-sm rounded-xl border border-red-500/30 bg-red-500/10 text-red-300">{setWriteError}</p>}
+
             {dailySession.length > 0 && (
               <StudentWorkoutNote clientId={clientId} dateId={currentDateId}/>
             )}
