@@ -99,12 +99,12 @@ export default function DashboardView({ clients, settings, navigateTo }) {
   };
 
   return (
-    <div className="max-w-6xl mx-auto animate-in fade-in pb-12">
+    <div className="ragnar-coach-dashboard max-w-[1440px] mx-auto animate-in fade-in pb-12">
       
       {/* HEADER PRINCIPAL CON CAMPANITA RESTAURADA */}
-      <div className="flex justify-between items-start mb-10">
+      <div className="ragnar-coach-dashboard-header flex justify-between items-start gap-3 mb-5">
         <div>
-          <h2 className="text-4xl font-black text-white uppercase italic tracking-tighter flex items-center gap-3">
+          <h2 className="ragnar-coach-page-title text-3xl sm:text-4xl font-black text-white uppercase tracking-tighter flex items-center gap-3">
             <TrendingUp className="text-yellow-400" size={32}/> Panel Principal
           </h2>
           <p className="text-zinc-500 text-sm font-bold mt-1">
@@ -123,7 +123,7 @@ export default function DashboardView({ clients, settings, navigateTo }) {
       </div>
 
       <button type="button" onClick={() => navigateTo('followup')}
-        className="w-full flex items-center justify-between gap-3 rounded-2xl border border-yellow-400/40 bg-yellow-400/10 hover:bg-yellow-400/15 px-5 py-4 mb-5 text-left transition-colors">
+        className="ragnar-coach-dashboard-cta w-full flex items-center justify-between gap-3 rounded-2xl border border-yellow-400/40 bg-yellow-400/10 hover:bg-yellow-400/15 px-5 py-4 mb-5 text-left transition-colors">
         <span className="flex items-center gap-3 min-w-0"><Activity className="text-yellow-400 shrink-0" size={25}/>
           <span><strong className="block text-white text-sm sm:text-base">Seguimiento de alumnos</strong>
             <span className="block text-zinc-400 text-xs mt-1">Detectá rutinas pendientes y acompañá a tus atletas.</span>
@@ -134,12 +134,12 @@ export default function DashboardView({ clients, settings, navigateTo }) {
       <CoachDailyPulse clients={clients} navigateTo={navigateTo}/>
 
       {/* GRID DE MÉTRICAS */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+      <div className="ragnar-coach-dashboard-metrics grid grid-cols-1 sm:grid-cols-3 gap-3 mb-6">
         
         {/* TARJETA 1: ATLETAS */}
         <div 
           onClick={() => navigateTo('clients')} 
-          className="bg-zinc-900 border border-zinc-800 rounded-[2.5rem] p-8 shadow-xl cursor-pointer group hover:border-yellow-400/50 hover:bg-zinc-800 transition-all relative overflow-hidden"
+          className="ragnar-coach-dashboard-metric bg-zinc-900 border border-zinc-800 rounded-2xl p-5 sm:p-6 shadow-xl cursor-pointer group hover:border-yellow-400/50 hover:bg-zinc-800 transition-all relative overflow-hidden"
         >
           <div className="absolute -right-6 -top-6 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all"></div>
           <div className="flex justify-between items-start mb-6 relative z-10">
@@ -159,7 +159,7 @@ export default function DashboardView({ clients, settings, navigateTo }) {
         {/* TARJETA 2: INGRESOS REALES */}
         <div 
           onClick={() => setIsIncomeModalOpen(true)} 
-          className="bg-zinc-900 border border-zinc-800 rounded-[2.5rem] p-8 shadow-xl cursor-pointer group hover:border-green-500/50 hover:bg-zinc-800 transition-all relative overflow-hidden"
+          className="ragnar-coach-dashboard-metric bg-zinc-900 border border-zinc-800 rounded-2xl p-5 sm:p-6 shadow-xl cursor-pointer group hover:border-green-500/50 hover:bg-zinc-800 transition-all relative overflow-hidden"
         >
           <div className="absolute -right-6 -top-6 w-24 h-24 bg-green-500/10 rounded-full blur-2xl group-hover:bg-green-500/20 transition-all"></div>
           <div className="flex justify-between items-start mb-6 relative z-10">
@@ -187,7 +187,7 @@ export default function DashboardView({ clients, settings, navigateTo }) {
         {/* TARJETA 3: GESTIÓN DE COBROS */}
         <div 
           onClick={() => navigateTo('payments')} 
-          className="bg-zinc-900 border border-zinc-800 rounded-[2.5rem] p-8 shadow-xl cursor-pointer group hover:border-orange-500/50 hover:bg-zinc-800 transition-all relative overflow-hidden"
+          className="ragnar-coach-dashboard-metric bg-zinc-900 border border-zinc-800 rounded-2xl p-5 sm:p-6 shadow-xl cursor-pointer group hover:border-orange-500/50 hover:bg-zinc-800 transition-all relative overflow-hidden"
         >
           <div className="absolute -right-6 -top-6 w-24 h-24 bg-orange-500/10 rounded-full blur-2xl group-hover:bg-orange-500/20 transition-all"></div>
           <div className="flex justify-between items-start mb-6 relative z-10">
@@ -212,7 +212,7 @@ export default function DashboardView({ clients, settings, navigateTo }) {
           
           <button 
             onClick={() => navigateTo('routines')}
-            className="flex items-center gap-4 p-5 bg-black/40 hover:bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-2xl transition-colors text-left group"
+            className="ragnar-coach-dashboard-quick flex items-center gap-4 p-4 bg-black/40 hover:bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-2xl transition-colors text-left group"
           >
             <div className="p-3 bg-zinc-900 group-hover:bg-yellow-400/10 group-hover:text-yellow-400 text-zinc-500 rounded-xl transition-colors">
               <Layout size={20}/>
@@ -225,7 +225,7 @@ export default function DashboardView({ clients, settings, navigateTo }) {
 
           <button 
             onClick={() => navigateTo('calendar')}
-            className="flex items-center gap-4 p-5 bg-black/40 hover:bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-2xl transition-colors text-left group"
+            className="ragnar-coach-dashboard-quick flex items-center gap-4 p-4 bg-black/40 hover:bg-zinc-900 border border-zinc-800 hover:border-zinc-700 rounded-2xl transition-colors text-left group"
           >
             <div className="p-3 bg-zinc-900 group-hover:bg-yellow-400/10 group-hover:text-yellow-400 text-zinc-500 rounded-xl transition-colors">
               <CalendarIcon size={20}/>
