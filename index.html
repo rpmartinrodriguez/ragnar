@@ -9,7 +9,28 @@
     
     <link rel="manifest" href="/manifest.json" />
     
-    <meta name="theme-color" content="#facc15" />
+    <meta name="theme-color" content="#101012" />
+    <script>
+      /* Elegir tema antes de React evita un destello oscuro en modo claro. */
+      (() => {
+        try {
+          const stored = localStorage.getItem('ragnar.appearance.v1');
+          const mode = ['dark', 'light', 'system'].includes(stored) ? stored : 'system';
+          const systemDark = window.matchMedia?.('(prefers-color-scheme: dark)')?.matches ?? true;
+          const theme = mode === 'system' ? (systemDark ? 'dark' : 'light') : mode;
+          document.documentElement.dataset.ragnarTheme = theme;
+          document.documentElement.dataset.ragnarAppearance = mode;
+          document.documentElement.style.colorScheme = theme;
+          document.querySelector('meta[name="theme-color"]')?.setAttribute('content',
+            theme === 'light' ? '#f6f5ef' : '#101012');
+        } catch {}
+      })();
+    </script>
+    <style>
+      html[data-ragnar-theme="light"], html[data-ragnar-theme="light"] body {
+        background: #f6f5ef;
+      }
+    </style>
     
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
