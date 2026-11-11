@@ -25,6 +25,7 @@ jobs:
       - run: node --test tests/coachExerciseNote.test.mjs
       - run: node --test tests/coachSafeEdits.test.mjs
       - run: node --test tests/studentSetValue.test.mjs
+      - run: node --test tests/appearance.test.mjs
       - run: npm run build
       - run: node --check scripts/migration/import-backup.mjs
       - run: node --check scripts/migration/create-student-auth.mjs
