@@ -1103,3 +1103,252 @@ html[data-ragnar-theme="light"] .ragnar-performance-history-summary {
     border-radius: 50%;
   }
 }
+
+
+/* RAGNAR Intelligence · el Check-in es voluntario y se integra en el workout
+   sin modales que interrumpan el registro de series. */
+.ragnar-intelligence-checkin,
+.ragnar-intelligence-panel,
+.ragnar-intelligence-coach-summary {
+  background: #222329;
+  color: #f7f7f8;
+  border: 1px solid #41444c;
+  border-radius: 23px;
+  box-shadow: 0 12px 34px rgba(0,0,0,.13);
+}
+.ragnar-intelligence-checkin { overflow: hidden; }
+.ragnar-intelligence-checkin-trigger {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  cursor: pointer;
+  list-style: none;
+  padding: 15px 17px;
+}
+.ragnar-intelligence-checkin-trigger::-webkit-details-marker { display: none; }
+.ragnar-intelligence-checkin-trigger small { color: #b9bdc7; line-height: 1.4; }
+.ragnar-intelligence-checkin-chevron { color: #facc15; transition: transform .18s ease; }
+.ragnar-intelligence-checkin[open] .ragnar-intelligence-checkin-chevron {
+  transform: rotate(180deg);
+}
+.ragnar-intelligence-choice {
+  min-height: 44px;
+  padding: 10px 8px;
+  border-radius: 999px;
+  border: 1px solid #555861;
+  color: #e5e7ec;
+  font-weight: 850;
+  font-size: .77rem;
+  background: #303239;
+}
+.ragnar-intelligence-choice.is-selected,
+.ragnar-intelligence-submit {
+  border-color: #facc15;
+  color: #17181b;
+  background: #facc15;
+}
+.ragnar-intelligence-submit {
+  width: 100%;
+  min-height: 48px;
+  border-radius: 999px;
+  padding: 11px 16px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  font-size: .77rem;
+  font-weight: 950;
+}
+.ragnar-intelligence-panel {
+  padding: clamp(16px,3.6vw,24px);
+}
+.ragnar-intelligence-eyebrow {
+  color: #facc15;
+  font-size: .64rem;
+  line-height: 1.4;
+  letter-spacing: .095em;
+  font-weight: 950;
+}
+.ragnar-intelligence-panel-title {
+  font-family: "Arial Black",Impact,system-ui,sans-serif;
+  font-size: clamp(1.3rem,3.7vw,1.85rem);
+  line-height: 1.06;
+  letter-spacing: -.055em;
+  color: inherit;
+  margin-top: 8px;
+}
+.ragnar-intelligence-timeframe {
+  color: #facc15;
+  border: 1px solid #66604e;
+  border-radius: 999px;
+  padding: 8px 10px;
+  font-size: .57rem;
+  font-weight: 950;
+  letter-spacing: .05em;
+}
+.ragnar-intelligence-stats {
+  display: grid;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+  gap: 8px;
+  margin-top: 18px;
+}
+.ragnar-intelligence-stat {
+  padding: 14px 10px;
+  border: 1px solid #494b52;
+  border-radius: 16px;
+  background: #303138;
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  min-width: 0;
+}
+.ragnar-intelligence-stat svg { color: #facc15; }
+.ragnar-intelligence-stat strong {
+  font-family: "Arial Black",Impact,system-ui,sans-serif;
+  font-size: clamp(1.25rem,4.6vw,1.95rem);
+  letter-spacing: -.05em;
+  font-weight: 950;
+  line-height: 1;
+  overflow-wrap: anywhere;
+}
+.ragnar-intelligence-stat span {
+  font-size: .58rem;
+  letter-spacing: .04em;
+  line-height: 1.4;
+  font-weight: 850;
+  color: #c5c6ca;
+}
+.ragnar-intelligence-compare {
+  padding: 12px;
+  background: #2c2d33;
+  border: 1px solid #45464e;
+  border-radius: 15px;
+}
+.ragnar-intelligence-change {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 8px;
+  font-size: .75rem;
+  font-weight: 950;
+  color: #d1d3d7;
+}
+.ragnar-intelligence-change.is-positive { color: #facc15; }
+.ragnar-intelligence-insights {
+  padding: 14px;
+  border-radius: 15px;
+  background: #18191e;
+  border: 1px solid #383940;
+  margin-top: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+.ragnar-intelligence-dot {
+  display: inline-block;
+  border-radius: 100px;
+  width: 6px;
+  height: 6px;
+  margin-top: 5px;
+  flex: 0 0 6px;
+  background: #facc15;
+}
+.ragnar-intelligence-coach-summary {
+  padding: 16px 18px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.ragnar-intelligence-coach-action {
+  background: #facc15;
+  color: #17181b;
+  font-size: .7rem;
+  line-height: 1.2;
+  font-weight: 950;
+  border-radius: 999px;
+  padding: 13px 16px;
+  min-height: 42px;
+  flex: 0 0 auto;
+}
+.ragnar-intelligence-coach-checkin {
+  border: 1px solid #514e3d;
+  background: #2c2b24;
+  border-radius: 15px;
+  padding: 12px;
+  color: #e8e8e9;
+}
+.ragnar-intelligence-coach-signal {
+  padding: 5px 9px;
+  color: #facc15;
+  background: #26231a;
+  border: 1px solid #81713b;
+  border-radius: 999px;
+  font-size: .65rem;
+  font-weight: 850;
+}
+html[data-ragnar-theme="light"] :is(.ragnar-intelligence-checkin,.ragnar-intelligence-panel,.ragnar-intelligence-coach-summary) {
+  background: #fff;
+  color: #25272c;
+  border-color: #dfe1e5;
+  box-shadow: var(--rp-elevated-shadow);
+}
+html[data-ragnar-theme="light"] .ragnar-intelligence-checkin-trigger small { color: #616671; }
+html[data-ragnar-theme="light"] .ragnar-intelligence-choice {
+  color: #272a30;
+  background: #f3f4f6;
+  border-color: #daddE2;
+}
+html[data-ragnar-theme="light"] .ragnar-intelligence-choice.is-selected {
+  background: #facc15;
+  color: #151515;
+  border-color: #facc15;
+}
+html[data-ragnar-theme="light"] .ragnar-intelligence-stat {
+  background: #292b30;
+  border-color: #292b30;
+  color: #fff;
+}
+html[data-ragnar-theme="light"] .ragnar-intelligence-stat span { color: #e5e5e8; }
+html[data-ragnar-theme="light"] .ragnar-intelligence-compare {
+  background: #f5f6f8;
+  border-color: #e1e3e7;
+}
+html[data-ragnar-theme="light"] .ragnar-intelligence-change:not(.is-positive) { color: #555963; }
+html[data-ragnar-theme="light"] .ragnar-intelligence-change.is-positive {
+  background: #282a30;
+  color: #facc15;
+  padding: 5px 9px;
+  border-radius: 999px;
+}
+html[data-ragnar-theme="light"] .ragnar-intelligence-insights {
+  background: #f6f7f8;
+  border-color: #e1e3e7;
+}
+html[data-ragnar-theme="light"] .ragnar-intelligence-timeframe {
+  color: #facc15;
+  background: #282a30;
+  border-color: #282a30;
+}
+html[data-ragnar-theme="light"] .ragnar-intelligence-coach-summary .text-white {color:#25272c !important;}
+html[data-ragnar-theme="light"] .ragnar-intelligence-coach-summary .text-zinc-400 {color:#666a72 !important;}
+html[data-ragnar-theme="light"] .ragnar-intelligence-coach-checkin {
+  background: #fffdf3;
+  border-color: #e5d4a0;
+  color: #33353b;
+}
+html[data-ragnar-theme="light"] .ragnar-intelligence-coach-signal {
+  background: #292a30;
+  color: #facc15;
+  border-color: #292a30;
+}
+@media (max-width:420px) {
+  .ragnar-intelligence-stat {padding: 12px 8px;}
+  .ragnar-intelligence-stat span {font-size:.54rem;}
+}
+@media (prefers-reduced-motion:reduce) {
+  .ragnar-intelligence-checkin-chevron,
+  .ragnar-intelligence-choice,
+  .ragnar-intelligence-coach-action {transition:none !important;}
+}
