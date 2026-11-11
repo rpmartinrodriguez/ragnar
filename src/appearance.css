@@ -435,18 +435,24 @@ html[data-ragnar-theme="light"] .react-calendar__tile--active.has-workout::after
    sobre grafito cuando se utiliza para tipografía, manteniendo legibilidad. */
 html[data-ragnar-theme="light"] .ragnar-performance-headline span {
   color: #facc15 !important;
-  background: #25262c;
-  padding: .01em .11em .035em;
-  border-radius: .11em;
-  -webkit-box-decoration-break: clone;
-  box-decoration-break: clone;
+  background: none !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  /* El trazo fino refuerza la lectura del amarillo original sobre blanco
+     sin encerrar cada palabra en rectángulos negros. */
+  -webkit-text-stroke: .85px #24262b;
+  text-shadow: 0 1px 0 rgba(36,38,43,.18);
+  -webkit-box-decoration-break: initial;
+  box-decoration-break: initial;
 }
 html[data-ragnar-theme="light"] :is(.ragnar-performance-kicker,.ragnar-performance-eyebrow) {
-  color: #facc15 !important;
-  background: #26272d;
-  border: 1px solid #38383c;
-  padding: 6px 10px;
-  border-radius: 999px;
+  color: #292c32 !important;
+  background: transparent !important;
+  border: none !important;
+  border-bottom: 2px solid #facc15 !important;
+  padding: 0 0 5px !important;
+  border-radius: 0 !important;
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -456,8 +462,9 @@ html[data-ragnar-theme="light"] :is(.ragnar-performance-kicker,.ragnar-performan
 html[data-ragnar-theme="light"] .ragnar-performance
 :is(.ragnar-performance-hero,.ragnar-performance-progress-hero,.ragnar-performance-community-hero)
 :is(.ragnar-performance-kicker,.ragnar-performance-eyebrow) {
-  background: #35363a;
+  background: transparent !important;
   color: #facc15 !important;
+  border-bottom-color: #facc15 !important;
 }
 html[data-ragnar-theme="light"] .ragnar-performance
 :is([class~="text-yellow-300"],[class~="text-yellow-400"],[class~="text-yellow-500"]) {
@@ -695,10 +702,11 @@ html[data-ragnar-theme="light"] .ragnar-performance-finish-feedback {
 }
 html[data-ragnar-theme="light"] .ragnar-performance-finish-title { color: #24262c; }
 html[data-ragnar-theme="light"] .ragnar-performance-finish-eyebrow {
-  color: #facc15;
-  background: #26272d;
-  border-radius: 999px;
-  padding: 5px 8px;
+  color: #27292e;
+  background: transparent;
+  border-radius: 0;
+  border-bottom: 2px solid #facc15;
+  padding: 0 0 4px;
   display: inline-flex;
 }
 html[data-ragnar-theme="light"] .ragnar-performance-finish-muted { color: #555b65; }
@@ -768,3 +776,280 @@ html[data-ragnar-theme="light"] .ragnar-performance-progress-compare {
 }
 html[data-ragnar-theme="light"] .ragnar-performance-progress-compare
 .ragnar-performance-finish-muted { color: #d5d6da; }
+
+
+/* RAGNAR PERFORMANCE · portada y entrenamiento simplificado, v3 staging
+   Sin fondos por palabra sobre títulos claros. */
+.ragnar-performance-headline-finished {
+  font-size: clamp(2.55rem,9.25vw,5.65rem);
+}
+.ragnar-performance-headline-finished > span { white-space: nowrap; }
+.ragnar-performance-home-done {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  width: fit-content;
+  color: #facc15;
+  background: rgba(250,204,21,.1);
+  border: 1px solid rgba(250,204,21,.35);
+  border-radius: 999px;
+  padding: 7px 12px;
+  margin-top: 15px;
+  font-size: .69rem;
+  line-height: 1.2;
+  font-weight: 950;
+  letter-spacing: .045em;
+}
+.ragnar-performance-home-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+.ragnar-performance-home-actions .ragnar-performance-primary {
+  flex: 1 1 210px;
+}
+.ragnar-performance-home-calendar {
+  color: #e2e3e6;
+  font-size: .72rem;
+  line-height: 1.2;
+  font-weight: 900;
+  border: 1px solid #53555c;
+  border-radius: 999px;
+  min-height: 54px;
+  padding: 14px 17px;
+  display: inline-flex;
+  justify-content: center;
+  align-items: center;
+  gap: 9px;
+  transition: border-color .16s ease, color .16s ease, background .16s ease;
+}
+.ragnar-performance-home-calendar:hover {
+  color: #facc15;
+  border-color: #facc15;
+  background: rgba(250,204,21,.055);
+}
+.ragnar-performance-next-preview {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  justify-content: space-between;
+  border-radius: 22px;
+  background: #222328;
+  border: 1px solid #45454c;
+  border-left: 4px solid #facc15;
+  color: #fff;
+  padding: 16px 18px;
+  box-shadow: 0 12px 32px rgba(0,0,0,.14);
+}
+.ragnar-performance-next-label {
+  font-size: .63rem;
+  font-weight: 900;
+  letter-spacing: .085em;
+  color: #facc15;
+}
+.ragnar-performance-next-preview h3 {
+  font-size: 1.07rem;
+  font-weight: 950;
+  line-height: 1.23;
+  margin-top: 5px;
+  text-transform: capitalize;
+  color: #fff;
+}
+.ragnar-performance-next-preview p:not(.ragnar-performance-next-label) {
+  color: #c8c9cf;
+  font-size: .73rem;
+  line-height: 1.5;
+  margin-top: 4px;
+  overflow-wrap: anywhere;
+}
+.ragnar-performance-next-action {
+  flex: 0 0 46px;
+  width: 46px; height: 46px;
+  border-radius: 50%;
+  background: #facc15;
+  color: #161719;
+  border: 1px solid #facc15;
+  display: flex; align-items: center; justify-content: center;
+  transition: transform .16s ease, box-shadow .16s ease;
+}
+.ragnar-performance-next-action:hover {
+  transform: translateX(2px);
+  box-shadow: 0 4px 17px rgba(250,204,21,.22);
+}
+.ragnar-performance-workout-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 9px;
+  padding: 0 7px;
+  color: #aeb2ba;
+  font-size: .76rem;
+  font-weight: 750;
+}
+.ragnar-performance-summary-separator { color: #facc15; }
+.ragnar-performance-clock-compact {
+  min-height: 39px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 9px;
+  padding: 9px 13px;
+  color: #dedee1;
+  border: 1px solid #383a42;
+  border-radius: 15px;
+  background: #202126;
+  width: fit-content;
+  max-width: 100%;
+}
+.ragnar-performance-mode-switch {
+  width: 100%;
+  display: grid;
+  grid-template-columns: repeat(2,minmax(0,1fr));
+  gap: 5px;
+  border: 1px solid #42434a;
+  background: #131418;
+  border-radius: 999px;
+  padding: 5px;
+}
+.ragnar-performance-mode-button {
+  min-height: 44px;
+  border-radius: 999px;
+  color: #b9bbc2;
+  background: transparent;
+  font-size: .68rem;
+  letter-spacing: .025em;
+  font-weight: 950;
+  text-align: center;
+  padding: 8px 10px;
+  transition: background .17s ease, color .17s ease, transform .17s ease;
+}
+.ragnar-performance-mode-button.is-active {
+  color: #17181c;
+  background: #facc15;
+  box-shadow: 0 3px 14px rgba(250,204,21,.13);
+}
+.ragnar-performance-mode-button:active { transform: scale(.987); }
+.ragnar-performance-focus-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 15px;
+  min-width: 0;
+}
+.ragnar-performance-focus-counter {
+  color: #facc15;
+  font-size: .63rem;
+  line-height: 1.3;
+  font-weight: 950;
+  letter-spacing: .075em;
+}
+.ragnar-performance-focus-name {
+  margin-top: 5px;
+  color: #f3f3f3;
+  font-size: .93rem;
+  line-height: 1.25;
+  text-transform: uppercase;
+  font-weight: 950;
+  overflow-wrap: anywhere;
+}
+.ragnar-performance-finished-details-toggle {
+  width: 100%;
+  min-height: 51px;
+  padding: 13px 16px;
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  background: #232429;
+  color: #facc15;
+  border: 1px solid #55504a;
+  border-radius: 999px;
+  font-size: .74rem;
+  line-height: 1.3;
+  font-weight: 950;
+  transition: border-color .17s ease, background .17s ease;
+}
+.ragnar-performance-finished-details-toggle:hover {
+  background: #292b30;
+  border-color: #facc15;
+}
+.ragnar-performance-finished-details-toggle svg:last-child {
+  transition: transform .18s ease;
+}
+.ragnar-performance-finish-progress-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font-size: .69rem;
+  font-weight: 900;
+  letter-spacing: .035em;
+  color: #facc15;
+  width: 100%;
+  margin-top: 13px;
+  padding: 9px;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+html[data-ragnar-theme="light"] .ragnar-performance-headline-finished {
+  color: #22242b !important;
+}
+html[data-ragnar-theme="light"] .ragnar-performance-next-preview {
+  background: #fff;
+  color: #26282e;
+  border-color: #dfe1e5;
+  border-left-color: #facc15;
+  box-shadow: var(--rp-elevated-shadow);
+}
+html[data-ragnar-theme="light"] .ragnar-performance-next-preview h3 { color: #23252a; }
+html[data-ragnar-theme="light"] .ragnar-performance-next-preview p:not(.ragnar-performance-next-label) {
+  color: #60656e;
+}
+html[data-ragnar-theme="light"] .ragnar-performance-next-label { color: #282a30; }
+html[data-ragnar-theme="light"] .ragnar-performance-workout-summary { color: #5d626c; }
+html[data-ragnar-theme="light"] .ragnar-performance-clock-compact {
+  background: #fff;
+  border-color: #dee1e6;
+  color: #252930;
+}
+html[data-ragnar-theme="light"] .ragnar-performance-clock-compact button { color: #303238; }
+html[data-ragnar-theme="light"] .ragnar-performance-mode-switch {
+  background: #e9eaee;
+  border-color: #d9dce2;
+}
+html[data-ragnar-theme="light"] .ragnar-performance-mode-button:not(.is-active) {
+  color: #454b56;
+}
+html[data-ragnar-theme="light"] .ragnar-performance-mode-button.is-active {
+  background: #facc15 !important;
+  color: #151515 !important;
+}
+html[data-ragnar-theme="light"] .ragnar-performance-focus-counter {
+  color: #303239;
+  border-bottom: 2px solid #facc15;
+  display: inline-block;
+  padding-bottom: 3px;
+}
+html[data-ragnar-theme="light"] .ragnar-performance-focus-name { color: #24272e; }
+html[data-ragnar-theme="light"] .ragnar-performance-finished-details-toggle {
+  background: #fff;
+  color: #2b2e34;
+  border-color: #dfe1e5;
+  box-shadow: var(--rp-elevated-shadow);
+}
+html[data-ragnar-theme="light"] .ragnar-performance-finished-details-toggle svg {
+  color: #e7b800;
+}
+html[data-ragnar-theme="light"] .ragnar-performance-finish-progress-link { color: #292c32; }
+@media (max-width: 385px) {
+  .ragnar-performance-headline-finished { font-size: clamp(2.12rem,9.1vw,3.5rem); }
+  .ragnar-performance-mode-button { font-size: .6rem; }
+  .ragnar-performance-home-calendar { width: 100%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ragnar-performance-mode-button,
+  .ragnar-performance-next-action,
+  .ragnar-performance-finished-details-toggle svg:last-child {
+    transition: none !important;
+    transform: none !important;
+  }
+}
