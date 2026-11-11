@@ -1,7 +1,7 @@
 import React,{useEffect,useMemo,useState} from 'react';
 import {collection,onSnapshot,getDocs} from 'firebase/firestore';
 import {db} from '../firebase';
-import {Activity,ArrowUpRight,CalendarCheck,Clock,Dumbbell,Info,TrendingUp,CalendarDays} from 'lucide-react';
+import {Activity,ArrowUpRight,CalendarCheck,Clock,Dumbbell,Info,TrendingUp,CalendarDays,ChevronDown,BarChart3} from 'lucide-react';
 import WeeklyRecap from './WeeklyRecap';
 import {regionOfExercise,regionLabels,groupProgress,exerciseHistorySeries,
   weeklyInsights,dateKey,isFridayFinalSession} from '../utils/trainingInsights';
@@ -85,13 +85,13 @@ export default function ProgressChart({clientId,coachView=false}){
     ?sessionCompletionFeedback(sessions,latestFinalDate):null,[sessions,latestFinalDate]);
 
   return (
-    <section className="ragnar-performance-progress space-y-5 animate-in fade-in">
+    <section className="ragnar-performance-progress ragnar-coach-progress-unified space-y-4 animate-in fade-in">
       <div className="ragnar-performance-progress-hero p-5 sm:p-7">
         <div className="flex items-start gap-3">
           <div className="bg-yellow-400/10 text-yellow-400 p-3 rounded-2xl"><TrendingUp size={24}/></div>
           <div className="min-w-0">
-            <h2 className="font-black text-white uppercase">MI PROGRESO.</h2>
-            <p className="text-zinc-300 text-sm mt-2">Tu esfuerzo deja huella. Cada registro cuenta tu evolución real.</p>
+            <h2 className="font-black text-white uppercase">{coachView?'EVOLUCIÓN DEL ATLETA.':'MI PROGRESO.'}</h2>
+            <p className="text-zinc-300 text-sm mt-2">{coachView?'Una visión clara para acompañar y ajustar su planificación.':'Tu esfuerzo deja huella. Cada registro cuenta tu evolución real.'}</p>
           </div>
         </div>
         <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-5">
@@ -108,7 +108,23 @@ export default function ProgressChart({clientId,coachView=false}){
       {error&&<p role="alert" className="p-3 bg-red-500/10 rounded-xl text-red-300 text-sm">{error}</p>}
       {loading?<div className="text-zinc-400 text-sm p-8 text-center">Preparando tus registros de entrenamiento...</div>:(
         <>
-          <div className="grid grid-cols-2 gap-2 sm:gap-3">
+          {region==='all' && (
+            <ProgressIntelligencePanel
+              sessions={categorizedSessions} today={today}
+              region={region} coachView={coachView}/>
+          )}
+
+          <details className="ragnar-coach-progress-details">
+            <summary className="ragnar-coach-progress-summary">
+              <span className="flex items-center gap-3">
+                <BarChart3 size={20} className="text-yellow-400"/>
+                <span><strong>ESTADÍSTICAS Y COMPARATIVAS</strong>
+                  <small>Sesiones, volumen, tiempo y última marca</small></span>
+              </span>
+              <ChevronDown size={19} className="ragnar-coach-progress-chevron"/>
+            </summary>
+            <div className="ragnar-coach-progress-details-content space-y-4">
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-2 sm:gap-3">
             {[
               {icon:CalendarCheck,label:'Sesiones terminadas',value:progress.completed},
               {icon:Dumbbell,label:'Series completadas',value:progress.sets},
@@ -123,12 +139,6 @@ export default function ProgressChart({clientId,coachView=false}){
               </div>;
             })}
           </div>
-
-          {region==='all' && (
-            <ProgressIntelligencePanel
-              sessions={categorizedSessions} today={today}
-              region={region} coachView={coachView}/>
-          )}
 
           {region==='all' && latestFeedback && (
             <section className="ragnar-performance-progress-latest" aria-label="Comparación de tu último entrenamiento">
@@ -169,6 +179,20 @@ export default function ProgressChart({clientId,coachView=false}){
             </section>
           )}
 
+            </div>
+          </details>
+
+          <details className="ragnar-coach-progress-details">
+            <summary className="ragnar-coach-progress-summary">
+              <span className="flex items-center gap-3">
+                <CalendarDays size={19} className="text-yellow-400"/>
+                <span><strong>ANÁLISIS SEMANAL</strong>
+                  <small>Compará las últimas semanas y el cierre del viernes</small></span>
+              </span>
+              <ChevronDown size={19} className="ragnar-coach-progress-chevron"/>
+            </summary>
+            <div className="ragnar-coach-progress-details-content space-y-3">
+
           {week&&<div className="rounded-3xl bg-zinc-900 border border-yellow-400/20 p-5 space-y-3">
             <p className="text-white font-black uppercase text-sm">Esta semana · {regionLabels[region]}</p>
             <p className="text-zinc-400 text-sm">{week.sessions} sesiones realizadas · {week.sets} series completadas</p>
@@ -208,8 +232,21 @@ export default function ProgressChart({clientId,coachView=false}){
             </div>
           )}
 
-          <div className="rounded-3xl bg-zinc-900 border border-zinc-800 p-4 sm:p-6">
-            <p className="font-black uppercase text-white text-lg tracking-tight">EVOLUCIÓN DE FUERZA.</p>
+            </div>
+          </details>
+
+          <details className="ragnar-coach-progress-details" >
+            <summary className="ragnar-coach-progress-summary">
+              <span className="flex items-center gap-3">
+                <TrendingUp size={19} className="text-yellow-400"/>
+                <span><strong>EVOLUCIÓN DE FUERZA</strong>
+                  <small>Elegí un ejercicio para explorar su historial</small></span>
+              </span>
+              <ChevronDown size={19} className="ragnar-coach-progress-chevron"/>
+            </summary>
+            <div className="ragnar-coach-progress-details-content">
+              <div className="ragnar-coach-progress-chart rounded-3xl bg-zinc-900 border border-zinc-800 p-4 sm:p-6">
+                <p className="font-black uppercase text-white text-lg tracking-tight">EVOLUCIÓN DE FUERZA.</p>
             <p className="text-zinc-500 text-xs mt-1 mb-4">Carga máxima realizada en una serie completada (kg).</p>
             <select aria-label="Elegí un ejercicio" value={selectedExercise}
               onChange={e=>setSelectedExercise(e.target.value)}
@@ -243,6 +280,9 @@ export default function ProgressChart({clientId,coachView=false}){
               </div>}
             </div>
           </div>
+
+            </div>
+          </details>
 
           {region==='all'&&(
             <div className="border border-zinc-800 rounded-2xl bg-zinc-900/70 p-4 text-zinc-400 text-xs flex gap-2 items-start">
