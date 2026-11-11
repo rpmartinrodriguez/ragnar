@@ -124,7 +124,7 @@ export default function ProgressChart({clientId,coachView=false}){
               </p>
               <p>Seleccioná Evolución de fuerza para consultar las cargas por ejercicio.</p>
             </section>
-          )
+          )}
 
           <details className="ragnar-coach-progress-details">
             <summary className="ragnar-coach-progress-summary">
