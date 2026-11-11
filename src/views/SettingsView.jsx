@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Save, CreditCard, Plus, Trash2, Tag, DollarSign, Wallet, Check } from 'lucide-react';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
+import AppearanceSelector from '../components/AppearanceSelector';
 
 export default function SettingsView() {
   // Estados de los datos
@@ -108,6 +109,8 @@ export default function SettingsView() {
           {saving ? 'Guardando...' : saved ? <><Check size={20}/> ¡Guardado!</> : <><Save size={20}/> Guardar Cambios</>}
         </button>
       </div>
+
+      <div className="mb-6"><AppearanceSelector /></div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         
