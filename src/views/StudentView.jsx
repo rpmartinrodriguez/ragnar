@@ -1510,40 +1510,22 @@ export default function StudentView({ clientId }) {
                 <div className="flex-1 flex justify-between items-center">
                   <div>
                     <h2 className="ragnar-performance-section-title">
-                      {isSessionFinalized ? 'SESIÓN COMPLETA.' : 'A ENTRENAR.'}
+                      {isSessionFinalized ? 'FINALIZADA.' : 'A ENTRENAR.'}
                     </h2>
                     <p className="text-yellow-400 font-bold text-[10px] uppercase mt-1 tracking-widest">
                       {date.toLocaleDateString('es-ES', { weekday: 'long', day: 'numeric', month: 'long' })}
                     </p>
                   </div>
-                  {isSessionFinalized && (
-                    <button 
-                      onClick={() => setShowShareModal(true)} 
-                      className="p-2 bg-yellow-400/10 text-yellow-400 border border-yellow-400/30 rounded-xl hover:bg-yellow-400/20 transition-colors" 
-                      title="Compartir Victoria"
-                    >
-                      <Share2 size={20}/>
-                    </button>
-                  )}
+
                 </div>
             </div>
 
-            {dailySession.length > 0 && (
-              <section className="ragnar-performance-session-meter" aria-label="Progreso del entrenamiento">
-                <div className="flex items-center justify-between gap-3">
-                  <div>
-                    <p className="ragnar-performance-eyebrow">TU PROGRESO EN ESTA SESIÓN</p>
-                    <p className="text-white text-2xl sm:text-3xl font-black mt-1 tabular-nums">
-                      {workoutCompletedSets} <span className="text-zinc-500 text-base">/ {workoutPlannedSets} series</span>
-                    </p>
-                  </div>
-                  <strong className="text-yellow-400 text-2xl font-black tabular-nums">{workoutProgress}%</strong>
-                </div>
-                <div className="ragnar-performance-track" role="progressbar" aria-label="Series completadas"
-                  aria-valuemin={0} aria-valuemax={100} aria-valuenow={workoutProgress}>
-                  <div className="ragnar-performance-track-fill" style={{width:workoutProgress+'%'}}/>
-                </div>
-              </section>
+            {!isSessionFinalized && dailySession.length > 0 && (
+              <div className="ragnar-performance-workout-summary" aria-label="Resumen breve de la rutina">
+                <span>{dailySession.length} {dailySession.length === 1 ? 'ejercicio' : 'ejercicios'}</span>
+                <span aria-hidden="true" className="ragnar-performance-summary-separator">·</span>
+                <span>{workoutCompletedSets} / {workoutPlannedSets} series hechas</span>
+              </div>
             )}
 
             {isSessionFinalized && dailySession.length > 0 && (
@@ -1553,32 +1535,28 @@ export default function StudentView({ clientId }) {
                 error={sessionFeedbackError}
                 onProgress={()=>setCurrentView('stats')}
                 onShare={()=>setShowShareModal(true)}
+                onDone={()=>{setShowFinishedWorkoutDetails(false);setCurrentView('home');}}
               />
             )}
 
-            {/* Registrar inicio real: no usar series x 3 como minutos transcurridos */}
-            {dailySession.length>0 && !isSessionFinalized && (
-              <div className="border border-yellow-400/20 bg-zinc-900 rounded-2xl p-4 mt-3">
+            {/* El cronómetro se muestra sólo cuando corresponde, sin bloquear
+                la lectura de ejercicios ni agregar paneles altos. */}
+            {dailySession.length>0 && !isSessionFinalized && currentDateId===todayYmd && (
+              <div className="ragnar-performance-clock-compact">
+                <Clock size={17} className="text-yellow-400 shrink-0"/>
                 {workoutStartedAt ? (
-                  <p className="flex gap-2 items-center text-yellow-300 text-sm font-bold">
-                    <Clock size={19}/> Tiempo de sesión: {elapsedMinutes===null?'Calculando...':elapsedMinutes+' min'}
-                  </p>
-                ) : currentDateId===todayYmd ? (
+                  <span className="text-xs font-bold">
+                    Tiempo registrado: {elapsedMinutes===null?'Calculando...':elapsedMinutes+' min'}
+                  </span>
+                ) : (
                   <button type="button" disabled={clockBusy} onClick={()=>startWorkoutClock()}
-                    className="w-full py-3 rounded-xl bg-yellow-400 text-black font-black text-sm disabled:opacity-40 flex justify-center items-center gap-2">
-                    <Clock size={19}/>{clockBusy?'Registrando inicio...':'Iniciar cronómetro del entrenamiento'}
+                    className="text-xs font-black text-yellow-400 disabled:opacity-40">
+                    {clockBusy?'Iniciando...':'INICIAR CRONÓMETRO'}
                   </button>
-                ) : <p className="text-zinc-500 text-xs">Solo se registra duración real al iniciar el cronómetro el mismo día del entrenamiento.</p>}
-                <p className="text-xs text-zinc-500 mt-2">El tiempo registrado se muestra al finalizar y en la tarjeta para Instagram. Si no lo iniciás, no se inventan minutos.</p>
-                {clockError&&<p role="alert" className="text-red-300 text-xs mt-2">{clockError}</p>}
+                )}
+                {clockError && <span role="alert" className="text-red-300 text-xs">{clockError}</span>}
               </div>
             )}
-            {isSessionFinalized && recordedDuration>0 && (
-              <p className="rounded-xl border border-zinc-800 bg-zinc-900 p-3 text-xs text-zinc-300 flex gap-2 items-center">
-                <Clock size={17} className="text-yellow-400"/> Duración registrada: {recordedDuration} min
-              </p>
-            )}
-
 
             {/* --- PANEL DE CONFIGURACIÓN DE SESIÓN --- */}
             {!isSessionFinalized && (
@@ -1687,46 +1665,60 @@ export default function StudentView({ clientId }) {
             )}
 
             {dailySession.length > 0 && !isSessionFinalized && (
-              <section className="ragnar-performance-exercise-nav" aria-label="Navegación de ejercicios">
-                <div className="flex items-center justify-between flex-wrap gap-3">
-                  <div className="flex-1 min-w-0">
-                    <p className="ragnar-performance-eyebrow">
-                      {showAllWorkoutExercises ? 'VISTA COMPLETA' : 'EJERCICIO ' + (effectiveFocusedExercise + 1) + ' DE ' + dailySession.length}
-                    </p>
-                    <p className="text-white text-base font-black uppercase tracking-tight mt-1 break-words">
-                      {showAllWorkoutExercises ? 'TODOS LOS EJERCICIOS' : dailySession[effectiveFocusedExercise]?.name}
-                    </p>
-                  </div>
+              <section className="ragnar-performance-exercise-nav" aria-label="Cómo ver tu rutina">
+                <div className="ragnar-performance-mode-switch" role="group" aria-label="Elegir vista de rutina">
                   <button type="button" aria-pressed={showAllWorkoutExercises}
-                    onClick={() => setShowAllWorkoutExercises(prev => !prev)}
-                    className="ragnar-performance-overview-button">
-                    {showAllWorkoutExercises ? 'MODO ENFOCADO' : 'VER RUTINA COMPLETA'}
+                    onClick={()=>setShowAllWorkoutExercises(true)}
+                    className={'ragnar-performance-mode-button ' +
+                      (showAllWorkoutExercises ? 'is-active' : '')}>
+                    RUTINA COMPLETA
+                  </button>
+                  <button type="button" aria-pressed={!showAllWorkoutExercises}
+                    onClick={()=>setShowAllWorkoutExercises(false)}
+                    className={'ragnar-performance-mode-button ' +
+                      (!showAllWorkoutExercises ? 'is-active' : '')}>
+                    PASO A PASO
                   </button>
                 </div>
                 {!showAllWorkoutExercises && (
-                  <div className="flex items-center gap-2 mt-3">
+                  <div className="ragnar-performance-focus-row">
                     <button type="button" disabled={effectiveFocusedExercise <= 0}
-                      onClick={() => setFocusedExerciseIndex(idx => Math.max(0, idx - 1))}
-                      className="ragnar-performance-nav-button disabled:opacity-30" aria-label="Ejercicio anterior">
-                      <ChevronLeft size={21}/>
-                    </button>
-                    <div className="flex-1 flex gap-1.5" aria-hidden="true">
-                      {dailySession.map((_, idx) => (
-                        <div key={idx} className={'h-1.5 flex-1 rounded-full ' +
-                          (idx <= effectiveFocusedExercise ? 'bg-yellow-400' : 'bg-zinc-700')}/>
-                      ))}
+                      onClick={()=>setFocusedExerciseIndex(idx=>Math.max(0,idx-1))}
+                      className="ragnar-performance-nav-button disabled:opacity-30"
+                      aria-label="Ejercicio anterior"><ChevronLeft size={21}/></button>
+                    <div className="flex-1 min-w-0 text-center">
+                      <p className="ragnar-performance-focus-counter">
+                        EJERCICIO {effectiveFocusedExercise + 1} DE {dailySession.length}
+                      </p>
+                      <p className="ragnar-performance-focus-name">
+                        {dailySession[effectiveFocusedExercise]?.name}
+                      </p>
                     </div>
-                    <button type="button" disabled={effectiveFocusedExercise >= dailySession.length - 1}
-                      onClick={() => setFocusedExerciseIndex(idx => Math.min(dailySession.length - 1, idx + 1))}
-                      className="ragnar-performance-nav-button disabled:opacity-30" aria-label="Próximo ejercicio">
-                      <ChevronRight size={21}/>
-                    </button>
+                    <button type="button" disabled={effectiveFocusedExercise >= dailySession.length-1}
+                      onClick={()=>setFocusedExerciseIndex(idx=>
+                        Math.min(dailySession.length-1,idx+1))}
+                      className="ragnar-performance-nav-button disabled:opacity-30"
+                      aria-label="Próximo ejercicio"><ChevronRight size={21}/></button>
                   </div>
                 )}
               </section>
             )}
 
-            {/* LISTA DE EJERCICIOS Y SOBRECARGA */}
+            {dailySession.length > 0 && isSessionFinalized && (
+              <button type="button" onClick={()=>setShowFinishedWorkoutDetails(value=>!value)}
+                aria-expanded={showFinishedWorkoutDetails}
+                className="ragnar-performance-finished-details-toggle">
+                <span className="flex items-center gap-2">
+                  <Dumbbell size={18}/>
+                  {showFinishedWorkoutDetails ? 'OCULTAR EJERCICIOS DEL DÍA' : 'VER EJERCICIOS DEL DÍA'}
+                </span>
+                <ChevronRight size={18} className={showFinishedWorkoutDetails?'rotate-90':''}/>
+              </button>
+            )}
+
+            {/* Lista completa sólo si el alumno la solicita en una sesión finalizada. */}
+            {(!isSessionFinalized || showFinishedWorkoutDetails) && (
+              <>
             <div className="ragnar-performance-exercises space-y-4">
                 {dailySession.length > 0 ? (
                   dailySession.map((ex, exIdx) => {
@@ -1915,6 +1907,14 @@ export default function StudentView({ clientId }) {
             {dailySession.length > 0 && (
               <StudentWorkoutNote clientId={clientId} dateId={currentDateId}/>
             )}
+            {isSessionFinalized && recordedDuration>0 && (
+              <p className="text-zinc-400 text-xs mt-3 flex gap-2 items-center">
+                <Clock size={16} className="text-yellow-400"/>
+                Duración registrada: {recordedDuration} min
+              </p>
+            )}
+              </>
+            )}
 
             {dailySession.length > 0 && !isSessionFinalized && (
               <div className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4 space-y-2 mt-4">
@@ -1929,11 +1929,6 @@ export default function StudentView({ clientId }) {
                     <option key={value} value={value}>{value} / 10{value===1?' · Muy fácil':value===10?' · Máximo esfuerzo':''}</option>
                   ))}
                 </select>
-              </div>
-            )}
-            {dailySession.length>0&&isSessionFinalized&&(
-              <div className="text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 rounded-xl p-3 text-sm">
-                Entrenamiento finalizado {recordedEffort!==null && '· esfuerzo '+recordedEffort+'/10'}
               </div>
             )}
             {dailySession.length > 0 && !isSessionFinalized && (
