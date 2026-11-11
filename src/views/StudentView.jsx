@@ -57,6 +57,7 @@ import StudentChangePassword from '../components/StudentChangePassword';
 import StudentFirstAccessModal from '../components/StudentFirstAccessModal';
 import StudentWorkoutNote from '../components/StudentWorkoutNote';
 import StudentSetInput from '../components/StudentSetInput';
+import AppearanceSelector from '../components/AppearanceSelector';
 import ConnectionBanner from '../components/ConnectionBanner';
 import StudentAlertsPanel from '../components/StudentAlertsPanel';
 import { studentAlertRequest, studentForegroundListener } from '../utils/studentPush';
@@ -1903,6 +1904,9 @@ export default function StudentView({ clientId }) {
                <p className="text-zinc-500 text-[10px] font-black uppercase tracking-[0.2em] relative z-10">{client?.email}</p>
              </div>
              
+             {/* Apariencia personal · no modifica los datos del coach ni del alumno */}
+             <AppearanceSelector />
+
              {/* VITRINA DE TROFEOS */}
              <div className="bg-zinc-900 rounded-[2rem] p-6 border border-zinc-800 shadow-xl">
                <h3 className="text-white font-bold uppercase mb-4 flex items-center gap-2">
