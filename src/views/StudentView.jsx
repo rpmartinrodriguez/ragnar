@@ -60,6 +60,7 @@ import StudentChangePassword from '../components/StudentChangePassword';
 import StudentFirstAccessModal from '../components/StudentFirstAccessModal';
 import StudentWorkoutNote from '../components/StudentWorkoutNote';
 import StudentSetInput from '../components/StudentSetInput';
+import StudentCheckIn from '../components/StudentCheckIn';
 import AppearanceSelector from '../components/AppearanceSelector';
 import ConnectionBanner from '../components/ConnectionBanner';
 import StudentAlertsPanel from '../components/StudentAlertsPanel';
@@ -117,6 +118,7 @@ export default function StudentView({ clientId }) {
   const [trainerSettings, setTrainerSettings] = useState({ alias: '', plans: [] });
   const [date, setDate] = useState(new Date());
   const [dailySession, setDailySession] = useState([]);
+  const [dailyCheckIn, setDailyCheckIn] = useState(null);
   const [focusedExerciseIndex, setFocusedExerciseIndex] = useState(0);
   const [showAllWorkoutExercises, setShowAllWorkoutExercises] = useState(true);
   const [showFinishedWorkoutDetails, setShowFinishedWorkoutDetails] = useState(false);
@@ -503,6 +505,7 @@ export default function StudentView({ clientId }) {
       if(snapshot.exists()){
         const data=snapshot.data();
         setDailySession(Array.isArray(data.exercises)?data.exercises:[]);
+        setDailyCheckIn(data.checkIn ?? null);
         setIsSessionFinalized(data.isFinalized===true);
         setRecordedEffort(data.perceivedEffort??null);
         setPerceivedEffort(String(data.perceivedEffort??'6'));
@@ -513,6 +516,7 @@ export default function StudentView({ clientId }) {
         setCardioIntensity(data.cardioIntensity||'Baja');
       }else{
         setDailySession([]);
+        setDailyCheckIn(null);
         setIsSessionFinalized(false);
         setRecordedEffort(null);
         setPerceivedEffort('6');
@@ -1542,6 +1546,13 @@ export default function StudentView({ clientId }) {
                 onShare={()=>setShowShareModal(true)}
                 onDone={()=>{setShowFinishedWorkoutDetails(false);setCurrentView('home');}}
               />
+            )}
+
+            {/* Check-in voluntario, integrado sin ventanas automáticas. */}
+            {dailySession.length>0 && !isSessionFinalized && currentDateId===todayYmd && (
+              <StudentCheckIn key={clientId+':'+currentDateId}
+                clientId={clientId} dateId={currentDateId}
+                initialValue={dailyCheckIn} finalized={isSessionFinalized}/>
             )}
 
             {/* El cronómetro se muestra sólo cuando corresponde, sin bloquear
