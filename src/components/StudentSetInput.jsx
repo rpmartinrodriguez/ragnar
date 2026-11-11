@@ -91,16 +91,17 @@ export default function StudentSetInput({
   useEffect(() => {
     mountedRef.current = true;
     return () => {
-    mountedRef.current = false;
-    if (timerRef.current) clearTimeout(timerRef.current);
-    if (dirtyRef.current) {
-      const next = normalizeSetField(field, draftRef.current);
-      if (next !== normalizeSetField(field, confirmedRef.current) &&
-          submittedRef.current !== next) {
-        // Cambio de día o navegación: conservar el último valor escrito.
-        void Promise.resolve().then(() => onSaveRef.current(next)).catch(console.error);
+      mountedRef.current = false;
+      if (timerRef.current) clearTimeout(timerRef.current);
+      if (dirtyRef.current) {
+        const next = normalizeSetField(field, draftRef.current);
+        if ((next !== normalizeSetField(field, confirmedRef.current) ||
+             (submittedRef.current !== null && submittedRef.current !== next)) &&
+            submittedRef.current !== next) {
+          // Cambio de día o navegación: conservar el último valor escrito.
+          void Promise.resolve().then(() => onSaveRef.current(next)).catch(console.error);
+        }
       }
-    }
     };
   }, [field]);
 
@@ -111,7 +112,16 @@ export default function StudentSetInput({
         aria-label={label} placeholder={placeholder} value={draft} disabled={disabled}
         onFocus={() => { focusedRef.current = true; }}
         onChange={updateDraft}
-        onBlur={() => { focusedRef.current = false; if (dirtyRef.current) saveDraft(); }}
+        onBlur={() => {
+          focusedRef.current = false;
+          if (dirtyRef.current) saveDraft();
+          else {
+            // Si el coach modificó el valor mientras estaba enfocado,
+            // mostrar la última versión recibida al salir del campo.
+            draftRef.current = confirmedRef.current;
+            setDraft(confirmedRef.current);
+          }
+        }}
         onKeyDown={event => {
           if (event.key === 'Enter') event.currentTarget.blur();
         }}
