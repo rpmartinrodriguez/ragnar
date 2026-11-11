@@ -152,15 +152,15 @@ export default function CoachSetLogger({ clientId, dateId, exercises = [], final
               <label className="min-w-0">
                 <span className="block text-[10px] text-zinc-500 mb-1">Reps</span>
                 <input aria-label={'Repeticiones '+ex.name+' serie '+(j+1)}
-                  type="number" min="0" step="1" inputMode="numeric" value={set.reps}
-                  disabled={finalized||saving} onChange={e=>update(i,j,'reps',e.target.value)}
+                  type="text" inputMode="numeric" maxLength={4} autoComplete="off" value={set.reps}
+                  disabled={finalized||saving} onChange={e=>{if(/^\d{0,4}$/.test(e.target.value))update(i,j,'reps',e.target.value);}}
                   className="w-full min-w-0 bg-zinc-900 border border-zinc-700 rounded-lg text-white text-sm p-2.5 outline-none focus:border-yellow-400 disabled:opacity-50"/>
               </label>
               <label className="min-w-0">
                 <span className="block text-[10px] text-zinc-500 mb-1">Kg</span>
                 <input aria-label={'Peso '+ex.name+' serie '+(j+1)}
-                  type="number" min="0" step="0.25" inputMode="decimal" value={set.weight}
-                  disabled={finalized||saving} onChange={e=>update(i,j,'weight',e.target.value)}
+                  type="text" inputMode="decimal" maxLength={7} autoComplete="off" value={set.weight}
+                  disabled={finalized||saving} onChange={e=>{if(/^\d{0,4}(?:[.,]\d{0,2})?$/.test(e.target.value))update(i,j,'weight',e.target.value);}}
                   className="w-full min-w-0 bg-zinc-900 border border-zinc-700 rounded-lg text-white text-sm p-2.5 outline-none focus:border-yellow-400 disabled:opacity-50"/>
               </label>
               <button type="button" onClick={()=>update(i,j,'completed',!set.completed)}
