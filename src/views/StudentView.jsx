@@ -674,6 +674,11 @@ export default function StudentView({ clientId }) {
     if (!hasPaidMonth) {
       setShowPaymentModal(true);
     } else {
+      if (formatDateId(newDate) !== currentDateId) {
+        // Evitar que por un instante se muestre la sesión del día anterior.
+        setDailySession([]);
+        setIsSessionFinalized(false);
+      }
       setDate(newDate);
       setFocusedExerciseIndex(0);
       setShowAllWorkoutExercises(true);
@@ -1411,7 +1416,7 @@ export default function StudentView({ clientId }) {
                 </div>
                 <button type="button" onClick={() => openWorkoutFromHome(nextWorkout.date)}
                   className="ragnar-performance-next-action" aria-label="Ver próxima rutina">
-                  <ArrowRight size={20}/>
+                  <span>VER RUTINA</span><ArrowRight size={20}/>
                 </button>
               </div>
             )}
@@ -1787,36 +1792,27 @@ export default function StudentView({ clientId }) {
                                 </div>
                               )}
 
-                              {/* ALERTA DE SOBRECARGA MÁGICA */}
+                              {/* La última marca existe, pero no invade el registro de series. */}
                               {hasValidHistory && (
-                                <div className="mt-2 mb-4 inline-flex items-center gap-1.5 bg-yellow-400/10 border border-yellow-400/30 px-2 py-1 rounded-md text-yellow-400 shadow-inner">
-                                  <TrendingUp size={12} className="shrink-0" />
-                                  <span className="text-[9px] font-black uppercase tracking-widest leading-none">
-                                    Última vez ({new Date(historyData.date + 'T12:00:00Z').toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}): 
+                                <details className="ragnar-performance-history-details">
+                                  <summary className="ragnar-performance-history-summary">
+                                    <TrendingUp size={14}/> VER ÚLTIMA MARCA
+                                    <ChevronRight size={14} className="ragnar-performance-details-chevron"/>
+                                  </summary>
+                                  <p className="text-xs mt-2 text-zinc-300">
+                                    {new Date(historyData.date + 'T12:00:00Z').toLocaleDateString(
+                                      'es-AR', {day:'numeric',month:'short'})}
                                     {(() => {
-                                       const completedSets = historyData.actualSets.filter(s => s.completed);
-                                       const maxWeight = Math.max(0, ...completedSets.map(s => Number(s.weight) || 0));
-                                       const maxReps = Math.max(0, ...completedSets.map(s => Number(s.reps) || 0));
-                                       return maxWeight > 0 ? ` Máx ${maxWeight}kg` : ` Máx ${maxReps} Reps`;
+                                      const completed = historyData.actualSets.filter(set=>set?.completed===true);
+                                      const maxWeight = Math.max(0, ...completed.map(set=>Number(set.weight)||0));
+                                      const maxReps = Math.max(0, ...completed.map(set=>Number(set.reps)||0));
+                                      return maxWeight>0 ? ' · Máximo '+maxWeight+' kg' : ' · Máximo '+maxReps+' repeticiones';
                                     })()}
-                                  </span>
-                                </div>
+                                  </p>
+                                </details>
                               )}
 
                             </div>
-                          </div>
-                        </div>
-
-                        <div className="ragnar-performance-card-progress">
-                          <div className="flex justify-between items-center gap-2 text-[11px] font-bold text-zinc-400">
-                            <span>SERIES COMPLETADAS</span>
-                            <span className="text-yellow-400 tabular-nums">{(ex.actualSets||[]).filter(set => set?.completed === true).length} / {safeSets.length}</span>
-                          </div>
-                          <div className="ragnar-performance-track mt-2">
-                            <div className="ragnar-performance-track-fill"
-                              style={{width:(safeSets.length
-                                ? Math.min(100,((ex.actualSets||[]).filter(set => set?.completed===true).length/safeSets.length)*100)
-                                : 0)+'%'}}/>
                           </div>
                         </div>
 
