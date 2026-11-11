@@ -7,11 +7,12 @@ import {regionOfExercise,regionLabels,groupProgress,exerciseHistorySeries,
   weeklyInsights,dateKey,isFridayFinalSession} from '../utils/trainingInsights';
 import {ymdInArgentina} from '../utils/billingCycle';
 import {sessionCompletionFeedback} from '../utils/sessionCompletionFeedback';
+import ProgressIntelligencePanel from './ProgressIntelligencePanel';
 
 const REGIONS=['all','upper','lower','core','cardio'];
 const formatWeight=x=>Number(x).toLocaleString('es-AR',{maximumFractionDigits:1});
 
-export default function ProgressChart({clientId}){
+export default function ProgressChart({clientId,coachView=false}){
   const [sessions,setSessions]=useState([]);
   const [libraryRegions,setLibraryRegions]=useState({});
   const [region,setRegion]=useState('all');
@@ -122,6 +123,12 @@ export default function ProgressChart({clientId}){
               </div>;
             })}
           </div>
+
+          {region==='all' && (
+            <ProgressIntelligencePanel
+              sessions={categorizedSessions} today={today}
+              region={region} coachView={coachView}/>
+          )}
 
           {region==='all' && latestFeedback && (
             <section className="ragnar-performance-progress-latest" aria-label="Comparación de tu último entrenamiento">
