@@ -1,0 +1,429 @@
+/* RAGNAR · Apariencia Premium v1
+ * Usa una preferencia local y `data-ragnar-theme` para ambos roles.
+ * No toca reglas Firebase ni archivos de rutinas.
+ */
+
+:root {
+  --rp-canvas: #101012;
+  --rp-card: #202024;
+  --rp-card-2: #28282d;
+  --rp-field: #151519;
+  --rp-text: #fafafa;
+  --rp-muted: #a1a1aa;
+  --rp-line: #34343b;
+  --rp-amber-text: #facc15;
+  --rp-elevated-shadow: 0 16px 46px rgba(0,0,0,.24);
+}
+html[data-ragnar-theme="light"] {
+  color-scheme: light;
+  --rp-canvas: #f6f5ef;
+  --rp-card: #ffffff;
+  --rp-card-2: #eeeef0;
+  --rp-field: #f7f8f9;
+  --rp-text: #222429;
+  --rp-muted: #59616b;
+  --rp-line: #dfe2e5;
+  --rp-amber-text: #976100;
+  --rp-elevated-shadow: 0 14px 32px rgba(23,28,39,.08), 0 2px 7px rgba(23,28,39,.035);
+}
+
+/* Apariencia: selector accesible, botones grandes y claridad de estado. */
+.ragnar-appearance-panel {
+  background: linear-gradient(142deg, var(--rp-card), var(--rp-card-2));
+  border: 1px solid var(--rp-line);
+  border-radius: 22px;
+  padding: clamp(16px, 3.5vw, 24px);
+  box-shadow: var(--rp-elevated-shadow);
+  color: var(--rp-text);
+}
+.ragnar-appearance-title {
+  font-weight: 950;
+  font-size: 1.1rem;
+  letter-spacing: -.025em;
+  color: var(--rp-text);
+}
+.ragnar-appearance-subtitle {
+  font-size: .81rem;
+  color: var(--rp-muted);
+  line-height: 1.5;
+  margin-top: 4px;
+}
+.ragnar-appearance-current {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  border-radius: 100px;
+  border: 1px solid var(--rp-line);
+  background: var(--rp-field);
+  font-size: .64rem;
+  letter-spacing: .04em;
+  font-weight: 850;
+  color: var(--rp-muted);
+}
+.ragnar-appearance-current-dot {
+  width: 7px; height: 7px; border-radius: 50%; background: #eab308;
+}
+.ragnar-appearance-options {
+  display: grid;
+  gap: 8px;
+  grid-template-columns: repeat(3,minmax(0,1fr));
+}
+.ragnar-appearance-option {
+  position: relative;
+  min-height: 105px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  align-items: flex-start;
+  text-align: left;
+  padding: 13px;
+  background: var(--rp-field);
+  color: var(--rp-text);
+  border-radius: 14px;
+  border: 1px solid var(--rp-line);
+  transition: transform .18s ease, border-color .18s ease, background .18s ease, box-shadow .18s ease;
+}
+.ragnar-appearance-option:hover { border-color: #d1a522; }
+.ragnar-appearance-option.is-selected {
+  border: 2px solid #eab308;
+  padding: 12px;
+  box-shadow: 0 0 0 3px rgba(234,179,8,.12);
+}
+.ragnar-appearance-option-icon {
+  color: var(--rp-amber-text);
+  display: inline-flex;
+  align-items: center;
+}
+.ragnar-appearance-option-text { display: flex; flex-direction: column; gap: 4px; }
+.ragnar-appearance-option-text strong { font-size: .83rem; font-weight: 900; }
+.ragnar-appearance-option-text small { font-size: .67rem; line-height: 1.35; color: var(--rp-muted); }
+.ragnar-appearance-option-check {
+  position: absolute; right: 9px; top: 8px; color: var(--rp-amber-text);
+}
+.ragnar-appearance-footnote {
+  margin-top: 13px; font-size: .7rem; line-height: 1.45; color: var(--rp-muted);
+}
+
+/* Claro: fondos amplios y superficie diferenciada. */
+html[data-ragnar-theme="light"] body,
+html[data-ragnar-theme="light"] #root { background: var(--rp-canvas); color: var(--rp-text); }
+html[data-ragnar-theme="light"] :is(.ragnar-student-shell,.ragnar-coach-shell,.ragnar-login-shell) {
+  background: var(--rp-canvas) !important;
+  color: var(--rp-text) !important;
+}
+html[data-ragnar-theme="light"] .ragnar-coach-shell > main,
+html[data-ragnar-theme="light"] .ragnar-coach-content {
+  background: var(--rp-canvas) !important;
+  color: var(--rp-text) !important;
+}
+html[data-ragnar-theme="light"] :is(.ragnar-student-shell,.ragnar-coach-shell,.ragnar-login-shell)
+:is([class~="bg-black"],[class~="bg-black/30"],[class~="bg-black/40"],
+    [class~="bg-black/50"],[class~="bg-black/60"],[class~="bg-black/80"],[class~="bg-black/95"],
+    [class~="bg-zinc-950"],[class~="bg-zinc-950/20"],[class~="bg-zinc-950/50"],
+    [class~="bg-zinc-950/80"],[class~="bg-zinc-950/95"]) {
+  background-color: var(--rp-field) !important;
+}
+html[data-ragnar-theme="light"] :is(.ragnar-student-shell,.ragnar-coach-shell,.ragnar-login-shell)
+:is([class~="bg-zinc-900"],[class~="bg-zinc-900/30"],[class~="bg-zinc-900/40"],
+    [class~="bg-zinc-900/50"],[class~="bg-zinc-900/60"],[class~="bg-zinc-900/65"],
+    [class~="bg-zinc-900/70"],[class~="bg-zinc-900/80"],
+    [class~="bg-zinc-900/90"]) {
+  background-color: var(--rp-card) !important;
+}
+html[data-ragnar-theme="light"] :is(.ragnar-student-shell,.ragnar-coach-shell,.ragnar-login-shell)
+[class~="bg-zinc-800"] { background-color: var(--rp-card-2) !important; }
+
+/* La pantalla conserva contraste tanto en pantallas grandes como en modales. */
+html[data-ragnar-theme="light"] :is(.ragnar-student-shell,.ragnar-coach-shell,.ragnar-login-shell)
+:is([class~="text-white"],[class~="text-zinc-100"],[class~="text-zinc-200"],[class~="text-zinc-300"]) {
+  color: var(--rp-text) !important;
+}
+html[data-ragnar-theme="light"] :is(.ragnar-student-shell,.ragnar-coach-shell,.ragnar-login-shell)
+:is([class~="text-zinc-400"],[class~="text-zinc-500"],[class~="text-zinc-600"]) {
+  color: var(--rp-muted) !important;
+}
+html[data-ragnar-theme="light"] :is(.ragnar-student-shell,.ragnar-coach-shell,.ragnar-login-shell)
+:is([class~="text-yellow-400"],[class~="text-yellow-300"],[class~="text-yellow-500"]) {
+  color: var(--rp-amber-text) !important;
+}
+html[data-ragnar-theme="light"] :is(.ragnar-student-shell,.ragnar-coach-shell,.ragnar-login-shell)
+:is([class~="border-zinc-700"],[class~="border-zinc-800"],[class~="border-zinc-900"],[class~="border-zinc-800/50"],[class~="border-zinc-800/80"]) {
+  border-color: var(--rp-line) !important;
+}
+html[data-ragnar-theme="light"] :is(.ragnar-student-shell,.ragnar-coach-shell,.ragnar-login-shell)
+:is(input,textarea,select) {
+  color: var(--rp-text);
+  caret-color: #b38613;
+}
+html[data-ragnar-theme="light"] :is(.ragnar-student-shell,.ragnar-coach-shell,.ragnar-login-shell)
+:is(input,textarea,select)::placeholder { color: #77818b !important; }
+html[data-ragnar-theme="light"] :is(.ragnar-student-shell,.ragnar-coach-shell,.ragnar-login-shell)
+:is(input,textarea,select):not([type="checkbox"]):not([type="radio"]) {
+  background-color: var(--rp-field);
+  border-color: var(--rp-line);
+}
+
+/* Amarillo protagonista siempre con texto negro; semáforos intactos. */
+html[data-ragnar-theme="light"] :is(.ragnar-student-shell,.ragnar-coach-shell,.ragnar-login-shell)
+:is(button,[role="button"])[class~="bg-yellow-400"] {
+  background: #facc15 !important;
+  color: #18181b !important;
+}
+html[data-ragnar-theme="light"] :is(.ragnar-student-shell,.ragnar-coach-shell,.ragnar-login-shell)
+:is(button,[role="button"])[class~="bg-yellow-400"] :is(svg,span) {
+  color: inherit;
+}
+html[data-ragnar-theme="light"] :is(.ragnar-student-shell,.ragnar-coach-shell)
+:is(button,[role="button"])[class~="bg-green-500"],
+html[data-ragnar-theme="light"] :is(.ragnar-student-shell,.ragnar-coach-shell)
+:is(button,[role="button"])[class~="bg-red-500"] {
+  color: #101113 !important;
+}
+html[data-ragnar-theme="light"] :is(.ragnar-student-shell,.ragnar-coach-shell)
+:is([class~="text-red-300"],[class~="text-red-400"]) { color: #bb2737 !important; }
+html[data-ragnar-theme="light"] :is(.ragnar-student-shell,.ragnar-coach-shell)
+:is([class~="text-emerald-300"],[class~="text-green-400"]) { color: #087949 !important; }
+html[data-ragnar-theme="light"] :is(.ragnar-student-shell,.ragnar-coach-shell)
+:is([class~="text-blue-400"],[class~="text-blue-300"]) { color: #165b99 !important; }
+
+/* Vista de la app coach: menú, paneles e inputs con separación editorial. */
+html[data-ragnar-theme="light"] .ragnar-coach-shell aside {
+  background: #fbfbfa !important;
+  border-color: var(--rp-line);
+}
+html[data-ragnar-theme="light"] .ragnar-coach-shell header {
+  background: #fff !important;
+  border-color: var(--rp-line) !important;
+}
+html[data-ragnar-theme="light"] .ragnar-coach-shell :is(button,a)[class~="bg-yellow-400"] {
+  box-shadow: 0 5px 18px rgba(180,135,15,.12);
+}
+html[data-ragnar-theme="light"] .ragnar-coach-content article,
+html[data-ragnar-theme="light"] .ragnar-coach-content [class~="rounded-2xl"][class~="bg-zinc-900"],
+html[data-ragnar-theme="light"] .ragnar-coach-content [class~="rounded-xl"][class~="bg-zinc-900"] {
+  box-shadow: var(--rp-elevated-shadow);
+}
+/* Header, avisos y tarjetas de atleta no deben quedar planos en modo claro. */
+html[data-ragnar-theme="light"] .ragnar-student-content :is(article,[class~="rounded-2xl"][class~="bg-zinc-900"]) {
+  box-shadow: var(--rp-elevated-shadow);
+}
+
+/* Vista premium: contraste en claro con cabeceras oscuras deliberadas. */
+html[data-ragnar-theme="light"] .ragnar-performance {
+  background: var(--rp-canvas) !important;
+}
+html[data-ragnar-theme="light"] .ragnar-performance-header {
+  background: rgba(255,255,255,.94) !important;
+  border-color: var(--rp-line);
+  box-shadow: 0 6px 24px rgba(27,32,42,.035);
+}
+html[data-ragnar-theme="light"] .ragnar-performance-wordmark { color: #202227; }
+html[data-ragnar-theme="light"] .ragnar-performance-hero,
+html[data-ragnar-theme="light"] .ragnar-performance-progress-hero,
+html[data-ragnar-theme="light"] .ragnar-performance-community-hero {
+  background: linear-gradient(128deg,#27292d,#141519 78%) !important;
+  color: #f8f8f5 !important;
+  border-color: #2e3035 !important;
+  box-shadow: 0 16px 42px rgba(28,32,38,.19);
+}
+html[data-ragnar-theme="light"] .ragnar-performance
+:is(.ragnar-performance-hero,.ragnar-performance-progress-hero,.ragnar-performance-community-hero)
+:is([class~="text-white"],[class~="text-zinc-100"],[class~="text-zinc-200"],[class~="text-zinc-300"]) {
+  color: #f8f8f5 !important;
+}
+html[data-ragnar-theme="light"] .ragnar-performance
+:is(.ragnar-performance-hero,.ragnar-performance-progress-hero,.ragnar-performance-community-hero)
+:is([class~="text-zinc-400"],[class~="text-zinc-500"]) {
+  color: #c8c8c9 !important;
+}
+html[data-ragnar-theme="light"] .ragnar-performance
+:is(.ragnar-performance-hero,.ragnar-performance-progress-hero,.ragnar-performance-community-hero)
+:is([class~="text-yellow-400"],[class~="text-yellow-300"]) {
+  color: #facc15 !important;
+}
+html[data-ragnar-theme="light"] .ragnar-performance .ragnar-performance-hero-title {
+  color: #fff;
+}
+html[data-ragnar-theme="light"] .ragnar-performance-headline {
+  color: #24272b;
+}
+html[data-ragnar-theme="light"] .ragnar-performance-headline span {
+  color: #a66c05;
+}
+html[data-ragnar-theme="light"] .ragnar-performance-kicker,
+html[data-ragnar-theme="light"] .ragnar-performance-eyebrow { color: #a66c05; }
+html[data-ragnar-theme="light"] .ragnar-performance-metrics {
+  background: #24262a;
+  color: #fff;
+  box-shadow: var(--rp-elevated-shadow);
+}
+html[data-ragnar-theme="light"] .ragnar-performance-metric:hover:not(:disabled) { background: #3a3c42; }
+html[data-ragnar-theme="light"] .ragnar-performance-metric :is(strong,small,span) { color: #fff !important; }
+html[data-ragnar-theme="light"] .ragnar-performance-metric svg { color: #facc15 !important; }
+html[data-ragnar-theme="light"] .ragnar-performance-shortcut {
+  color: #23252a;
+  background: #fff;
+  border-color: var(--rp-line);
+  box-shadow: var(--rp-elevated-shadow);
+}
+html[data-ragnar-theme="light"] .ragnar-performance-shortcut:hover:not(:disabled) {
+  background: #fffdf4;
+  border-color: #e0bc58;
+}
+html[data-ragnar-theme="light"] .ragnar-performance-shortcut svg { color: #9b6c0b; }
+html[data-ragnar-theme="light"] .ragnar-performance-session-meter,
+html[data-ragnar-theme="light"] .ragnar-performance-exercise-nav,
+html[data-ragnar-theme="light"] .ragnar-performance-settings,
+html[data-ragnar-theme="light"] .ragnar-performance-exercise-card {
+  background: #fff !important;
+  color: var(--rp-text);
+  border-color: var(--rp-line);
+  box-shadow: var(--rp-elevated-shadow);
+}
+html[data-ragnar-theme="light"] .ragnar-performance-overview-button,
+html[data-ragnar-theme="light"] .ragnar-performance-nav-button {
+  background: #f4f2e8;
+  color: #956400;
+  border-color: #ddd4b9;
+}
+html[data-ragnar-theme="light"] .ragnar-performance-track { background: #e5e7ea; }
+html[data-ragnar-theme="light"] .ragnar-performance-track-fill {
+  background: linear-gradient(90deg,#c78c05,#facc15);
+}
+html[data-ragnar-theme="light"] .ragnar-performance-exercise-card input[data-ragnar-series-input] {
+  background: #f7f8fa !important;
+  color: #1b1d20 !important;
+  border-color: #d1d5db !important;
+}
+html[data-ragnar-theme="light"] .ragnar-performance .ragnar-student-bottom-nav {
+  background: rgba(255,255,255,.97) !important;
+  color: #24262a !important;
+  border-color: var(--rp-line) !important;
+  box-shadow: 0 -12px 38px rgba(20,25,35,.08);
+}
+html[data-ragnar-theme="light"] .ragnar-performance .ragnar-student-bottom-nav button {
+  color: #636b74 !important;
+}
+html[data-ragnar-theme="light"] .ragnar-performance .ragnar-student-bottom-nav button[class~="text-yellow-400"] {
+  color: #9c6906 !important;
+}
+html[data-ragnar-theme="light"] .ragnar-performance-stat {
+  background: #ffffff !important;
+  border-color: var(--rp-line) !important;
+  box-shadow: var(--rp-elevated-shadow);
+}
+html[data-ragnar-theme="light"] .ragnar-performance-stat p:nth-of-type(1) { color: var(--rp-text) !important; }
+html[data-ragnar-theme="light"] .ragnar-performance-stat p:nth-of-type(2) { color: var(--rp-muted) !important; }
+html[data-ragnar-theme="light"] .ragnar-performance-stat svg { color: #a2750b !important; }
+html[data-ragnar-theme="light"] .ragnar-performance-community-post {
+  background: #fff !important;
+  box-shadow: var(--rp-elevated-shadow);
+}
+
+/* Calendarios: rehacer jerarquía en claro (la app oscura usa sus reglas previas). */
+html[data-ragnar-theme="light"] .react-calendar,
+html[data-ragnar-theme="light"] .react-calendar.react-calendar-custom,
+html[data-ragnar-theme="light"] .react-calendar__viewContainer,
+html[data-ragnar-theme="light"] .react-calendar__month-view,
+html[data-ragnar-theme="light"] .react-calendar__year-view,
+html[data-ragnar-theme="light"] .react-calendar__decade-view,
+html[data-ragnar-theme="light"] .react-calendar__century-view {
+  background: #fff !important;
+  color: #26282c !important;
+  border-color: #dfe1e4 !important;
+}
+html[data-ragnar-theme="light"] .react-calendar button { color: #30333a !important; }
+html[data-ragnar-theme="light"] .react-calendar__navigation button {
+  color: #8c610a !important;
+}
+html[data-ragnar-theme="light"] .react-calendar__month-view__weekdays__weekday abbr {
+  color: #57606c !important;
+}
+html[data-ragnar-theme="light"] .react-calendar .react-calendar__month-view__days__day--weekend {
+  color: #a83243 !important;
+}
+html[data-ragnar-theme="light"] .react-calendar .react-calendar__month-view__days__day--neighboringMonth {
+  color: #9ba2aa !important;
+}
+html[data-ragnar-theme="light"] .react-calendar__tile--now:not(.react-calendar__tile--active) {
+  background: #fffae8 !important;
+  color: #805507 !important;
+}
+html[data-ragnar-theme="light"] .react-calendar__tile:enabled:hover,
+html[data-ragnar-theme="light"] .react-calendar__navigation button:enabled:hover {
+  background: #f5f2e5 !important;
+  color: #342810 !important;
+}
+html[data-ragnar-theme="light"] .react-calendar .react-calendar__tile--active,
+html[data-ragnar-theme="light"] .react-calendar .react-calendar__tile--hasActive,
+html[data-ragnar-theme="light"] .react-calendar .react-calendar__tile--rangeStart,
+html[data-ragnar-theme="light"] .react-calendar .react-calendar__tile--rangeEnd {
+  background: #facc15 !important;
+  color: #161616 !important;
+}
+html[data-ragnar-theme="light"] .react-calendar .react-calendar__tile--range:not(.react-calendar__tile--rangeStart):not(.react-calendar__tile--rangeEnd):not(.react-calendar__tile--active) {
+  background: #fff1bc !important;
+  color: #584008 !important;
+}
+html[data-ragnar-theme="light"] .react-calendar__tile.has-workout::after {
+  background: #a3760b !important;
+}
+html[data-ragnar-theme="light"] .react-calendar__tile--active.has-workout::after {
+  background: #161616 !important;
+}
+
+/* Microinteracciones: profundidad sin ralentizar el registro de series. */
+.ragnar-performance .ragnar-performance-hero,
+.ragnar-performance .ragnar-performance-exercise-card,
+.ragnar-performance .ragnar-performance-session-meter,
+.ragnar-performance .ragnar-performance-shortcut,
+.ragnar-coach-content :is(button,a) {
+  transition: transform .18s ease, box-shadow .2s ease, border-color .2s ease, background-color .2s ease;
+}
+.ragnar-performance-exercise-card {
+  box-shadow: 0 11px 30px rgba(0,0,0,.2);
+}
+.ragnar-performance .ragnar-performance-hero {
+  box-shadow: 0 17px 50px rgba(0,0,0,.24);
+}
+.ragnar-performance-exercise-card :is(button,input):focus-visible,
+.ragnar-appearance-option:focus-visible {
+  outline: 2px solid #eab308;
+  outline-offset: 2px;
+}
+.ragnar-performance-home > * {
+  animation: ragnar-reveal .38s cubic-bezier(.2,.8,.2,1) both;
+}
+.ragnar-performance-home > :nth-child(2) { animation-delay: .035s; }
+.ragnar-performance-home > :nth-child(3) { animation-delay: .07s; }
+.ragnar-performance-home > :nth-child(4) { animation-delay: .105s; }
+.ragnar-performance-home > :nth-child(5) { animation-delay: .14s; }
+.ragnar-performance-home > :nth-child(n+6) { animation-delay: .18s; }
+@keyframes ragnar-reveal {
+  from { opacity: 0; transform: translateY(9px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+@media (hover:hover) and (prefers-reduced-motion:no-preference) {
+  .ragnar-performance-shortcut:hover,
+  .ragnar-performance-exercise-card:hover { transform: translateY(-2px); }
+  .ragnar-coach-content button:hover:not(:disabled) { transform: translateY(-1px); }
+  .ragnar-appearance-option:hover { transform: translateY(-2px); }
+}
+@media (max-width:560px) {
+  .ragnar-appearance-options { grid-template-columns: repeat(3,minmax(0,1fr)); gap: 6px; }
+  .ragnar-appearance-option { padding: 10px 8px; min-height: 94px; }
+  .ragnar-appearance-option.is-selected { padding: 9px 7px; }
+  .ragnar-appearance-option-text strong { font-size: .72rem; }
+  .ragnar-appearance-option-text small { font-size: .62rem; }
+}
+@media (prefers-reduced-motion:reduce) {
+  .ragnar-performance-home > * { animation: none !important; }
+  .ragnar-performance-exercise-card,
+  .ragnar-performance-shortcut,
+  .ragnar-appearance-option,
+  .ragnar-coach-content button {
+    transform: none !important;
+    transition: none !important;
+  }
+}
