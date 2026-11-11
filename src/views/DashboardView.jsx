@@ -139,6 +139,13 @@ export default function DashboardView({ clients, settings, navigateTo }) {
         {/* TARJETA 1: ATLETAS */}
         <div 
           onClick={() => navigateTo('clients')} 
+          role="button" tabIndex={0} aria-label="Ver atletas activos"
+          onKeyDown={event => {
+            if (event.key==='Enter' || event.key===' ') {
+              event.preventDefault();
+              navigateTo('clients');
+            }
+          }}
           className="ragnar-coach-dashboard-metric bg-zinc-900 border border-zinc-800 rounded-2xl p-5 sm:p-6 shadow-xl cursor-pointer group hover:border-yellow-400/50 hover:bg-zinc-800 transition-all relative overflow-hidden"
         >
           <div className="absolute -right-6 -top-6 w-24 h-24 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all"></div>
@@ -159,6 +166,13 @@ export default function DashboardView({ clients, settings, navigateTo }) {
         {/* TARJETA 2: INGRESOS REALES */}
         <div 
           onClick={() => setIsIncomeModalOpen(true)} 
+          role="button" tabIndex={0} aria-label="Ver detalle de ingresos del mes"
+          onKeyDown={event => {
+            if (event.key==='Enter' || event.key===' ') {
+              event.preventDefault();
+              setIsIncomeModalOpen(true);
+            }
+          }}
           className="ragnar-coach-dashboard-metric bg-zinc-900 border border-zinc-800 rounded-2xl p-5 sm:p-6 shadow-xl cursor-pointer group hover:border-green-500/50 hover:bg-zinc-800 transition-all relative overflow-hidden"
         >
           <div className="absolute -right-6 -top-6 w-24 h-24 bg-green-500/10 rounded-full blur-2xl group-hover:bg-green-500/20 transition-all"></div>
@@ -187,6 +201,13 @@ export default function DashboardView({ clients, settings, navigateTo }) {
         {/* TARJETA 3: GESTIÓN DE COBROS */}
         <div 
           onClick={() => navigateTo('payments')} 
+          role="button" tabIndex={0} aria-label="Gestionar cobros"
+          onKeyDown={event => {
+            if (event.key==='Enter' || event.key===' ') {
+              event.preventDefault();
+              navigateTo('payments');
+            }
+          }}
           className="ragnar-coach-dashboard-metric bg-zinc-900 border border-zinc-800 rounded-2xl p-5 sm:p-6 shadow-xl cursor-pointer group hover:border-orange-500/50 hover:bg-zinc-800 transition-all relative overflow-hidden"
         >
           <div className="absolute -right-6 -top-6 w-24 h-24 bg-orange-500/10 rounded-full blur-2xl group-hover:bg-orange-500/20 transition-all"></div>
