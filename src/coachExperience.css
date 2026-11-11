@@ -1,0 +1,383 @@
+/* RAGNAR · Coach Experience / Design system v1 · solo staging
+   Estilos visuales aislados. Las lecturas/escrituras Firebase no cambian. */
+.ragnar-coach-shell {
+  --rc-panel: #202126;
+  --rc-panel-raised: #282930;
+  --rc-field: #16171b;
+  --rc-border: #3a3c43;
+  --rc-text: #f7f7fa;
+  --rc-muted: #abb0bb;
+  --rc-soft-shadow: 0 13px 31px rgba(0,0,0,.17);
+  --rc-focus: #facc15;
+}
+html[data-ragnar-theme="light"] .ragnar-coach-shell {
+  --rc-panel: #fff;
+  --rc-panel-raised: #f6f7f9;
+  --rc-field: #f3f4f6;
+  --rc-border: #dfe2e7;
+  --rc-text: #292b30;
+  --rc-muted: #606874;
+  --rc-soft-shadow: 0 11px 31px rgba(23,27,35,.07), 0 2px 5px rgba(23,27,35,.025);
+}
+.ragnar-coach-shell :is(button,a,input,select,textarea):focus-visible {
+  outline: 2px solid var(--rc-focus);
+  outline-offset: 3px;
+}
+.ragnar-coach-page-title {
+  font-family: "Arial Black",Impact,system-ui,sans-serif;
+  font-style: normal;
+  font-weight: 950;
+  line-height: 1.02;
+  letter-spacing: -.06em;
+  text-wrap: balance;
+}
+/* Menú de coach: indicador de sección sin recurrir a efectos continuos. */
+.ragnar-coach-shell aside nav > button,
+.ragnar-coach-shell .ragnar-coach-detail-tabs > button {
+  border-radius: 14px;
+  transition: background .18s ease,color .18s ease,box-shadow .18s ease;
+}
+.ragnar-coach-shell aside nav > button[class*="bg-yellow-400"] {
+  box-shadow: 0 6px 17px rgba(250,204,21,.16);
+}
+html[data-ragnar-theme="light"] .ragnar-coach-shell aside nav > button[class*="bg-yellow-400"] {
+  color: #15171a !important;
+}
+.ragnar-coach-followup > header {
+  border-radius: 24px;
+  background: linear-gradient(125deg,#25262c,#191a1e);
+  padding: clamp(16px,2.7vw,24px);
+  border: 1px solid #404148;
+  box-shadow: var(--rc-soft-shadow);
+}
+.ragnar-coach-followup > header p { color: #c5c8d0 !important; }
+.ragnar-coach-followup > header h2 { color: #fff !important; }
+.ragnar-coach-kpi {
+  min-height: 113px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 5px;
+  background: var(--rc-panel) !important;
+  border-color: var(--rc-border) !important;
+  box-shadow: var(--rc-soft-shadow);
+  transition: transform .18s ease,border-color .18s ease,box-shadow .18s ease;
+}
+.ragnar-coach-kpi p:first-of-type { color: var(--rc-text) !important; font-variant-numeric: tabular-nums; }
+.ragnar-coach-kpi-active { border-color: #facc15 !important; box-shadow: inset 0 0 0 1px #facc15,var(--rc-soft-shadow); }
+.ragnar-coach-filters {
+  background: var(--rc-panel) !important;
+  border-color: var(--rc-border) !important;
+  box-shadow: var(--rc-soft-shadow);
+}
+.ragnar-coach-filters input { min-height: 25px; }
+.ragnar-coach-filters button[class*="rounded-lg"] { border-radius: 999px; }
+.ragnar-coach-density {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px;
+  border: 1px solid var(--rc-border);
+  background: var(--rc-field);
+  border-radius: 999px;
+  gap: 2px;
+}
+.ragnar-coach-density button {
+  font-size: .63rem;
+  font-weight: 950;
+  letter-spacing: .035em;
+  color: var(--rc-muted);
+  min-height: 32px;
+  border-radius: 999px;
+  padding: 7px 10px;
+}
+.ragnar-coach-density button[aria-pressed="true"] {
+  background: #facc15 !important;
+  color: #16171a !important;
+}
+.ragnar-coach-athlete {
+  color: var(--rc-text);
+  background: var(--rc-panel) !important;
+  border-color: var(--rc-border) !important;
+  box-shadow: var(--rc-soft-shadow);
+  overflow: hidden;
+  transition: border-color .16s ease, transform .18s ease, box-shadow .18s ease;
+}
+.ragnar-coach-athlete:hover { border-color: rgba(250,204,21,.45) !important; }
+.ragnar-coach-athlete-main {
+  display: grid;
+  grid-template-columns: 42px minmax(0,1fr) auto minmax(90px,118px) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 13px 15px;
+}
+.ragnar-coach-athlete-avatar {
+  width: 42px;height: 42px;border-radius: 14px;
+  display:flex;align-items:center;justify-content:center;
+  color: #facc15;
+  background: linear-gradient(145deg,#414349,#24252a);
+  border: 1px solid #54545a;
+  font-family:"Arial Black",Impact,system-ui,sans-serif;
+  font-size: 1.15rem;font-weight:950;
+}
+.ragnar-coach-athlete-identity { min-width: 0; }
+.ragnar-coach-athlete-status { display: flex;align-items:center;gap:6px;min-width:0; }
+.ragnar-coach-status { white-space: nowrap; font-size:.66rem; font-weight:900; }
+.ragnar-coach-wellness-dot {
+  display:inline-flex;align-items:center;justify-content:center;
+  border-radius: 50%;width:23px;height:23px;
+  font-size:.7rem;font-weight:950;color:#17181b;
+  background:#facc15;
+}
+.ragnar-coach-athlete-numbers { display:flex;flex-direction:column;line-height:1.2; }
+.ragnar-coach-athlete-numbers strong {
+  font-family:"Arial Black",Impact,system-ui,sans-serif;
+  font-size:1.15rem;color:var(--rc-text);
+  font-variant-numeric:tabular-nums;
+}
+.ragnar-coach-athlete-numbers small { font-size:.78rem;color:var(--rc-muted); }
+.ragnar-coach-athlete-numbers span {
+  font-size:.58rem;max-width:115px;line-height:1.25;color:var(--rc-muted);margin-top:3px;
+}
+.ragnar-coach-athlete-open,.ragnar-coach-chat-link {
+  display:inline-flex;align-items:center;justify-content:center;gap:7px;
+  background: #facc15;
+  color:#141519 !important;
+  border:1px solid #facc15;
+  border-radius:999px;
+  padding:10px 12px;
+  white-space:nowrap;
+  min-height:39px;
+  font-size:.68rem;
+  font-weight:950;
+}
+.ragnar-coach-athlete-bottom {
+  display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;
+  border-top: 1px solid var(--rc-border);
+  background: var(--rc-panel-raised);
+  padding:9px 15px;
+}
+.ragnar-coach-athlete-reason { font-size:.73rem;line-height:1.4;color:var(--rc-muted);min-width:0;flex:1 1 200px; }
+.ragnar-coach-checkin-label {
+  color: var(--rc-text);
+  border: 1px solid var(--rc-border);
+  padding:5px 9px;
+  border-radius:999px;
+  font-size:.65rem;
+  white-space:normal;
+}
+.ragnar-coach-row-details { position:relative; }
+.ragnar-coach-row-details summary {
+  list-style:none;
+  cursor:pointer;
+  font-size:.64rem;letter-spacing:.04em;font-weight:950;
+  color:#facc15;
+  padding:6px 2px;
+}
+.ragnar-coach-row-details summary::-webkit-details-marker {display:none;}
+.ragnar-coach-row-details[open] { flex:1 1 100%; }
+.ragnar-coach-athlete-extra {
+  color:var(--rc-muted);
+  font-size:.73rem;
+  line-height:1.5;
+  display:flex;flex-direction:column;gap:8px;
+  padding:10px 0 5px;
+}
+.ragnar-coach-athlete-extra strong {color:var(--rc-text);}
+.ragnar-coach-chat-link {align-self:flex-start;background:transparent;color:var(--rc-text) !important;border-color:var(--rc-border);}
+.ragnar-coach-chat-link:hover {border-color:#facc15;color:#facc15 !important;}
+.ragnar-coach-athlete.is-expanded .ragnar-coach-athlete-main {
+  grid-template-columns:42px minmax(0,1fr) auto;
+}
+.ragnar-coach-athlete.is-expanded .ragnar-coach-athlete-numbers {display:none;}
+.ragnar-coach-athlete.is-expanded .ragnar-coach-athlete-open {grid-column:1/-1;justify-self:stretch;}
+.ragnar-coach-athlete.is-expanded .ragnar-coach-athlete-bottom {
+  display:block;
+}
+.ragnar-coach-extra-stats {display:flex;flex-wrap:wrap;gap:7px;}
+.ragnar-coach-extra-stats > span {
+  background:var(--rc-field);border:1px solid var(--rc-border);
+  border-radius:12px;padding:9px;
+}
+.ragnar-coach-checkin-detail {
+  border-left:3px solid #facc15;
+  padding:10px 12px;
+  background:var(--rc-field);
+  border-radius:8px;
+}
+/* Ficha 360°, resultados primero, contexto bajo demanda. */
+.ragnar-coach-overview-hero {
+  background:linear-gradient(125deg,#26272c,#1b1c20) !important;
+  box-shadow:var(--rc-soft-shadow);
+}
+.ragnar-coach-overview-metric {
+  background:var(--rc-panel) !important;
+  border-color:var(--rc-border) !important;
+  box-shadow:var(--rc-soft-shadow);
+  min-width:0;
+}
+.ragnar-coach-overview-checkin {
+  padding:0 !important;overflow:hidden;
+}
+.ragnar-coach-overview-checkin-summary {
+  cursor:pointer;list-style:none;
+  padding:14px 16px;
+  display:flex;align-items:center;justify-content:space-between;gap:13px;
+  font-size:.7rem;line-height:1.4;font-weight:850;
+}
+.ragnar-coach-overview-checkin-summary::-webkit-details-marker {display:none;}
+.ragnar-coach-overview-checkin[open] .ragnar-coach-overview-checkin-summary {
+  border-bottom:1px solid var(--rc-border);
+}
+.ragnar-coach-overview-link {
+  border-radius:999px;
+  min-height:49px;
+  background:var(--rc-panel) !important;
+  border-color:var(--rc-border) !important;
+  color:var(--rc-text) !important;
+  transition:border-color .15s ease,transform .16s ease;
+}
+.ragnar-coach-overview-link:hover {border-color:#facc15 !important;}
+.ragnar-coach-overview-link svg {color:#facc15;}
+/* La ficha del alumno mantiene tabs visibles en una sola línea desplazable. */
+.ragnar-coach-detail-tabs {
+  display:flex;gap:7px;
+  border-bottom:0 !important;
+  padding-bottom:2px;
+  scrollbar-width:none;
+}
+.ragnar-coach-detail-tabs > button {
+  min-height:43px;
+  border:1px solid var(--rc-border) !important;
+  border-radius:999px !important;
+  background:var(--rc-panel) !important;
+  color:var(--rc-muted) !important;
+  padding:12px 16px !important;
+  font-size:.68rem;
+  line-height:1;
+  transition:background-color .17s ease,border-color .17s ease;
+}
+.ragnar-coach-detail-tabs > button[aria-selected="true"] {
+  color:#161718 !important;background:#facc15 !important;border-color:#facc15 !important;
+  box-shadow:0 6px 17px rgba(250,204,21,.12);
+}
+.ragnar-coach-planning > aside > section,
+.ragnar-coach-planning > div > div {
+  box-shadow:var(--rc-soft-shadow);
+  border-color:var(--rc-border) !important;
+}
+.ragnar-coach-planning > aside > section {
+  background:var(--rc-panel) !important;
+}
+.ragnar-coach-planning > div > div {
+  background:var(--rc-panel) !important;
+}
+.ragnar-coach-planning > div > div > .flex.flex-col.gap-3 > .flex.flex-wrap > button,
+.ragnar-coach-planning > aside > section button[class*="rounded-xl"] {
+  min-height:40px;border-radius:999px !important;
+}
+.ragnar-coach-planning article,
+.ragnar-coach-planning .group {
+  background:var(--rc-field) !important;
+  border:1px solid var(--rc-border) !important;
+  box-shadow:0 2px 9px rgba(0,0,0,.035);
+  border-radius:18px !important;
+}
+/* Progreso: una vista ejecutiva y tres detalles plegables. */
+.ragnar-coach-progress-unified {
+  max-width:1120px;
+  margin-left:auto;margin-right:auto;
+}
+.ragnar-coach-progress-details {
+  background:var(--rc-panel);
+  border:1px solid var(--rc-border);
+  border-radius:21px;
+  box-shadow:var(--rc-soft-shadow);
+  overflow:hidden;
+}
+.ragnar-coach-progress-summary {
+  display:flex;align-items:center;justify-content:space-between;
+  list-style:none;
+  cursor:pointer;
+  min-height:69px;
+  gap:10px;
+  padding:14px 18px;
+  color:var(--rc-text);
+}
+.ragnar-coach-progress-summary::-webkit-details-marker {display:none;}
+.ragnar-coach-progress-summary strong {display:block;font-size:.76rem;font-weight:950;letter-spacing:.03em;}
+.ragnar-coach-progress-summary small {display:block;margin-top:3px;font-size:.68rem;color:var(--rc-muted);}
+.ragnar-coach-progress-chevron {color:var(--rc-muted);flex-shrink:0;transition:transform .17s ease;}
+.ragnar-coach-progress-details[open] .ragnar-coach-progress-chevron {transform:rotate(180deg);}
+.ragnar-coach-progress-details[open] .ragnar-coach-progress-summary {
+  border-bottom:1px solid var(--rc-border);
+}
+.ragnar-coach-progress-details-content {padding:14px;}
+.ragnar-coach-progress-chart {box-shadow:none !important;}
+.ragnar-coach-progress-unified .ragnar-performance-progress-hero {
+  border-radius:24px;
+}
+.ragnar-coach-progress-unified .ragnar-intelligence-panel {
+  box-shadow:var(--rc-soft-shadow);
+}
+html[data-ragnar-theme="light"] .ragnar-coach-followup > header {
+  background:linear-gradient(125deg,#2b2d32,#1c1d21) !important;
+}
+html[data-ragnar-theme="light"] .ragnar-coach-overview-hero {
+  background:linear-gradient(125deg,#2b2d32,#1d1e22) !important;
+}
+html[data-ragnar-theme="light"] .ragnar-coach-overview-hero :is(.text-white,.text-zinc-200,.text-zinc-300) {
+  color:#fff !important;
+}
+html[data-ragnar-theme="light"] .ragnar-coach-overview-hero :is(.text-zinc-400,.text-zinc-500) {
+  color:#c4c6cc !important;
+}
+html[data-ragnar-theme="light"] .ragnar-coach-athlete-main .text-white,
+html[data-ragnar-theme="light"] .ragnar-coach-overview-metric .text-white {
+  color:var(--rc-text) !important;
+}
+html[data-ragnar-theme="light"] .ragnar-coach-athlete-main .text-zinc-500 {
+  color:var(--rc-muted) !important;
+}
+html[data-ragnar-theme="light"] .ragnar-coach-athlete-numbers strong {
+  color:var(--rc-text) !important;
+}
+html[data-ragnar-theme="light"] .ragnar-coach-status {filter:saturate(.82);}
+html[data-ragnar-theme="light"] .ragnar-coach-athlete-open,
+html[data-ragnar-theme="light"] .ragnar-coach-density button[aria-pressed="true"] {
+  background:#facc15 !important;color:#17181a !important;
+}
+html[data-ragnar-theme="light"] .ragnar-coach-overview-checkin-summary {
+  color:#282a30 !important;
+}
+html[data-ragnar-theme="light"] .ragnar-coach-row-details summary {color:#282a30;border-bottom:2px solid #facc15;}
+html[data-ragnar-theme="light"] .ragnar-coach-chat-link {color:#292a31 !important;}
+html[data-ragnar-theme="light"] .ragnar-coach-page-title:not(.text-white) {color:var(--rc-text);}
+@media (hover:hover) and (prefers-reduced-motion:no-preference) {
+  .ragnar-coach-athlete:hover,
+  .ragnar-coach-kpi:hover {transform:translateY(-2px);}
+  .ragnar-coach-overview-link:hover {transform:translateY(-1px);}
+}
+@media (max-width:1024px) {
+  .ragnar-coach-athlete-main {
+    grid-template-columns:42px minmax(0,1fr) auto;
+  }
+  .ragnar-coach-athlete-numbers {display:none;}
+}
+@media (max-width:600px) {
+  .ragnar-coach-athlete-main {grid-template-columns:39px minmax(0,1fr) auto;gap:9px;padding:12px;}
+  .ragnar-coach-athlete-avatar {width:39px;height:39px;border-radius:12px;}
+  .ragnar-coach-athlete-open {grid-column:1/-1;justify-self:stretch;}
+  .ragnar-coach-athlete-open span {display:inline;}
+  .ragnar-coach-athlete-status {grid-column:3;grid-row:1;}
+  .ragnar-coach-status {padding:6px !important;font-size:.62rem;}
+  .ragnar-coach-status span {display:none;}
+  .ragnar-coach-athlete-reason {flex:1 1 100%;}
+  .ragnar-coach-kpi {min-height:100px;}
+  .ragnar-coach-progress-details-content {padding:12px;}
+}
+@media (prefers-reduced-motion:reduce) {
+  .ragnar-coach-athlete,.ragnar-coach-kpi,
+  .ragnar-coach-overview-link,.ragnar-coach-progress-chevron {
+    transform:none !important;transition:none !important;
+  }
+}
