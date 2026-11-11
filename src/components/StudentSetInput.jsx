@@ -22,8 +22,11 @@ export default function StudentSetInput({
   useEffect(() => {
     const incoming = setFieldString(value);
     confirmedRef.current = incoming;
-    if (normalizeSetField(field, incoming) === normalizeSetField(field, draftRef.current)) {
+    if (normalizeSetField(field, incoming) === normalizeSetField(field, draftRef.current) &&
+        (submittedRef.current === null ||
+         submittedRef.current === normalizeSetField(field, draftRef.current))) {
       dirtyRef.current = false;
+      submittedRef.current = null;
       if (!focusedRef.current) {
         draftRef.current = incoming;
         setDraft(incoming);
@@ -45,7 +48,7 @@ export default function StudentSetInput({
     clearTimer();
     const next = normalizeSetField(field, draftRef.current);
     const saved = normalizeSetField(field, confirmedRef.current);
-    if (next === saved) {
+    if (next === saved && (submittedRef.current === null || submittedRef.current === next)) {
       dirtyRef.current = false;
       if (mountedRef.current) { setError(''); setState('idle'); }
       return;
@@ -76,14 +79,18 @@ export default function StudentSetInput({
     if (!acceptsSetDraft(field, next)) return;
     draftRef.current = next;
     setDraft(next);
-    dirtyRef.current = normalizeSetField(field, next) !== normalizeSetField(field, confirmedRef.current);
+    const normalized = normalizeSetField(field, next);
+    dirtyRef.current = normalized !== normalizeSetField(field, confirmedRef.current) ||
+      (submittedRef.current !== null && submittedRef.current !== normalized);
     setError('');
     setState('idle');
     if (dirtyRef.current) scheduleSave();
     else clearTimer();
   };
 
-  useEffect(() => () => {
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
     mountedRef.current = false;
     if (timerRef.current) clearTimeout(timerRef.current);
     if (dirtyRef.current) {
@@ -94,11 +101,12 @@ export default function StudentSetInput({
         void Promise.resolve().then(() => onSaveRef.current(next)).catch(console.error);
       }
     }
+    };
   }, [field]);
 
   return (
     <div className="min-w-0">
-      <input type="text" inputMode={field === 'reps' ? 'numeric' : 'decimal'}
+      <input data-ragnar-series-input type="text" inputMode={field === 'reps' ? 'numeric' : 'decimal'}
         autoComplete="off" spellCheck={false} maxLength={field === 'reps' ? 4 : 7}
         aria-label={label} placeholder={placeholder} value={draft} disabled={disabled}
         onFocus={() => { focusedRef.current = true; }}
