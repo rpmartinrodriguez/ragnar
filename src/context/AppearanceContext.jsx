@@ -10,8 +10,10 @@ function systemPrefersDark() {
 }
 
 export function AppearanceProvider({ children }) {
-  const [mode, setModeState] = useState(() =>
-    loadAppearance(typeof window === 'undefined' ? null : window.localStorage));
+  const [mode, setModeState] = useState(() => {
+    try { return loadAppearance(typeof window === 'undefined' ? null : window.localStorage); }
+    catch { return 'system'; }
+  });
   const [systemDark, setSystemDark] = useState(systemPrefersDark);
   const resolved = resolveAppearance(mode, systemDark);
 
