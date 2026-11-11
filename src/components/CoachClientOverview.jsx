@@ -48,12 +48,12 @@ export default function CoachClientOverview({client,onOpenTab}){
     {label:'Última cuota registrada',value:summary?.lastPayment||'—',icon:CreditCard}
   ];
   return(
-    <section className="space-y-4 animate-in fade-in">
-      <div className="rounded-3xl border border-yellow-400/25 bg-zinc-900 p-5">
+    <section className="ragnar-coach-overview space-y-4 animate-in fade-in">
+      <div className="ragnar-coach-overview-hero rounded-3xl border border-yellow-400/25 bg-zinc-900 p-4 sm:p-6">
         <div className="flex items-start gap-3">
           <div className="rounded-xl bg-yellow-400/10 p-3 text-yellow-400"><UserRound size={25}/></div>
           <div className="min-w-0">
-            <h3 className="text-xl font-black uppercase text-white">Ficha 360°</h3>
+            <h3 className="ragnar-coach-page-title text-xl font-black uppercase text-white">FICHA 360°</h3>
             <p className="text-zinc-400 text-sm mt-1">Un resumen completo del atleta, sin cambiar su historial.</p>
           </div>
         </div>
@@ -78,14 +78,19 @@ export default function CoachClientOverview({client,onOpenTab}){
       </div>
       {error&&<p role="alert" className="text-red-300 text-sm flex gap-2"><AlertCircle size={16}/>{error}</p>}
       {summary?.checkIn && (
-        <section className="ragnar-intelligence-coach-checkin space-y-2" aria-label="Último Check-in del alumno">
-          <div className="flex justify-between gap-2 flex-wrap items-center">
-            <strong className="text-sm uppercase">ÚLTIMO CHECK-IN · {summary.checkIn.date.split('-').reverse().join('/')}</strong>
-            {summary.checkIn.signals.length>0 &&
-              <span className="ragnar-intelligence-coach-signal">
-                {summary.checkIn.signals.length} señal{summary.checkIn.signals.length===1?'':'es'} para conversar
-              </span>}
-          </div>
+        <details className="ragnar-coach-overview-checkin ragnar-intelligence-coach-checkin" aria-label="Último Check-in del alumno">
+          <summary className="ragnar-coach-overview-checkin-summary">
+            <span className="flex items-center gap-2">
+              <Activity size={18}/>
+              <strong>CHECK-IN · {summary.checkIn.date.split('-').reverse().join('/')}</strong>
+              {summary.checkIn.signals.length>0 &&
+                <span className="ragnar-intelligence-coach-signal">
+                  {summary.checkIn.signals.length} para revisar
+                </span>}
+            </span>
+            <span className="text-xs">VER DETALLE</span>
+          </summary>
+          <div className="p-3 sm:p-4 space-y-2">
           <p className="text-sm">{checkInDisplay(summary.checkIn)}</p>
           {summary.checkIn.signals.length>0 && (
             <p className="text-xs opacity-80">
@@ -95,20 +100,21 @@ export default function CoachClientOverview({client,onOpenTab}){
           <p className="text-[11px] opacity-65">
             Información voluntaria, disponible solo en la ficha y el seguimiento del entrenador.
           </p>
-        </section>
+          </div>
+        </details>
       )}
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="ragnar-coach-overview-metrics grid grid-cols-2 lg:grid-cols-4 gap-3">
         {cards.map(item=>{
           const Icon=item.icon;
-          return <div key={item.label} className="rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
+          return <div key={item.label} className="ragnar-coach-overview-metric rounded-2xl border border-zinc-800 bg-zinc-900 p-4">
             <Icon className="text-yellow-400" size={20}/>
             <p className="text-white font-black text-xl mt-2">{item.value}</p>
             <p className="text-zinc-400 text-xs mt-1">{item.label}</p>
           </div>;
         })}
       </div>
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+      <div className="ragnar-coach-overview-actions grid grid-cols-1 sm:grid-cols-3 gap-2.5">
         {[
           {tab:'planificacion',label:'Planificar rutina',icon:Dumbbell},
           {tab:'progreso',label:'Ver evolución',icon:Activity},
@@ -116,7 +122,7 @@ export default function CoachClientOverview({client,onOpenTab}){
         ].map(item=>{
           const Icon=item.icon;
           return <button key={item.tab} type="button" onClick={()=>onOpenTab(item.tab)}
-            className="rounded-xl border border-yellow-400/30 bg-yellow-400/5 text-yellow-300 text-xs font-black p-4 flex items-center justify-between gap-2 hover:border-yellow-400">
+            className="ragnar-coach-overview-link rounded-xl border border-yellow-400/30 bg-yellow-400/5 text-yellow-300 text-xs font-black p-3.5 flex items-center justify-between gap-2 hover:border-yellow-400">
             <span className="flex items-center gap-2"><Icon size={17}/>{item.label}</span>
             <ArrowRight size={15}/>
           </button>;
