@@ -968,7 +968,7 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
       {/* VISTA: PROGRESO */}
       {activeTab === 'progreso' && (
         <div className="animate-in fade-in">
-          <ProgressChart clientId={client.id} />
+          <ProgressChart clientId={client.id} coachView />
         </div>
       )}
 
