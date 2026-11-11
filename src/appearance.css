@@ -1352,3 +1352,38 @@ html[data-ragnar-theme="light"] .ragnar-intelligence-coach-signal {
   .ragnar-intelligence-choice,
   .ragnar-intelligence-coach-action {transition:none !important;}
 }
+
+
+/* Confirmación visual de guardado: nunca reemplaza el dato escrito.
+   El servidor resuelve la transacción; sólo entonces dice "Guardado". */
+.ragnar-set-save-status {
+  min-height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 100%;
+  margin-top: 4px;
+  font-size: .63rem;
+  font-weight: 800;
+  line-height: 1.25;
+  color: #b2b6c0;
+  white-space: nowrap;
+}
+.ragnar-set-save-status[data-state="saved"] { color: #53d6a0; }
+.ragnar-set-save-status[data-state="saving"] { color: #facc15; }
+.ragnar-set-save-dot {
+  width: 6px;height: 6px;border-radius: 50%;
+  background: currentColor;
+  flex: 0 0 6px;
+}
+.ragnar-set-save-status[data-state="saving"] .ragnar-set-save-dot {
+  animation: ragnar-sync-pulse .85s ease-in-out infinite alternate;
+}
+@keyframes ragnar-sync-pulse { to {opacity:.3;} }
+html[data-ragnar-theme="light"] .ragnar-set-save-status[data-state="saved"] { color:#0c7850; }
+html[data-ragnar-theme="light"] .ragnar-set-save-status[data-state="saving"] { color:#282b32; }
+html[data-ragnar-theme="light"] .ragnar-set-save-status[data-state="editing"] { color:#67707b; }
+@media (prefers-reduced-motion:reduce) {
+  .ragnar-set-save-status .ragnar-set-save-dot { animation:none !important; }
+}
