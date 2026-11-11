@@ -27,6 +27,7 @@ jobs:
       - run: node --test tests/studentSetValue.test.mjs
       - run: node --test tests/appearance.test.mjs
       - run: node --test tests/sessionCompletionFeedback.test.mjs
+      - run: node --test tests/studentHome.test.mjs
       - run: npm run build
       - run: node --check scripts/migration/import-backup.mjs
       - run: node --check scripts/migration/create-student-auth.mjs
