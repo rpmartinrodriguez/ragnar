@@ -654,24 +654,38 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
       </div>
 
       {/* PESTAÑAS DE NAVEGACIÓN */}
-      <div role="tablist" aria-label="Secciones del alumno" className={(activeTab === 'planificacion' ? 'mb-4' : 'mb-6') + ' ragnar-coach-detail-tabs flex gap-2 border-b border-zinc-800/80 overflow-x-auto no-scrollbar'}>
-        <button role="tab" aria-selected={activeTab==='resumen'} type="button" onClick={()=>setActiveTab('resumen')}
+      <div role="tablist" aria-label="Secciones del alumno"
+        onKeyDown={event => {
+          const order=['resumen','planificacion','progreso','mensajes'];
+          const current=order.indexOf(activeTab);
+          let next=current;
+          if(event.key==='ArrowRight') next=(current+1)%order.length;
+          else if(event.key==='ArrowLeft') next=(current-1+order.length)%order.length;
+          else if(event.key==='Home') next=0;
+          else if(event.key==='End') next=order.length-1;
+          else return;
+          event.preventDefault();
+          setActiveTab(order[next]);
+          event.currentTarget.querySelectorAll('[role="tab"]')[next]?.focus();
+        }}
+        className={(activeTab === 'planificacion' ? 'mb-4' : 'mb-6') + ' ragnar-coach-detail-tabs flex gap-2 border-b border-zinc-800/80 overflow-x-auto no-scrollbar'}>
+        <button role="tab" aria-selected={activeTab==='resumen'} tabIndex={activeTab==='resumen'?0:-1} type="button" onClick={()=>setActiveTab('resumen')}
           className={`pb-3 uppercase font-black text-xs tracking-widest transition-colors whitespace-nowrap ${activeTab==='resumen'?'text-yellow-400 border-b-2 border-yellow-400':'text-zinc-500 hover:text-zinc-300'}`}>
           Resumen 360°
         </button>
-        <button role="tab" aria-selected={activeTab==='planificacion'}
+        <button role="tab" aria-selected={activeTab==='planificacion'} tabIndex={activeTab==='planificacion'?0:-1}
           onClick={() => setActiveTab('planificacion')} 
           className={`pb-3 uppercase font-black text-xs tracking-widest transition-colors whitespace-nowrap ${activeTab === 'planificacion' ? 'text-yellow-400 border-b-2 border-yellow-400' : 'text-zinc-500 hover:text-zinc-300'}`}
         >
           Planificación
         </button>
-        <button role="tab" aria-selected={activeTab==='progreso'} 
+        <button role="tab" aria-selected={activeTab==='progreso'} tabIndex={activeTab==='progreso'?0:-1} 
           onClick={() => setActiveTab('progreso')} 
           className={`pb-3 uppercase font-black text-xs tracking-widest transition-colors whitespace-nowrap ${activeTab === 'progreso' ? 'text-yellow-400 border-b-2 border-yellow-400' : 'text-zinc-500 hover:text-zinc-300'}`}
         >
           Progreso
         </button>
-        <button role="tab" aria-selected={activeTab==='mensajes'} 
+        <button role="tab" aria-selected={activeTab==='mensajes'} tabIndex={activeTab==='mensajes'?0:-1} 
           onClick={() => setActiveTab('mensajes')} 
           className={`pb-3 uppercase font-black text-xs tracking-widest transition-colors whitespace-nowrap ${activeTab === 'mensajes' ? 'text-yellow-400 border-b-2 border-yellow-400' : 'text-zinc-500 hover:text-zinc-300'}`}
         >
