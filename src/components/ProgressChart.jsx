@@ -6,6 +6,7 @@ import WeeklyRecap from './WeeklyRecap';
 import {regionOfExercise,regionLabels,groupProgress,exerciseHistorySeries,
   weeklyInsights,dateKey,isFridayFinalSession} from '../utils/trainingInsights';
 import {ymdInArgentina} from '../utils/billingCycle';
+import {sessionCompletionFeedback} from '../utils/sessionCompletionFeedback';
 
 const REGIONS=['all','upper','lower','core','cardio'];
 const formatWeight=x=>Number(x).toLocaleString('es-AR',{maximumFractionDigits:1});
@@ -77,6 +78,10 @@ export default function ProgressChart({clientId}){
   const max=chart.length?Math.max(...chart.map(x=>x.maxWeight)):0;
   const last=chart.at(-1);
   const previous=chart.length>1?chart.at(-2):null;
+  const latestFinalDate=useMemo(()=>sessions.filter(s=>s.isFinalized===true)
+    .map(dateKey).filter(Boolean).sort().at(-1)||null,[sessions]);
+  const latestFeedback=useMemo(()=>latestFinalDate
+    ?sessionCompletionFeedback(sessions,latestFinalDate):null,[sessions,latestFinalDate]);
 
   return (
     <section className="ragnar-performance-progress space-y-5 animate-in fade-in">
@@ -117,6 +122,45 @@ export default function ProgressChart({clientId}){
               </div>;
             })}
           </div>
+
+          {region==='all' && latestFeedback && (
+            <section className="ragnar-performance-progress-latest" aria-label="Comparación de tu último entrenamiento">
+              <div className="flex justify-between items-start gap-3">
+                <div>
+                  <p className="ragnar-performance-finish-eyebrow">TU ÚLTIMA SESIÓN</p>
+                  <h3 className="text-lg font-black mt-1">TU EVOLUCIÓN, CON DATOS REALES.</h3>
+                  <p className="text-xs ragnar-performance-finish-muted mt-1">
+                    {latestFeedback.date.split('-').reverse().join('/')} · {latestFeedback.completedSets} series completas
+                    {latestFeedback.previousSets!==null
+                      ? ' · anterior: '+latestFeedback.previousSets+' series' : ' · primera sesión disponible'}
+                  </p>
+                </div>
+                <TrendingUp className="text-yellow-400 shrink-0" size={24}/>
+              </div>
+              {latestFeedback.comparisons.length>0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 mt-3">
+                  {latestFeedback.comparisons.map(item=>(
+                    <div key={item.name} className="ragnar-performance-progress-compare">
+                      <p className="text-xs font-bold truncate">{item.name}</p>
+                      <p className="text-xs mt-1 ragnar-performance-finish-muted">
+                        {item.fromLabel} → {item.toLabel}
+                      </p>
+                      <strong className={item.delta>0?'text-yellow-400':'ragnar-performance-finish-muted'}>
+                        {item.delta===0?'Misma carga':item.formattedDelta}
+                      </strong>
+                    </div>
+                  ))}
+                </div>
+              ):(
+                <p className="text-xs ragnar-performance-finish-muted mt-3">
+                  No hay cargas anteriores comparables para estos ejercicios.
+                </p>
+              )}
+              <p className="text-[11px] ragnar-performance-finish-muted mt-3">
+                Se calcula a partir de las sesiones guardadas. Más o menos carga no determina por sí sola tu progreso.
+              </p>
+            </section>
+          )}
 
           {week&&<div className="rounded-3xl bg-zinc-900 border border-yellow-400/20 p-5 space-y-3">
             <p className="text-white font-black uppercase text-sm">Esta semana · {regionLabels[region]}</p>
