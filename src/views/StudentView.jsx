@@ -112,6 +112,8 @@ export default function StudentView({ clientId }) {
   const [trainerSettings, setTrainerSettings] = useState({ alias: '', plans: [] });
   const [date, setDate] = useState(new Date());
   const [dailySession, setDailySession] = useState([]);
+  const [focusedExerciseIndex, setFocusedExerciseIndex] = useState(0);
+  const [showAllWorkoutExercises, setShowAllWorkoutExercises] = useState(false);
   const [isSessionFinalized, setIsSessionFinalized] = useState(false);
   const [isFinishing, setIsFinishing] = useState(false);
   const [perceivedEffort, setPerceivedEffort] = useState('6');
@@ -194,6 +196,16 @@ export default function StudentView({ clientId }) {
        (client.accountActivatedAt || client.authPasswordResetAt) &&
        !client.passwordChangedAt)));
   const currentDateId = formatDateId(date);
+  const effectiveFocusedExercise = Math.min(focusedExerciseIndex, Math.max(0, dailySession.length - 1));
+  const workoutPlannedSets = dailySession.reduce((sum, exercise) => sum + (
+    Array.isArray(exercise.plannedSets) && exercise.plannedSets.length
+      ? exercise.plannedSets.length : Math.max(1, Number.parseInt(exercise.sets, 10) || 1)
+  ), 0);
+  const workoutCompletedSets = dailySession.reduce((sum, exercise) =>
+    sum + (Array.isArray(exercise.actualSets)
+      ? exercise.actualSets.filter(set => set?.completed === true).length : 0), 0);
+  const workoutProgress = workoutPlannedSets > 0
+    ? Math.min(100, Math.round((workoutCompletedSets / workoutPlannedSets) * 100)) : 0;
   const todayYmd=ymdInArgentina();
   const upcomingRenewal=getUpcomingRenewal(client?.startDate,todayYmd);
 
@@ -974,7 +986,7 @@ export default function StudentView({ clientId }) {
   }
 
   return (
-    <div className="ragnar-student-shell min-h-[100dvh] w-full max-w-full min-w-0 bg-zinc-950 text-white font-sans flex flex-col relative overflow-x-hidden">
+    <div className="ragnar-student-shell ragnar-performance min-h-[100dvh] w-full max-w-full min-w-0 bg-zinc-950 text-white font-sans flex flex-col relative overflow-x-hidden">
         <ConnectionBanner/>
         {temporaryPasswordRequired && (
           <StudentFirstAccessModal clientId={clientId}
@@ -1204,81 +1216,89 @@ export default function StudentView({ clientId }) {
         </div>
       )}
 
-      {/* HEADER DE BIENVENIDA CON RACHA */}
-      <div className="bg-yellow-400 text-black px-3 sm:px-4 pt-4 pb-10 rounded-b-[2rem] sm:rounded-b-[3rem] shadow-xl relative z-10 shrink-0 w-full min-w-0"
-        style={{paddingTop:'max(16px, env(safe-area-inset-top))'}}>
-          <div className="flex justify-between items-center gap-2 min-w-0 w-full max-w-2xl mx-auto">
-            
-            <div className="flex items-center gap-2 sm:gap-4 min-w-0 flex-1">
-               <div className="w-10 h-10 sm:w-12 sm:h-12 shrink-0 bg-black rounded-2xl flex items-center justify-center text-yellow-400 shadow-lg">
-                 <User size={24}/>
-               </div>
-               <div className="min-w-0 flex-1">
-                 <h1 className="text-base sm:text-xl font-black uppercase leading-tight tracking-tighter break-words">
-                   {client?.name || 'Atleta'}
-                 </h1>
-                 <div className="flex items-center gap-1.5 mt-1">
-                   <Flame size={12} className={client?.currentStreak > 0 ? "text-orange-500" : "text-black/40"}/>
-                   <p className="text-[10px] font-black opacity-80 uppercase tracking-widest">
-                     Racha: {client?.currentStreak || 0} Días
-                   </p>
-                 </div>
-               </div>
+      {/* RAGNAR PERFORMANCE · HEADER DE ATLETA */}
+      <header className="ragnar-performance-header relative z-10 shrink-0 w-full">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 py-3 flex items-center justify-between gap-3"
+          style={{paddingTop:'max(12px, env(safe-area-inset-top))'}}>
+          <div className="flex items-center gap-3 min-w-0 flex-1">
+            <img src="/logo.png" alt="Ragnar" className="w-10 h-10 object-contain shrink-0"
+              onError={event => { event.currentTarget.style.display = 'none'; }}/>
+            <div className="min-w-0">
+              <p className="ragnar-performance-wordmark">RAGNAR<span className="text-yellow-400">.</span></p>
+              <p className="text-[10px] text-zinc-400 truncate">
+                {client?.name || 'Atleta'} · {client?.currentStreak || 0} días de racha
+              </p>
             </div>
-            
-            <div className="flex items-center gap-1 sm:gap-2 shrink-0">
-               <button onClick={() => setCurrentView('alerts')} aria-label="Mis notificaciones"
-                 className="relative p-2 bg-black/5 rounded-lg">
-                 <Bell size={24}/>
-                 {(studentUnreadCount>0||unreadCount>0) && <span className="absolute top-0 right-0 min-w-4 h-4 px-1 bg-red-600 text-white font-black rounded-full text-[10px] border border-black flex items-center justify-center">{studentUnreadCount||unreadCount}</span>}
-               </button>
-               <button onClick={() => setIsMenuOpen(true)} className="p-2 bg-black/5 rounded-lg">
-                 <Menu size={28}/>
-               </button>
-            </div>
-            
           </div>
-      </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <button type="button" onClick={() => setCurrentView('alerts')} aria-label="Mis notificaciones"
+              className="relative p-2.5 rounded-xl border border-zinc-800 bg-zinc-900 hover:border-yellow-400/50">
+              <Bell size={20}/>
+              {(studentUnreadCount>0||unreadCount>0) && <span className="absolute -top-1 -right-1 min-w-4 h-4 px-1 bg-red-600 text-white font-black rounded-full text-[10px] flex items-center justify-center">{studentUnreadCount||unreadCount}</span>}
+            </button>
+            <button type="button" onClick={() => setIsMenuOpen(true)} aria-label="Abrir menú"
+              className="p-2.5 rounded-xl border border-zinc-800 bg-zinc-900 hover:border-yellow-400/50">
+              <Menu size={20}/>
+            </button>
+          </div>
+        </div>
+      </header>
 
       {/* CONTENIDO PRINCIPAL DINÁMICO */}
-      <main className="ragnar-student-content flex-1 min-w-0 max-w-2xl mx-auto w-full px-3 sm:px-4 -mt-6 pb-32 relative z-20 flex flex-col">
+      <main className="ragnar-student-content flex-1 min-w-0 max-w-3xl mx-auto w-full px-3 sm:px-5 pt-5 pb-32 relative z-20 flex flex-col">
 
         {currentView==='home' && (
-          <section className="space-y-4 animate-in fade-in">
-            <div className="rounded-[2rem] border border-yellow-400/30 bg-zinc-900 p-6 shadow-xl">
-              <div className="flex items-center gap-2 text-yellow-400 mb-3">
-                <Dumbbell size={22}/>
-                <span className="font-black uppercase tracking-wider text-xs">Mi entrenamiento de hoy</span>
+          <section className="ragnar-performance-home space-y-5 animate-in fade-in">
+            <div className="ragnar-performance-kicker flex items-center gap-2">
+              <span className="w-5 h-[2px] bg-yellow-400"/>
+              RAGNAR PERFORMANCE · {new Date(todayYmd + 'T12:00:00').toLocaleDateString('es-AR', { weekday:'long', day:'numeric', month:'short' })}
+            </div>
+            <h1 className="ragnar-performance-headline">
+              {todayWorkout
+                ? todayWorkout.finalized ? <>MISIÓN<br/><span>CUMPLIDA.</span></> : <>HOY SE<br/><span>ENTRENA.</span></>
+                : <>TU PRÓXIMO<br/><span>DESAFÍO.</span></>}
+            </h1>
+            <p className="text-zinc-400 text-sm sm:text-base max-w-md -mt-2">
+              {todayWorkout ? 'Cada repetición cuenta. Entrená con intención y seguí tu progreso.' :
+                'Tu próximo paso comienza con una buena planificación.'}
+            </p>
+            <div className="ragnar-performance-hero">
+              <div className="relative z-10">
+                <div className="flex justify-between items-center gap-2">
+                  <p className="ragnar-performance-eyebrow">LA SESIÓN DE HOY</p>
+                  <Dumbbell className="text-yellow-400" size={24}/>
+                </div>
+                <h2 className="ragnar-performance-hero-title">
+                  {todayWorkout ? todayWorkout.finalized ? 'ENTRENAMIENTO COMPLETO' : 'TU RUTINA ESTÁ LISTA'
+                    : 'PRÓXIMA RUTINA'}
+                </h2>
+                <p className="text-zinc-300 text-sm mt-2 max-w-sm">
+                  {todayWorkout
+                    ? todayWorkout.count+' ejercicios · '+todayWorkout.sets+' series programadas'
+                    : allSessionsIds.some(id=>id>todayYmd)
+                      ? 'Próxima fecha: '+allSessionsIds.filter(id=>id>todayYmd).sort()[0].split('-').reverse().join('/')
+                      : 'Todavía no tenés una rutina asignada para hoy. Podés ver tu agenda o hablar con tu entrenador.'}
+                </p>
+                {hasPaidMonth ? (
+                  <button type="button" onClick={()=>{
+                    if(todayWorkout){
+                      setDate(new Date());
+                      setFocusedExerciseIndex(0);
+                      setShowAllWorkoutExercises(false);
+                      setCurrentView('workout');
+                      if(!todayWorkout.finalized)void startWorkoutClock(todayYmd);
+                    }else setCurrentView('calendar');
+                  }} className="ragnar-performance-primary mt-6 w-full sm:w-auto" >
+                    <span>{todayWorkout ? todayWorkout.finalized ? 'VER MI ENTRENAMIENTO' : 'COMENZAR ENTRENAMIENTO' : 'VER MI AGENDA'}</span>
+                    <ArrowRight size={21}/>
+                  </button>
+                ) : (
+                  <button type="button" onClick={()=>setCurrentView('profile')}
+                    className="mt-6 w-full sm:w-auto px-5 py-3 rounded-xl bg-amber-500/10 border border-amber-400/30 text-amber-200 font-bold text-sm">
+                    Revisar mi suscripción
+                  </button>
+                )}
               </div>
-              <h2 className="text-white text-2xl font-black uppercase tracking-tight">
-                {todayWorkout ? todayWorkout.finalized?'¡Entrenamiento completado!':'Listo para entrenar' : 'Tu próxima sesión'}
-              </h2>
-              <p className="text-zinc-400 text-sm mt-2">
-                {todayWorkout
-                  ? todayWorkout.count+' ejercicios · '+todayWorkout.sets+' series planificadas'
-                  : allSessionsIds.some(id=>id>todayYmd)
-                    ? 'Próxima rutina programada: '+allSessionsIds.filter(id=>id>todayYmd).sort()[0].split('-').reverse().join('/')
-                    : 'Todavía no tenés una rutina asignada para hoy. Consultá el calendario o escribile a tu entrenador.'}
-              </p>
-              {hasPaidMonth ? (
-                <button type="button" onClick={()=>{
-                  if(todayWorkout){
-                    setDate(new Date());
-                    setCurrentView('workout');
-                    // Al elegir Comenzar desde Inicio, se registra el inicio real.
-                    // Si ya estaba corriendo, la transacción conserva el primero.
-                    if(!todayWorkout.finalized)void startWorkoutClock(todayYmd);
-                  }else {setCurrentView('calendar');}
-                }} className="mt-5 w-full py-4 bg-yellow-400 text-black font-black uppercase text-xs rounded-xl flex items-center justify-center gap-2">
-                  <Dumbbell size={18}/>
-                  {todayWorkout ? todayWorkout.finalized?'Ver mi entrenamiento':'Comenzar / continuar entrenamiento':'Ver mi agenda'}
-                </button>
-              ) : (
-                <button type="button" onClick={()=>setCurrentView('profile')}
-                  className="mt-4 w-full py-3 bg-amber-500/10 border border-amber-400/30 text-amber-200 rounded-xl font-bold text-sm">
-                  Revisar mi suscripción
-                </button>
-              )}
             </div>
             {upcomingRenewal && upcomingRenewal.daysUntil>=0 &&
               upcomingRenewal.daysUntil<=3 && renewalPaid===false && (
@@ -1295,30 +1315,35 @@ export default function StudentView({ clientId }) {
                 </div>
               </div>
             )}
-            <div className="grid grid-cols-2 gap-3">
-              <button onClick={()=>setCurrentView('stats')} disabled={!hasPaidMonth}
-                className="bg-zinc-900 border border-zinc-800 text-left rounded-2xl p-4 disabled:opacity-40">
-                <TrendingUp className="text-yellow-400" size={24}/>
-                <p className="text-white font-black text-sm mt-3">Mi evolución</p>
-                <p className="text-xs text-zinc-400 mt-1">Series, cargas y progreso</p>
+            <div className="ragnar-performance-metrics">
+              <button type="button" onClick={()=>setCurrentView('stats')} disabled={!hasPaidMonth}
+                className="ragnar-performance-metric disabled:opacity-40" aria-label="Ver mi evolución">
+                <TrendingUp size={20} className="text-yellow-400"/>
+                <strong>{client?.currentStreak || 0}<small> DÍAS</small></strong>
+                <span>RACHA ACTUAL</span>
               </button>
-              <button onClick={()=>setCurrentView('alerts')}
-                className="bg-zinc-900 border border-zinc-800 text-left rounded-2xl p-4">
-                <Bell className="text-yellow-400" size={24}/>
-                <p className="text-white font-black text-sm mt-3">Mis avisos</p>
-                <p className="text-xs text-zinc-400 mt-1">{studentUnreadCount} avisos pendientes</p>
+              <button type="button" onClick={()=>setCurrentView('calendar')} disabled={!hasPaidMonth}
+                className="ragnar-performance-metric disabled:opacity-40" aria-label="Ver agenda">
+                <CalendarIcon size={20} className="text-yellow-400"/>
+                <strong>{todayWorkout?.count ?? '—'}</strong>
+                <span>EJERCICIOS HOY</span>
               </button>
-              <button onClick={()=>setCurrentView('chat')}
-                className="bg-zinc-900 border border-zinc-800 text-left rounded-2xl p-4">
-                <MessageSquare className="text-yellow-400" size={24}/>
-                <p className="text-white font-black text-sm mt-3">Mi entrenador</p>
-                <p className="text-xs text-zinc-400 mt-1">{unreadCount} mensajes sin leer</p>
+              <button type="button" onClick={()=>setCurrentView('alerts')}
+                className="ragnar-performance-metric" aria-label="Ver avisos">
+                <Bell size={20} className="text-yellow-400"/>
+                <strong>{studentUnreadCount}</strong>
+                <span>AVISOS SIN LEER</span>
               </button>
-              <button onClick={()=>setCurrentView('calendar')} disabled={!hasPaidMonth}
-                className="bg-zinc-900 border border-zinc-800 text-left rounded-2xl p-4 disabled:opacity-40">
-                <CalendarIcon className="text-yellow-400" size={24}/>
-                <p className="text-white font-black text-sm mt-3">Calendario</p>
-                <p className="text-xs text-zinc-400 mt-1">Planificación de mis días</p>
+            </div>
+            <div className="ragnar-performance-shortcuts">
+              <button onClick={()=>setCurrentView('stats')} disabled={!hasPaidMonth} className="ragnar-performance-shortcut disabled:opacity-40">
+                <span><TrendingUp size={20}/> MI PROGRESO</span><ArrowRight size={18}/>
+              </button>
+              <button onClick={()=>setCurrentView('chat')} className="ragnar-performance-shortcut">
+                <span><MessageSquare size={20}/> MI ENTRENADOR {unreadCount > 0 ? '('+unreadCount+')' : ''}</span><ArrowRight size={18}/>
+              </button>
+              <button onClick={()=>setCurrentView('community')} disabled={!hasPaidMonth} className="ragnar-performance-shortcut disabled:opacity-40">
+                <span><Users size={20}/> SALÓN RAGNAR</span><ArrowRight size={18}/>
               </button>
             </div>
           </section>
