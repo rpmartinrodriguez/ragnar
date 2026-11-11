@@ -53,6 +53,8 @@ import ProgressChart from '../components/ProgressChart';
 import WeeklyRecap from '../components/WeeklyRecap';
 import WorkoutShareCard from '../components/WorkoutShareCard';
 import {weeklyInsights,isFridayFinalSession} from '../utils/trainingInsights';
+import { sessionCompletionFeedback } from '../utils/sessionCompletionFeedback';
+import SessionCompletionCard from '../components/SessionCompletionCard';
 import StudentChangePassword from '../components/StudentChangePassword';
 import StudentFirstAccessModal from '../components/StudentFirstAccessModal';
 import StudentWorkoutNote from '../components/StudentWorkoutNote';
@@ -129,6 +131,9 @@ export default function StudentView({ clientId }) {
   const [sharingBusy,setSharingBusy] = useState(false);
   const [sharingError,setSharingError] = useState('');
   const [showWeeklySummary,setShowWeeklySummary] = useState(false);
+  const [sessionFeedback,setSessionFeedback] = useState(null);
+  const [sessionFeedbackLoading,setSessionFeedbackLoading] = useState(false);
+  const [sessionFeedbackError,setSessionFeedbackError] = useState('');
   const finalizingRef = useRef(false);
   const setWriteQueueRef = useRef(Promise.resolve());
   const failedSetWritesRef = useRef(new Set());
@@ -208,6 +213,34 @@ export default function StudentView({ clientId }) {
       ? exercise.actualSets.filter(set => set?.completed === true).length : 0), 0);
   const workoutProgress = workoutPlannedSets > 0
     ? Math.min(100, Math.round((workoutCompletedSets / workoutPlannedSets) * 100)) : 0;
+
+  // Progreso y feedback leen el mismo origen: sesiones finalizadas en Firestore.
+  // No creamos otra estadística persistida ni alteramos las rutinas históricas.
+  useEffect(() => {
+    if (!clientId || !isSessionFinalized || currentView !== 'workout') {
+      setSessionFeedback(null);
+      setSessionFeedbackLoading(false);
+      setSessionFeedbackError('');
+      return;
+    }
+    let cancelled = false;
+    setSessionFeedbackLoading(true);
+    setSessionFeedbackError('');
+    setSessionFeedback(null);
+    getDocs(collection(db, 'clients', clientId, 'sessions')).then(snapshot => {
+      if (cancelled) return;
+      const data = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+      setSessionFeedback(sessionCompletionFeedback(data, currentDateId));
+      setSessionFeedbackLoading(false);
+    }).catch(error => {
+      if (cancelled) return;
+      console.warn('La sesión está guardada pero no se pudo cargar su comparación:', error?.message || error);
+      setSessionFeedbackError(error?.code || 'unavailable');
+      setSessionFeedbackLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [clientId, currentDateId, isSessionFinalized, currentView]);
+
   const todayYmd=ymdInArgentina();
   const upcomingRenewal=getUpcomingRenewal(client?.startDate,todayYmd);
 
@@ -934,7 +967,9 @@ export default function StudentView({ clientId }) {
       }else if(recap){
         setShowWeeklySummary(true);
       }else{
-        setShowShareModal(true);
+        // La comparación queda integrada en la sesión terminada.
+        // Compartir pasa a ser una acción opcional, no un modal automático.
+        setShowShareModal(false);
       }
 
     } catch (error) {
@@ -1034,7 +1069,7 @@ export default function StudentView({ clientId }) {
             onClick={() => { 
               setNewMedalAlert(null);
               if(weeklySummary)setShowWeeklySummary(true);
-              else setShowShareModal(true); 
+              // Sin resumen semanal, la devolución compacta queda en la pantalla. 
             }}
             className="bg-yellow-400 text-black font-black px-8 py-4 rounded-2xl uppercase tracking-widest active:scale-95 transition-transform"
           >
@@ -1049,7 +1084,7 @@ export default function StudentView({ clientId }) {
           style={{paddingTop:'max(12px,env(safe-area-inset-top))',paddingBottom:'max(12px,env(safe-area-inset-bottom))'}}>
           <div className="max-w-xl mx-auto my-2 sm:my-8">
             <WeeklyRecap summary={weeklySummary}
-              onClose={()=>{setShowWeeklySummary(false);setShowShareModal(true);}}
+              onClose={()=>setShowWeeklySummary(false)}
               onViewProgress={()=>{setShowWeeklySummary(false);setCurrentView('stats');}}
               onShare={()=>{setShowWeeklySummary(false);setShowShareModal(true);}}/>
           </div>
@@ -1431,6 +1466,16 @@ export default function StudentView({ clientId }) {
                   <div className="ragnar-performance-track-fill" style={{width:workoutProgress+'%'}}/>
                 </div>
               </section>
+            )}
+
+            {isSessionFinalized && dailySession.length > 0 && (
+              <SessionCompletionCard
+                feedback={sessionFeedback}
+                loading={sessionFeedbackLoading}
+                error={sessionFeedbackError}
+                onProgress={()=>setCurrentView('stats')}
+                onShare={()=>setShowShareModal(true)}
+              />
             )}
 
             {/* Registrar inicio real: no usar series x 3 como minutos transcurridos */}
