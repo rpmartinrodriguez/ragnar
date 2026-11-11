@@ -4,6 +4,7 @@ import { CalendarCheck2, CreditCard, Dumbbell, MessageSquare, Activity,
 import { collection,getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 import { getUpcomingRenewal,ymdInArgentina } from '../utils/billingCycle';
+import { latestCheckIn, checkInDisplay } from '../utils/ragnarCheckIn';
 
 export default function CoachClientOverview({client,onOpenTab}){
   const [summary,setSummary]=useState(null);
@@ -19,7 +20,7 @@ export default function CoachClientOverview({client,onOpenTab}){
       getDocs(collection(db,'clients',client.id,'payments'))
     ]).then(([sessions,messages,payments])=>{
       if(!live)return;
-      const work=sessions.docs.map(d=>({id:d.id,...d.data()}));
+      const work=sessions.docs.map(d=>({...d.data(),id:d.id}));
       const dateBack=new Date(today+'T12:00:00Z');
       dateBack.setUTCDate(dateBack.getUTCDate()-29);
       const minYmd=dateBack.toISOString().slice(0,10);
@@ -34,7 +35,8 @@ export default function CoachClientOverview({client,onOpenTab}){
         plannedMonth:recent.length,lastCompleted:completed[0]?.id,
         unreadMessages:unpaidMessages.length,
         lastPayment:paid[0]?.id||null,
-        notes:work.filter(d=>!!String(d.studentNote||'').trim()).length});
+        notes:work.filter(d=>!!String(d.studentNote||'').trim()).length,
+        checkIn:latestCheckIn(work,today)});
     }).catch(err=>{if(live)setError(err?.message||'No se pudo cargar el resumen.');});
     return()=>{live=false;};
   },[client?.id,today]);
@@ -75,6 +77,27 @@ export default function CoachClientOverview({client,onOpenTab}){
         </p>}
       </div>
       {error&&<p role="alert" className="text-red-300 text-sm flex gap-2"><AlertCircle size={16}/>{error}</p>}
+      {summary?.checkIn && (
+        <section className="ragnar-intelligence-coach-checkin space-y-2" aria-label="Último Check-in del alumno">
+          <div className="flex justify-between gap-2 flex-wrap items-center">
+            <strong className="text-sm uppercase">ÚLTIMO CHECK-IN · {summary.checkIn.date.split('-').reverse().join('/')}</strong>
+            {summary.checkIn.signals.length>0 &&
+              <span className="ragnar-intelligence-coach-signal">
+                {summary.checkIn.signals.length} señal{summary.checkIn.signals.length===1?'':'es'} para conversar
+              </span>}
+          </div>
+          <p className="text-sm">{checkInDisplay(summary.checkIn)}</p>
+          {summary.checkIn.signals.length>0 && (
+            <p className="text-xs opacity-80">
+              {summary.checkIn.signals.join(' · ')}. Verificar con el alumno antes de ajustar su entrenamiento.
+            </p>
+          )}
+          <p className="text-[11px] opacity-65">
+            Información voluntaria, disponible solo en la ficha y el seguimiento del entrenador.
+          </p>
+        </section>
+      )}
+
       <div className="grid grid-cols-2 gap-3">
         {cards.map(item=>{
           const Icon=item.icon;
