@@ -78,15 +78,15 @@ export default function CommunityView({currentUserId,userName,onOpenProgress}){
   };
 
   return (
-    <section className="max-w-3xl mx-auto animate-in fade-in pb-20 space-y-5" aria-label="El Gran Salón Ragnar">
-      <div className="bg-zinc-900 border border-yellow-400/30 rounded-3xl p-5 sm:p-7 relative overflow-hidden">
+    <section className="ragnar-performance-community max-w-3xl mx-auto animate-in fade-in pb-20 space-y-5" aria-label="El Gran Salón Ragnar">
+      <div className="ragnar-performance-community-hero p-5 sm:p-7 relative overflow-hidden">
         <div className="absolute -right-16 -top-16 w-44 h-44 bg-yellow-400/10 blur-3xl rounded-full pointer-events-none"/>
         <div className="relative">
           <div className="flex items-center gap-3">
             <img src="/logo.png" alt="Ragnar" className="w-14 h-14 object-contain"/>
             <div className="min-w-0">
-              <h2 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight">El Gran Salón</h2>
-              <p className="text-yellow-400 text-xs font-black uppercase tracking-wider">El lugar donde celebramos la constancia</p>
+              <h2 className="font-black text-white uppercase">EL GRAN SALÓN.</h2>
+              <p className="text-yellow-400 text-xs font-black uppercase tracking-wider">CADA LOGRO MERECE SU LUGAR</p>
             </div>
           </div>
           <p className="text-zinc-300 text-sm leading-relaxed mt-4">
@@ -151,7 +151,7 @@ export default function CommunityView({currentUserId,userName,onOpenProgress}){
       </button>}
 
       <div className="flex items-center justify-between gap-2">
-        <h3 className="text-white text-lg font-black uppercase">Muro de conquistas</h3>
+        <h3 className="text-white text-2xl font-black uppercase tracking-tight">MURO DE CONQUISTAS.</h3>
         <span className="text-zinc-500 text-xs">{filtered.length} publicaciones</span>
       </div>
       <div className="flex gap-2 flex-wrap" role="group" aria-label="Filtrar publicaciones del salón">
@@ -181,7 +181,7 @@ export default function CommunityView({currentUserId,userName,onOpenProgress}){
         {filtered.map(post=>{
           const fire=post.reactions?.fire||[],power=post.reactions?.power||[];
           const own=post.userId===currentUserId;
-          return <article key={post.id} className="bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden hover:border-zinc-700 transition-colors">
+          return <article key={post.id} className="ragnar-performance-community-post bg-zinc-900 border border-zinc-800 rounded-2xl overflow-hidden hover:border-zinc-700 transition-colors">
             <div className="p-4 sm:p-5">
               <div className="flex items-start gap-3">
                 <div className={'w-11 h-11 shrink-0 rounded-2xl flex items-center justify-center font-black text-xl '+
