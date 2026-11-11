@@ -632,14 +632,14 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
   }
 
   return (
-    <div className={(activeTab === 'planificacion' ? 'max-w-[1500px]' : 'max-w-6xl') + ' mx-auto animate-in fade-in pb-12'}>
+    <div className={(activeTab === 'planificacion' ? 'max-w-[1500px]' : 'max-w-6xl') + ' ragnar-coach-detail mx-auto animate-in fade-in pb-12'}>
       
       {/* HEADER PRINCIPAL */}
       <div className={(activeTab === 'planificacion' ? 'mb-4' : 'mb-6') + ' flex flex-col md:flex-row md:items-center justify-between gap-4'}>
         <div className="flex items-center gap-4">
           <button 
             onClick={goBack} 
-            className="w-12 h-12 bg-zinc-900 border border-zinc-800 rounded-2xl flex items-center justify-center text-white hover:text-yellow-400 hover:border-yellow-400 transition-colors shadow-lg shrink-0"
+            className="w-12 h-12 bg-zinc-900 border border-zinc-800 rounded-full flex items-center justify-center text-white hover:text-yellow-400 hover:border-yellow-400 transition-colors shadow-lg shrink-0" aria-label="Volver a la lista de alumnos"
           >
             <ChevronLeft size={28}/>
           </button>
@@ -654,24 +654,24 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
       </div>
 
       {/* PESTAÑAS DE NAVEGACIÓN */}
-      <div className={(activeTab === 'planificacion' ? 'mb-4' : 'mb-8') + ' flex gap-6 border-b border-zinc-800/80 overflow-x-auto no-scrollbar'}>
-        <button type="button" onClick={()=>setActiveTab('resumen')}
+      <div role="tablist" aria-label="Secciones del alumno" className={(activeTab === 'planificacion' ? 'mb-4' : 'mb-6') + ' ragnar-coach-detail-tabs flex gap-2 border-b border-zinc-800/80 overflow-x-auto no-scrollbar'}>
+        <button role="tab" aria-selected={activeTab==='resumen'} type="button" onClick={()=>setActiveTab('resumen')}
           className={`pb-3 uppercase font-black text-xs tracking-widest transition-colors whitespace-nowrap ${activeTab==='resumen'?'text-yellow-400 border-b-2 border-yellow-400':'text-zinc-500 hover:text-zinc-300'}`}>
           Resumen 360°
         </button>
-        <button
+        <button role="tab" aria-selected={activeTab==='planificacion'}
           onClick={() => setActiveTab('planificacion')} 
           className={`pb-3 uppercase font-black text-xs tracking-widest transition-colors whitespace-nowrap ${activeTab === 'planificacion' ? 'text-yellow-400 border-b-2 border-yellow-400' : 'text-zinc-500 hover:text-zinc-300'}`}
         >
           Planificación
         </button>
-        <button 
+        <button role="tab" aria-selected={activeTab==='progreso'} 
           onClick={() => setActiveTab('progreso')} 
           className={`pb-3 uppercase font-black text-xs tracking-widest transition-colors whitespace-nowrap ${activeTab === 'progreso' ? 'text-yellow-400 border-b-2 border-yellow-400' : 'text-zinc-500 hover:text-zinc-300'}`}
         >
           Progreso
         </button>
-        <button 
+        <button role="tab" aria-selected={activeTab==='mensajes'} 
           onClick={() => setActiveTab('mensajes')} 
           className={`pb-3 uppercase font-black text-xs tracking-widest transition-colors whitespace-nowrap ${activeTab === 'mensajes' ? 'text-yellow-400 border-b-2 border-yellow-400' : 'text-zinc-500 hover:text-zinc-300'}`}
         >
@@ -683,7 +683,7 @@ export default function ClientDetailView({ client, goBack, exercisesLibrary = []
 
       {/* VISTA: PLANIFICACIÓN */}
       {activeTab === 'planificacion' && (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 items-start animate-in fade-in">
+        <div className="ragnar-coach-planning grid grid-cols-1 lg:grid-cols-12 gap-3 sm:gap-4 items-start animate-in fade-in">
           
           {/* PANEL IZQUIERDO: ELEGIR FECHA Y HERRAMIENTAS SIN SCROLL EXCESIVO */}
           <aside className="lg:col-span-4 xl:col-span-3 min-w-0 space-y-3">
