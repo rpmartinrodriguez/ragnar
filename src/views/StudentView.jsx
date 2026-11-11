@@ -55,6 +55,7 @@ import WorkoutShareCard from '../components/WorkoutShareCard';
 import {weeklyInsights,isFridayFinalSession} from '../utils/trainingInsights';
 import { sessionCompletionFeedback } from '../utils/sessionCompletionFeedback';
 import SessionCompletionCard from '../components/SessionCompletionCard';
+import { nextPlannedWorkout } from '../utils/studentHome';
 import StudentChangePassword from '../components/StudentChangePassword';
 import StudentFirstAccessModal from '../components/StudentFirstAccessModal';
 import StudentWorkoutNote from '../components/StudentWorkoutNote';
@@ -117,7 +118,8 @@ export default function StudentView({ clientId }) {
   const [date, setDate] = useState(new Date());
   const [dailySession, setDailySession] = useState([]);
   const [focusedExerciseIndex, setFocusedExerciseIndex] = useState(0);
-  const [showAllWorkoutExercises, setShowAllWorkoutExercises] = useState(false);
+  const [showAllWorkoutExercises, setShowAllWorkoutExercises] = useState(true);
+  const [showFinishedWorkoutDetails, setShowFinishedWorkoutDetails] = useState(false);
   const [isSessionFinalized, setIsSessionFinalized] = useState(false);
   const [isFinishing, setIsFinishing] = useState(false);
   const [perceivedEffort, setPerceivedEffort] = useState('6');
@@ -161,6 +163,7 @@ export default function StudentView({ clientId }) {
   const currentViewRef=useRef(currentView);
   useEffect(()=>{currentViewRef.current=currentView;},[currentView]);
   const [todayWorkout, setTodayWorkout] = useState(null);
+  const [nextWorkout, setNextWorkout] = useState(null);
   const [studentUnreadCount, setStudentUnreadCount] = useState(0);
   const [studentAlertsRevision,setStudentAlertsRevision] = useState(0);
   const [studentToast, setStudentToast] = useState(null);
@@ -473,14 +476,25 @@ export default function StudentView({ clientId }) {
   // La lista de días se escucha UNA sola vez por alumno. Cambiar de fecha no
   // vuelve a descargar todo el calendario, solo la sesión seleccionada.
   useEffect(()=>{
-    if(!client?.id||!hasPaidMonth)return;
+    if(!client?.id||!hasPaidMonth){
+      setNextWorkout(null);
+      return;
+    }
     const ref=collection(db,'clients',client.id,'sessions');
     return onSnapshot(ref,snapshot=>{
-      setAllSessionsIds(snapshot.docs
-        .filter(d=>Array.isArray(d.data().exercises)&&d.data().exercises.length>0)
-        .map(d=>d.id));
-    },error=>console.warn('Calendario de alumno:',error?.code||error));
-  },[client?.id,hasPaidMonth]);
+      // Aprovechamos el listener del calendario: no es necesaria una segunda
+      // lectura de Firebase para descubrir la próxima rutina programada.
+      const planned=snapshot.docs.filter(d=>
+        Array.isArray(d.data().exercises)&&d.data().exercises.length>0);
+      setAllSessionsIds(planned.map(d=>d.id));
+      setNextWorkout(nextPlannedWorkout(
+        planned.map(d=>({id:d.id,...d.data()})),todayYmd
+      ));
+    },error=>{
+      console.warn('Calendario de alumno:',error?.code||error);
+      setNextWorkout(null);
+    });
+  },[client?.id,hasPaidMonth,todayYmd]);
 
   useEffect(()=>{
     if(!client?.id||!hasPaidMonth)return;
@@ -661,7 +675,24 @@ export default function StudentView({ clientId }) {
       setShowPaymentModal(true);
     } else {
       setDate(newDate);
-      setCurrentView('workout'); 
+      setFocusedExerciseIndex(0);
+      setShowAllWorkoutExercises(true);
+      setShowFinishedWorkoutDetails(false);
+      setCurrentView('workout');
+    }
+  };
+
+  const openWorkoutFromHome = (dayYmd, startClock = false) => {
+    if (!hasPaidMonth) {
+      setShowPaymentModal(true);
+      return;
+    }
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(dayYmd || ''))) return;
+    const selectedDate = new Date(dayYmd + 'T12:00:00');
+    if (Number.isNaN(selectedDate.getTime())) return;
+    handleDateChange(selectedDate);
+    if (startClock && dayYmd === todayYmd) {
+      void startWorkoutClock(dayYmd);
     }
   };
 
@@ -1290,45 +1321,73 @@ export default function StudentView({ clientId }) {
               <span className="w-5 h-[2px] bg-yellow-400"/>
               RAGNAR PERFORMANCE · {new Date(todayYmd + 'T12:00:00').toLocaleDateString('es-AR', { weekday:'long', day:'numeric', month:'short' })}
             </div>
-            <h1 className="ragnar-performance-headline">
+            <h1 className={'ragnar-performance-headline ' +
+              (todayWorkout?.finalized ? 'ragnar-performance-headline-finished' : '')}>
               {todayWorkout
-                ? todayWorkout.finalized ? <>MISIÓN<br/><span>CUMPLIDA.</span></> : <>HOY SE<br/><span>ENTRENA.</span></>
-                : <>TU PRÓXIMO<br/><span>DESAFÍO.</span></>}
+                ? todayWorkout.finalized
+                  ? <>SESIÓN<br/><span>FINALIZADA.</span></>
+                  : <>HOY SE<br/><span>ENTRENA.</span></>
+                : nextWorkout
+                  ? <>TU PRÓXIMO<br/><span>DESAFÍO.</span></>
+                  : <>VAMOS POR<br/><span>MÁS.</span></>}
             </h1>
             <p className="text-zinc-400 text-sm sm:text-base max-w-md -mt-2">
-              {todayWorkout ? 'Cada repetición cuenta. Entrená con intención y seguí tu progreso.' :
-                'Tu próximo paso comienza con una buena planificación.'}
+              {todayWorkout?.finalized
+                ? 'Tu entrenamiento de hoy ya está guardado. Conocé tus resultados o mirá lo que viene.'
+                : todayWorkout
+                  ? 'Tu planificación está lista. Elegí si querés verla completa o ejercicio por ejercicio.'
+                  : nextWorkout
+                    ? 'Hoy no tenés una sesión pendiente. Ya podés consultar la próxima rutina.'
+                    : 'Tu calendario reúne cada entrenamiento programado.'}
             </p>
             <div className="ragnar-performance-hero">
               <div className="relative z-10">
                 <div className="flex justify-between items-center gap-2">
-                  <p className="ragnar-performance-eyebrow">LA SESIÓN DE HOY</p>
-                  <Dumbbell className="text-yellow-400" size={24}/>
+                  <p className="ragnar-performance-eyebrow">
+                    {todayWorkout ? 'ENTRENAMIENTO DE HOY' : nextWorkout ? 'PRÓXIMA SESIÓN' : 'TU PLANIFICACIÓN'}
+                  </p>
+                  <Dumbbell className="text-yellow-400 shrink-0" size={24}/>
                 </div>
+                {todayWorkout?.finalized && (
+                  <div className="ragnar-performance-home-done" role="status">
+                    <CheckCircle size={17}/> FINALIZADA · GUARDADA
+                  </div>
+                )}
                 <h2 className="ragnar-performance-hero-title">
-                  {todayWorkout ? todayWorkout.finalized ? 'ENTRENAMIENTO COMPLETO' : 'TU RUTINA ESTÁ LISTA'
-                    : 'PRÓXIMA RUTINA'}
+                  {todayWorkout
+                    ? todayWorkout.finalized ? 'ENTRENAMIENTO FINALIZADO' : 'TU RUTINA ESTÁ LISTA'
+                    : nextWorkout ? 'PRÓXIMA RUTINA PROGRAMADA' : 'SIN RUTINA PARA HOY'}
                 </h2>
                 <p className="text-zinc-300 text-sm mt-2 max-w-sm">
                   {todayWorkout
-                    ? todayWorkout.count+' ejercicios · '+todayWorkout.sets+' series programadas'
-                    : allSessionsIds.some(id=>id>todayYmd)
-                      ? 'Próxima fecha: '+allSessionsIds.filter(id=>id>todayYmd).sort()[0].split('-').reverse().join('/')
-                      : 'Todavía no tenés una rutina asignada para hoy. Podés ver tu agenda o hablar con tu entrenador.'}
+                    ? todayWorkout.count + ' ejercicios · ' +
+                      (todayWorkout.finalized ? 'Podés revisar tus detalles cuando quieras.'
+                        : todayWorkout.sets + ' series programadas')
+                    : nextWorkout
+                      ? new Date(nextWorkout.date + 'T12:00:00').toLocaleDateString('es-AR',
+                          {weekday:'long',day:'numeric',month:'long'}) +
+                        ' · ' + nextWorkout.exerciseCount + ' ejercicios programados'
+                      : 'Todavía no hay ejercicios asignados para hoy. Consultá el calendario o hablá con tu entrenador.'}
                 </p>
                 {hasPaidMonth ? (
-                  <button type="button" onClick={()=>{
-                    if(todayWorkout){
-                      setDate(new Date());
-                      setFocusedExerciseIndex(0);
-                      setShowAllWorkoutExercises(false);
-                      setCurrentView('workout');
-                      if(!todayWorkout.finalized)void startWorkoutClock(todayYmd);
-                    }else setCurrentView('calendar');
-                  }} className="ragnar-performance-primary mt-6 w-full sm:w-auto" >
-                    <span>{todayWorkout ? todayWorkout.finalized ? 'VER MI ENTRENAMIENTO' : 'COMENZAR ENTRENAMIENTO' : 'VER MI AGENDA'}</span>
-                    <ArrowRight size={21}/>
-                  </button>
+                  <div className="ragnar-performance-home-actions">
+                    <button type="button" onClick={() => {
+                      if (todayWorkout) openWorkoutFromHome(todayYmd, !todayWorkout.finalized);
+                      else if (nextWorkout) openWorkoutFromHome(nextWorkout.date);
+                      else setCurrentView('calendar');
+                    }} className="ragnar-performance-primary" >
+                      <span>{todayWorkout
+                        ? todayWorkout.finalized ? 'VER DETALLES' : 'COMENZAR ENTRENAMIENTO'
+                        : nextWorkout ? 'VER PRÓXIMA RUTINA' : 'VER MI CALENDARIO'}</span>
+                      <ArrowRight size={21}/>
+                    </button>
+                    {todayWorkout && (
+                      <button type="button" onClick={() => setCurrentView('calendar')}
+                        className="ragnar-performance-home-calendar">
+                        <CalendarIcon size={16}/> CALENDARIO
+                      </button>
+                    )}
+                  </div>
                 ) : (
                   <button type="button" onClick={()=>setCurrentView('profile')}
                     className="mt-6 w-full sm:w-auto px-5 py-3 rounded-xl bg-amber-500/10 border border-amber-400/30 text-amber-200 font-bold text-sm">
@@ -1337,6 +1396,25 @@ export default function StudentView({ clientId }) {
                 )}
               </div>
             </div>
+
+            {nextWorkout && todayWorkout && hasPaidMonth && (
+              <div className="ragnar-performance-next-preview">
+                <div className="flex-1 min-w-0">
+                  <p className="ragnar-performance-next-label">A CONTINUACIÓN · PRÓXIMA RUTINA</p>
+                  <h3>{new Date(nextWorkout.date + 'T12:00:00').toLocaleDateString(
+                    'es-AR', {weekday:'long',day:'numeric',month:'long'})}</h3>
+                  <p>{nextWorkout.exerciseCount} ejercicios
+                    {nextWorkout.exerciseNames.length > 0
+                      ? ' · ' + nextWorkout.exerciseNames.join(' · ')
+                      : ''}
+                  </p>
+                </div>
+                <button type="button" onClick={() => openWorkoutFromHome(nextWorkout.date)}
+                  className="ragnar-performance-next-action" aria-label="Ver próxima rutina">
+                  <ArrowRight size={20}/>
+                </button>
+              </div>
+            )}
             {upcomingRenewal && upcomingRenewal.daysUntil>=0 &&
               upcomingRenewal.daysUntil<=3 && renewalPaid===false && (
               <div className="border border-amber-400/30 bg-amber-500/10 rounded-2xl p-4 flex items-start gap-3">
